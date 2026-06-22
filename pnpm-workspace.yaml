@@ -1,0 +1,4 @@
+packages:
+  - 'catalog-service'
+  - 'booking-service'
+  - 'frontend'
