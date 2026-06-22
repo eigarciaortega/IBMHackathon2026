@@ -43,9 +43,8 @@ export default function Login() {
   };
 
   const demoCredentials = [
-    { email: 'admin@beespace.com', password: 'admin123', role: 'Administrador' },
-    { email: 'user@beespace.com', password: 'user123', role: 'Usuario' },
-    { email: 'owner@beespace.com', password: 'owner123', role: 'Propietario' }
+    { email: 'admin@corporativoalpha.com', password: 'admin123', role: 'Administrador' },
+    { email: 'colaborador@corporativoalpha.com', password: 'user123', role: 'Colaborador' }
   ];
 
   return (
@@ -56,7 +55,7 @@ export default function Login() {
             <span className="text-3xl">🐝</span>
           </div>
           <h1 className="text-4xl font-bold text-gray-900 mb-2">BeeSpace</h1>
-          <p className="text-gray-600">Encuentra tu espacio de trabajo ideal</p>
+          <p className="text-gray-600">Sistema de Gestión de Espacios - Corporativo Alpha</p>
         </div>
 
         <div className="bg-white rounded-2xl shadow-xl p-8">
@@ -141,10 +140,7 @@ export default function Login() {
         </div>
 
         <p className="text-center text-sm text-gray-600 mt-6">
-          ¿No tienes cuenta?{' '}
-          <a href="#" className="text-yellow-600 hover:text-yellow-700 font-medium">
-            Regístrate aquí
-          </a>
+          Sistema interno de Corporativo Alpha
         </p>
       </div>
     </div>
