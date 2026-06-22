@@ -33,7 +33,24 @@ importers:
         specifier: ^3.1.14
         version: 3.1.14
 
-  catalog-service: {}
+  catalog-service:
+    dependencies:
+      cors:
+        specifier: ^2.8.6
+        version: 2.8.6
+      dotenv:
+        specifier: ^17.4.2
+        version: 17.4.2
+      express:
+        specifier: ^5.2.1
+        version: 5.2.1
+      pg:
+        specifier: ^8.22.0
+        version: 8.22.0
+    devDependencies:
+      nodemon:
+        specifier: ^3.1.14
+        version: 3.1.14
 
   frontend:
     dependencies:

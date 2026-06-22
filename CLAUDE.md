@@ -272,6 +272,16 @@ Route protection via `ProtectedRoute` component that reads JWT from localStorage
 
 ---
 
+## Database Connection (local dev, no Docker)
+
+Host:     localhost
+Port:     5432
+Database: officespace_db
+User:     officespace_user
+Password: officespace_pass
+
+Connect via: psql -h localhost -U officespace_user -d officespace_db
+
 ## Current Status
 
 - [x] Project structure created
@@ -279,9 +289,36 @@ Route protection via `ProtectedRoute` component that reads JWT from localStorage
 - [x] README.md written
 - [x] .gitignore written
 - [x] CLAUDE.md written
-- [x] init-db.sql written
-- [ ] catalog-service implementation
-- [ ] booking-service implementation
-- [ ] frontend implementation
-- [ ] .env files created
+- [x] init-db.sql executed — 3 tables, 3 users, 10 spaces seeded
+- [x] booking-service implemented and running on port 3002
+  - [x] POST /auth/login
+  - [x] GET /bookings/my
+  - [x] POST /bookings (overlap detection)
+  - [x] DELETE /bookings/:id
+- [x] catalog-service implemented and running on port 3001
+  - [x] GET /spaces
+  - [x] GET /spaces/availability
+  - [x] GET /spaces/:id
+  - [x] POST /spaces (admin)
+  - [x] PUT /spaces/:id (admin)
+  - [x] DELETE /spaces/:id (admin)
+  - [x] GET /dashboard/today (admin)
+- [ ] Frontend (React + Vite + TailwindCSS) — NOT STARTED
+- [ ] Postman collection
+- [ ] Manual test cases document
+- [ ] Gherkin scenarios
 - [ ] Docker setup (last step)
+
+## Pending: Frontend Pages
+1. LoginPage        — route: /
+2. SearchPage       — route: /search
+3. BookingConfirmPage — route: /confirm
+4. MyBookingsPage   — route: /my-bookings
+5. AdminPage        — route: /admin (admin only)
+
+## What to Build Next in Claude Code
+Initialize frontend with Vite inside /frontend directory:
+  pnpm create vite@latest . -- --template react
+  pnpm add react-router-dom axios
+  pnpm add -D tailwindcss @tailwindcss/vite
+Then build the 5 pages in order: Login → Search → Confirm → MyBookings → Admin
