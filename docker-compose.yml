@@ -1,0 +1,84 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: beespace-db
+    environment:
+      POSTGRES_DB: beespace
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin123
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./shared-infra/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d beespace"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - beespace-network
+
+  catalog-service:
+    build: ./catalog-service
+    container_name: catalog-service
+    ports:
+      - "3001:3001"
+    environment:
+      DATABASE_URL: postgresql://admin:admin123@postgres:5432/beespace
+      JWT_SECRET: beespace-secret-key-change-in-production-2026
+      PORT: 3001
+      NODE_ENV: development
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - beespace-network
+    restart: unless-stopped
+
+  booking-service:
+    build: ./booking-service
+    container_name: booking-service
+    ports:
+      - "3002:3002"
+    environment:
+      DATABASE_URL: postgresql://admin:admin123@postgres:5432/beespace
+      JWT_SECRET: beespace-secret-key-change-in-production-2026
+      PORT: 3002
+      NODE_ENV: development
+      CATALOG_SERVICE_URL: http://catalog-service:3001
+    depends_on:
+      postgres:
+        condition: service_healthy
+      catalog-service:
+        condition: service_started
+    networks:
+      - beespace-network
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    container_name: frontend
+    ports:
+      - "80:80"
+    environment:
+      VITE_CATALOG_API_URL: http://localhost:3001/api
+      VITE_BOOKING_API_URL: http://localhost:3002/api
+    depends_on:
+      - catalog-service
+      - booking-service
+    networks:
+      - beespace-network
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
+    driver: local
+
+networks:
+  beespace-network:
+    driver: bridge
+
+# Made with Bob
