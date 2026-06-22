@@ -1,0 +1,7 @@
+﻿package com.corporativoalpha.bookingservice.repositories;
+
+import com.corporativoalpha.bookingservice.models.Space;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface SpaceRepository extends JpaRepository<Space, Long> {
+}
