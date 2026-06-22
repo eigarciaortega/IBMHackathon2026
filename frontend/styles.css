@@ -173,6 +173,14 @@ main {
   padding: 22px;
 }
 
+.confirm-form {
+  display: grid;
+  grid-template-columns: minmax(160px, 260px) auto;
+  gap: 14px;
+  align-items: end;
+  margin-top: 18px;
+}
+
 .login-message {
   min-height: 20px;
   margin: 0;
@@ -274,6 +282,18 @@ textarea {
 .assistant-card p {
   color: var(--gray-700);
   line-height: 1.55;
+}
+
+.space-card button {
+  min-height: 38px;
+  margin-top: 14px;
+  border: 0;
+  border-radius: 8px;
+  padding: 0 12px;
+  color: var(--navy);
+  background: var(--turquoise);
+  cursor: pointer;
+  font-weight: 700;
 }
 
 .booking-row {
@@ -446,7 +466,8 @@ textarea {
   .topbar,
   .split,
   .section-header,
-  .booking-row {
+  .booking-row,
+  .confirm-form {
     grid-template-columns: 1fr;
   }
 

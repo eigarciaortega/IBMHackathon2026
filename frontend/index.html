@@ -63,58 +63,47 @@
             <p class="section-label">Busqueda consultiva</p>
             <h2>Encuentra el espacio correcto para cada momento</h2>
           </div>
-          <button class="primary-action">Buscar disponibilidad</button>
         </div>
-        <div class="filters">
-          <label>Fecha <input type="date" /></label>
+        <form class="filters" id="availabilityForm">
+          <label>Fecha <input id="availabilityDate" name="date" type="date" required /></label>
+          <label>Inicio <input id="availabilityStartTime" name="startTime" type="time" value="09:00" required /></label>
+          <label>Fin <input id="availabilityEndTime" name="endTime" type="time" value="10:00" required /></label>
           <label>Tipo
-            <select>
-              <option>Sala</option>
-              <option>Desk</option>
+            <select id="availabilityType" name="type">
+              <option value="">Todos</option>
+              <option value="SALA">Sala</option>
+              <option value="DESK">Desk</option>
             </select>
           </label>
-          <label>Capacidad <input type="number" value="5" min="1" /></label>
-          <label>Recurso
-            <select>
-              <option>Proyector</option>
-              <option>Pantalla</option>
-              <option>Pizarra</option>
-              <option>Zona silenciosa</option>
-            </select>
-          </label>
-        </div>
-        <div class="space-grid">
-          <article class="space-card">
-            <span>SALA</span>
-            <h3>Sala Creativa</h3>
-            <p>Ideal para workshops y reuniones de equipo.</p>
-            <strong>6 personas - Piso 3</strong>
-          </article>
-          <article class="space-card">
-            <span>SALA</span>
-            <h3>Sala Ejecutiva</h3>
-            <p>Privacidad y recursos para juntas directivas.</p>
-            <strong>10 personas - Piso 5</strong>
-          </article>
-          <article class="space-card">
-            <span>DESK</span>
-            <h3>Hot Desk Ventana</h3>
-            <p>Luz natural y zona silenciosa para concentrarte.</p>
-            <strong>1 persona - Piso 3</strong>
-          </article>
-        </div>
+          <label>Asistentes <input id="availabilityAttendees" name="attendees" type="number" value="5" min="1" required /></label>
+          <div class="checkbox-grid wide">
+            <label><input name="projector" type="checkbox" /> Proyector</label>
+            <label><input name="ac" type="checkbox" /> Aire acondicionado</label>
+            <label><input name="screen" type="checkbox" /> Pantalla</label>
+            <label><input name="whiteboard" type="checkbox" /> Pizarra</label>
+            <label><input name="quietZone" type="checkbox" /> Zona silenciosa</label>
+          </div>
+          <button class="primary-action wide" type="submit">Buscar disponibilidad</button>
+        </form>
+        <p class="login-message" id="availabilityMessage" role="alert"></p>
+        <div class="space-grid" id="availabilityResults"></div>
       </section>
 
       <section class="view" id="confirm">
-        <div class="panel">
+        <div class="panel" id="bookingSummaryPanel">
           <p class="section-label">Confirmar reserva</p>
           <h2>Revisa detalles antes de reservar</h2>
-          <div class="summary-list">
-            <span>Espacio: Sala Creativa</span>
-            <span>Horario: 09:00 - 10:30</span>
-            <span>Recursos: proyector, pantalla, pizarra</span>
+          <div class="summary-list" id="bookingSummary">
+            <span>Selecciona un espacio disponible para preparar la reserva.</span>
           </div>
-          <button class="primary-action">Confirmar reserva demo</button>
+          <form class="confirm-form" id="confirmBookingForm">
+            <label>
+              Asistentes
+              <input id="confirmAttendees" name="attendees" type="number" min="1" value="1" required />
+            </label>
+            <button class="primary-action" type="submit">Confirmar reserva</button>
+          </form>
+          <p class="login-message" id="bookingMessage" role="alert"></p>
         </div>
       </section>
 
@@ -124,17 +113,10 @@
             <p class="section-label">Mis reservas</p>
             <h2>Tu agenda de espacios</h2>
           </div>
+          <button class="primary-action" id="refreshBookingsButton" type="button">Actualizar</button>
         </div>
-        <div class="booking-row">
-          <strong>Sala de Entrevistas</strong>
-          <span>Hoy - 15:00 - 15:45</span>
-          <button>Cancelar</button>
-        </div>
-        <div class="booking-row">
-          <strong>Hot Desk Individual</strong>
-          <span>Manana - 09:00 - 13:00</span>
-          <button>Cancelar</button>
-        </div>
+        <p class="login-message" id="myBookingsMessage" role="alert"></p>
+        <div id="myBookingsList"></div>
       </section>
 
       <section class="view" id="dashboard">
@@ -145,14 +127,14 @@
           </div>
         </div>
         <div class="metric-grid">
-          <article><span>Total espacios</span><strong>8</strong></article>
-          <article><span>Ocupados hoy</span><strong>3</strong></article>
-          <article><span>Disponibles hoy</span><strong>5</strong></article>
-          <article><span>Reservas totales</span><strong>24</strong></article>
+          <article><span>Total espacios</span><strong id="metricTotalSpaces">-</strong></article>
+          <article><span>Ocupados hoy</span><strong id="metricOccupiedToday">-</strong></article>
+          <article><span>Disponibles hoy</span><strong id="metricAvailableToday">-</strong></article>
+          <article><span>Reservas totales</span><strong id="metricTotalBookings">-</strong></article>
         </div>
         <div class="panel">
           <h3>Senales para negocio</h3>
-          <p>Espacios mas reservados, horarios mas solicitados y recursos pedidos al asistente apareceran aqui.</p>
+          <p id="dashboardSignals">Las metricas de ocupacion y analitica apareceran aqui al iniciar sesion como administrador.</p>
         </div>
         <div class="panel catalog-admin">
           <div class="section-header compact">

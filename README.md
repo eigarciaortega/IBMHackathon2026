@@ -95,10 +95,15 @@ Esta version entrega el esqueleto inicial, autenticacion y CRUD de catalogo:
 - Catalogo funcional con `GET /spaces`, `GET /spaces/:id`, `POST /spaces`, `PUT /spaces/:id` y `DELETE /spaces/:id`.
 - Filtros de espacios por tipo, capacidad minima, proyector, aire acondicionado, pantalla, pizarra y zona silenciosa.
 - Control de roles en catalogo: colaboradores pueden consultar y solo administradores pueden crear, editar o eliminar.
+- Motor de reservas con `GET /availability`, `POST /bookings`, `GET /bookings/my`, `DELETE /bookings/:id`, `GET /dashboard/today` y `GET /dashboard/analytics`.
+- Validacion critica de no solapamiento por espacio: `new_start < existing_end AND new_end > existing_start`.
+- Dashboard basico de ocupacion y analitica de reservas para administradores.
 - Rutas de negocio restantes como stubs documentados.
-- Frontend inicial con login conectado, `localStorage`, redireccion por rol, busqueda, reserva, mis reservas, dashboard, administracion basica de espacios y Alpha Assistant.
+- Frontend inicial con login conectado, `localStorage`, redireccion por rol, busqueda de disponibilidad, confirmacion de reserva, mis reservas, dashboard, administracion basica de espacios y Alpha Assistant.
 
-La logica completa de disponibilidad, reservas, analitica y persistencia del asistente queda lista para implementarse en la siguiente iteracion.
+La persistencia y logica completa del asistente queda lista para implementarse en la siguiente iteracion.
+
+Nota de desarrollo local: si cambias el esquema de base de datos y necesitas reiniciar datos semilla desde cero, usa `docker compose down -v` antes de levantar nuevamente con `docker compose up --build`.
 
 ## Enfoque de innovacion
 

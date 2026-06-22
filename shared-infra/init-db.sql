@@ -28,14 +28,16 @@ CREATE TABLE IF NOT EXISTS spaces (
 
 CREATE TABLE IF NOT EXISTS bookings (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES users(id),
   space_id UUID NOT NULL REFERENCES spaces(id),
-  starts_at TIMESTAMPTZ NOT NULL,
-  ends_at TIMESTAMPTZ NOT NULL,
+  user_id UUID NOT NULL REFERENCES users(id),
+  date DATE NOT NULL,
+  start_time TIME NOT NULL,
+  end_time TIME NOT NULL,
+  attendees INTEGER NOT NULL CHECK (attendees > 0),
   status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE', 'CANCELLED')),
-  purpose VARCHAR(180),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  CONSTRAINT bookings_valid_time_range CHECK (ends_at > starts_at)
+  CONSTRAINT bookings_valid_time_range CHECK (end_time > start_time)
 );
 
 CREATE TABLE IF NOT EXISTS assistant_logs (
@@ -48,11 +50,11 @@ CREATE TABLE IF NOT EXISTS assistant_logs (
 );
 
 CREATE INDEX IF NOT EXISTS idx_bookings_space_time
-  ON bookings (space_id, starts_at, ends_at)
+  ON bookings (space_id, date, start_time, end_time)
   WHERE status = 'ACTIVE';
 
 CREATE INDEX IF NOT EXISTS idx_bookings_user
-  ON bookings (user_id, starts_at DESC);
+  ON bookings (user_id, date ASC, start_time ASC);
 
 CREATE INDEX IF NOT EXISTS idx_assistant_logs_created_at
   ON assistant_logs (created_at DESC);
