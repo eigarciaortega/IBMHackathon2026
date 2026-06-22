@@ -1,0 +1,74 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: officespace-postgres
+    environment:
+      POSTGRES_DB: officespace_advisor
+      POSTGRES_USER: officespace_user
+      POSTGRES_PASSWORD: officespace_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./shared-infra/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U officespace_user -d officespace_advisor"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  auth-service:
+    build:
+      context: ./auth-service
+    container_name: officespace-auth-service
+    environment:
+      PORT: 3000
+      DATABASE_URL: postgres://officespace_user:officespace_pass@postgres:5432/officespace_advisor
+      JWT_SECRET: hackathon-dev-secret
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  catalog-service:
+    build:
+      context: ./catalog-service
+    container_name: officespace-catalog-service
+    environment:
+      PORT: 3001
+      DATABASE_URL: postgres://officespace_user:officespace_pass@postgres:5432/officespace_advisor
+      JWT_SECRET: hackathon-dev-secret
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  booking-service:
+    build:
+      context: ./booking-service
+    container_name: officespace-booking-service
+    environment:
+      PORT: 3002
+      DATABASE_URL: postgres://officespace_user:officespace_pass@postgres:5432/officespace_advisor
+      JWT_SECRET: hackathon-dev-secret
+    ports:
+      - "3002:3002"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: officespace-frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - auth-service
+      - catalog-service
+      - booking-service
+
+volumes:
+  postgres-data:

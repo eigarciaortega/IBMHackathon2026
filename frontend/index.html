@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OfficeSpace Advisor</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">OfficeSpace Advisor</p>
+        <h1>Gestion inteligente de espacios para oficinas hibridas</h1>
+        <p class="tagline">Reserva mejor. Ocupa mejor. Decide con datos.</p>
+      </div>
+      <nav class="nav" aria-label="Navegacion principal">
+        <button class="nav-button active" data-view="login">Login</button>
+        <button class="nav-button" data-view="search">Buscar</button>
+        <button class="nav-button" data-view="confirm">Reservar</button>
+        <button class="nav-button" data-view="bookings">Mis reservas</button>
+        <button class="nav-button" data-view="dashboard">Dashboard</button>
+        <button class="nav-button" id="logoutButton" type="button" hidden>Salir</button>
+      </nav>
+      <div class="session-card" id="sessionCard" hidden>
+        <span id="sessionName">Sesion activa</span>
+        <strong id="sessionRole">ROL</strong>
+      </div>
+    </header>
+
+    <main>
+      <section class="view active" id="login">
+        <div class="panel split">
+          <div>
+            <p class="section-label">Acceso por roles</p>
+            <h2>Entra como administrador o colaborador</h2>
+            <p>
+              Autenticacion funcional con usuarios predefinidos, JWT basico y redireccion visual por rol.
+            </p>
+            <div class="credential-list">
+              <span>admin@corporativoalpha.com</span>
+              <span>carlos.mendez@corporativoalpha.com</span>
+              <span>ana.torres@corporativoalpha.com</span>
+            </div>
+          </div>
+          <form class="login-card" id="loginForm">
+            <label>
+              Email
+              <input id="email" name="email" type="email" value="admin@corporativoalpha.com" autocomplete="username" required />
+            </label>
+            <label>
+              Password
+              <input id="password" name="password" type="password" value="Admin123" autocomplete="current-password" required />
+            </label>
+            <button id="loginButton" type="submit">Iniciar sesion</button>
+            <p class="login-message" id="loginMessage" role="alert"></p>
+          </form>
+        </div>
+      </section>
+
+      <section class="view" id="search">
+        <div class="section-header">
+          <div>
+            <p class="section-label">Busqueda consultiva</p>
+            <h2>Encuentra el espacio correcto para cada momento</h2>
+          </div>
+          <button class="primary-action">Buscar disponibilidad</button>
+        </div>
+        <div class="filters">
+          <label>Fecha <input type="date" /></label>
+          <label>Tipo
+            <select>
+              <option>Sala</option>
+              <option>Desk</option>
+            </select>
+          </label>
+          <label>Capacidad <input type="number" value="5" min="1" /></label>
+          <label>Recurso
+            <select>
+              <option>Proyector</option>
+              <option>Pantalla</option>
+              <option>Pizarra</option>
+              <option>Zona silenciosa</option>
+            </select>
+          </label>
+        </div>
+        <div class="space-grid">
+          <article class="space-card">
+            <span>SALA</span>
+            <h3>Sala Creativa</h3>
+            <p>Ideal para workshops y reuniones de equipo.</p>
+            <strong>6 personas - Piso 3</strong>
+          </article>
+          <article class="space-card">
+            <span>SALA</span>
+            <h3>Sala Ejecutiva</h3>
+            <p>Privacidad y recursos para juntas directivas.</p>
+            <strong>10 personas - Piso 5</strong>
+          </article>
+          <article class="space-card">
+            <span>DESK</span>
+            <h3>Hot Desk Ventana</h3>
+            <p>Luz natural y zona silenciosa para concentrarte.</p>
+            <strong>1 persona - Piso 3</strong>
+          </article>
+        </div>
+      </section>
+
+      <section class="view" id="confirm">
+        <div class="panel">
+          <p class="section-label">Confirmar reserva</p>
+          <h2>Revisa detalles antes de reservar</h2>
+          <div class="summary-list">
+            <span>Espacio: Sala Creativa</span>
+            <span>Horario: 09:00 - 10:30</span>
+            <span>Recursos: proyector, pantalla, pizarra</span>
+          </div>
+          <button class="primary-action">Confirmar reserva demo</button>
+        </div>
+      </section>
+
+      <section class="view" id="bookings">
+        <div class="section-header">
+          <div>
+            <p class="section-label">Mis reservas</p>
+            <h2>Tu agenda de espacios</h2>
+          </div>
+        </div>
+        <div class="booking-row">
+          <strong>Sala de Entrevistas</strong>
+          <span>Hoy - 15:00 - 15:45</span>
+          <button>Cancelar</button>
+        </div>
+        <div class="booking-row">
+          <strong>Hot Desk Individual</strong>
+          <span>Manana - 09:00 - 13:00</span>
+          <button>Cancelar</button>
+        </div>
+      </section>
+
+      <section class="view" id="dashboard">
+        <div class="section-header">
+          <div>
+            <p class="section-label">Admin dashboard</p>
+            <h2>Ocupacion y decisiones con datos</h2>
+          </div>
+        </div>
+        <div class="metric-grid">
+          <article><span>Total espacios</span><strong>8</strong></article>
+          <article><span>Ocupados hoy</span><strong>3</strong></article>
+          <article><span>Disponibles hoy</span><strong>5</strong></article>
+          <article><span>Reservas totales</span><strong>24</strong></article>
+        </div>
+        <div class="panel">
+          <h3>Senales para negocio</h3>
+          <p>Espacios mas reservados, horarios mas solicitados y recursos pedidos al asistente apareceran aqui.</p>
+        </div>
+      </section>
+    </main>
+
+    <aside class="assistant-card" aria-label="Alpha Assistant">
+      <div class="assistant-header">
+        <span>Alpha Assistant</span>
+        <small>Reglas iniciales</small>
+      </div>
+      <p>Cuentame que necesitas y lo convertire en filtros de busqueda.</p>
+      <textarea id="assistantText">Necesito una sala para 5 personas manana en la manana con proyector</textarea>
+      <button id="assistantButton">Interpretar busqueda</button>
+      <pre id="assistantOutput">Esperando consulta...</pre>
+    </aside>
+
+    <script src="app.js"></script>
+  </body>
+</html>
