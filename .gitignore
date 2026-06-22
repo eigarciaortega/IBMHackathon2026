@@ -1,0 +1,28 @@
+# Node / React
+node_modules/
+dist/
+frontend/node_modules/
+frontend/dist/
+
+# Java / Spring Boot
+target/
+*.class
+*.jar
+*.war
+
+# Maven
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+*.env
+
+# Logs
+*.log
