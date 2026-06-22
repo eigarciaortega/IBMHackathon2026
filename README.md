@@ -82,7 +82,7 @@ Colaboradores:
 
 ## Estado actual
 
-Esta version entrega el esqueleto inicial y la fase 1.2 de autenticacion:
+Esta version entrega el esqueleto inicial, autenticacion y CRUD de catalogo:
 
 - Carpetas principales.
 - Dockerfile por servicio.
@@ -92,8 +92,11 @@ Esta version entrega el esqueleto inicial y la fase 1.2 de autenticacion:
 - Endpoints `/health`.
 - Auth funcional con `POST /login`, `GET /me`, JWT y validacion contra PostgreSQL.
 - Middleware reutilizable para validar token y rol administrador.
+- Catalogo funcional con `GET /spaces`, `GET /spaces/:id`, `POST /spaces`, `PUT /spaces/:id` y `DELETE /spaces/:id`.
+- Filtros de espacios por tipo, capacidad minima, proyector, aire acondicionado, pantalla, pizarra y zona silenciosa.
+- Control de roles en catalogo: colaboradores pueden consultar y solo administradores pueden crear, editar o eliminar.
 - Rutas de negocio restantes como stubs documentados.
-- Frontend inicial con login conectado, `localStorage`, redireccion por rol, busqueda, reserva, mis reservas, dashboard y Alpha Assistant.
+- Frontend inicial con login conectado, `localStorage`, redireccion por rol, busqueda, reserva, mis reservas, dashboard, administracion basica de espacios y Alpha Assistant.
 
 La logica completa de disponibilidad, reservas, analitica y persistencia del asistente queda lista para implementarse en la siguiente iteracion.
 

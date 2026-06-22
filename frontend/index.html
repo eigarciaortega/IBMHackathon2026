@@ -154,6 +154,75 @@
           <h3>Senales para negocio</h3>
           <p>Espacios mas reservados, horarios mas solicitados y recursos pedidos al asistente apareceran aqui.</p>
         </div>
+        <div class="panel catalog-admin">
+          <div class="section-header compact">
+            <div>
+              <p class="section-label">Catalogo de espacios</p>
+              <h3>Gestion de salas y desks</h3>
+            </div>
+            <button class="primary-action" id="refreshSpacesButton" type="button">Actualizar</button>
+          </div>
+
+          <form class="space-form" id="spaceForm">
+            <input id="spaceId" name="spaceId" type="hidden" />
+            <label>
+              Nombre
+              <input id="spaceName" name="name" type="text" placeholder="Sala Proyecto Alpha" required />
+            </label>
+            <label>
+              Tipo
+              <select id="spaceType" name="type" required>
+                <option value="SALA">SALA</option>
+                <option value="DESK">DESK</option>
+              </select>
+            </label>
+            <label>
+              Capacidad
+              <input id="spaceCapacity" name="capacity" type="number" min="1" value="4" required />
+            </label>
+            <label>
+              Piso
+              <input id="spaceFloor" name="floor" type="text" placeholder="Piso 4" required />
+            </label>
+            <label class="wide">
+              Descripcion
+              <input id="spaceDescription" name="description" type="text" placeholder="Espacio para juntas de proyecto." />
+            </label>
+            <div class="checkbox-grid wide">
+              <label><input id="spaceProjector" name="hasProjector" type="checkbox" /> Proyector</label>
+              <label><input id="spaceAc" name="hasAc" type="checkbox" /> Aire acondicionado</label>
+              <label><input id="spaceScreen" name="hasScreen" type="checkbox" /> Pantalla</label>
+              <label><input id="spaceWhiteboard" name="hasWhiteboard" type="checkbox" /> Pizarra</label>
+              <label><input id="spaceQuietZone" name="isQuietZone" type="checkbox" /> Zona silenciosa</label>
+            </div>
+            <div class="form-actions wide">
+              <button class="primary-action" id="saveSpaceButton" type="submit">Crear espacio</button>
+              <button id="clearSpaceFormButton" type="button">Limpiar</button>
+            </div>
+          </form>
+
+          <p class="login-message" id="spaceMessage" role="alert"></p>
+
+          <div class="table-wrap">
+            <table class="spaces-table">
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Tipo</th>
+                  <th>Capacidad</th>
+                  <th>Piso</th>
+                  <th>Recursos</th>
+                  <th class="admin-only">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="spacesTableBody">
+                <tr>
+                  <td colspan="6">Inicia sesion para consultar espacios.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </section>
     </main>
 
