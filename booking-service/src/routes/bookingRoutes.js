@@ -6,6 +6,7 @@ const {
   getAvailability,
   getMyBookings
 } = require("../controllers/bookingsController");
+const { searchAssistantSpaces } = require("../controllers/assistantController");
 const { getAnalyticsDashboard, getTodayDashboard } = require("../controllers/dashboardController");
 const { authenticateToken, requireAdmin } = require("../middleware/auth");
 
@@ -17,5 +18,6 @@ router.get("/bookings/my", authenticateToken, getMyBookings);
 router.delete("/bookings/:id", authenticateToken, cancelBooking);
 router.get("/dashboard/today", authenticateToken, requireAdmin, getTodayDashboard);
 router.get("/dashboard/analytics", authenticateToken, requireAdmin, getAnalyticsDashboard);
+router.post("/assistant/search", authenticateToken, searchAssistantSpaces);
 
 module.exports = router;

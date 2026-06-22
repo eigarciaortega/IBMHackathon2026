@@ -46,6 +46,11 @@ const createSwaggerSpec = (port) => ({
           hasScreen: { type: "boolean", example: true },
           hasWhiteboard: { type: "boolean", example: true },
           isQuietZone: { type: "boolean", example: false },
+          has_projector: { type: "boolean", example: true },
+          has_ac: { type: "boolean", example: true },
+          has_screen: { type: "boolean", example: true },
+          has_whiteboard: { type: "boolean", example: true },
+          is_quiet_zone: { type: "boolean", example: false },
           description: { type: "string" }
         }
       },
@@ -58,6 +63,63 @@ const createSwaggerSpec = (port) => ({
           endTime: { type: "string" },
           attendees: { type: "integer" },
           status: { type: "string", enum: ["ACTIVE", "CANCELLED"] }
+        }
+      },
+      AssistantSearchInput: {
+        type: "object",
+        required: ["message"],
+        properties: {
+          message: {
+            type: "string",
+            example: "Necesito una sala para 5 personas manana en la manana con proyector"
+          }
+        }
+      },
+      AssistantInterpretedFilters: {
+        type: "object",
+        properties: {
+          type: { type: "string", nullable: true, enum: ["SALA", "DESK"], example: "SALA" },
+          capacity: { type: "integer", nullable: true, example: 5 },
+          date: { type: "string", nullable: true, format: "date", example: "2026-06-23" },
+          startTime: { type: "string", nullable: true, example: "09:00" },
+          endTime: { type: "string", nullable: true, example: "12:00" },
+          timePreference: { type: "string", nullable: true, example: "MORNING" },
+          resources: {
+            type: "array",
+            items: { type: "string", enum: ["projector", "screen", "whiteboard", "ac", "quietZone"] },
+            example: ["projector"]
+          }
+        }
+      },
+      AssistantSearchResponse: {
+        type: "object",
+        properties: {
+          intent: { type: "string", example: "BUSCAR_ESPACIO" },
+          message: { type: "string" },
+          interpretedFilters: { $ref: "#/components/schemas/AssistantInterpretedFilters" },
+          missingFields: {
+            type: "array",
+            items: { type: "string", enum: ["date", "time", "capacity"] },
+            example: []
+          },
+          suggestedSpaces: {
+            type: "array",
+            items: { $ref: "#/components/schemas/SpaceAvailability" }
+          }
+        }
+      },
+      DashboardAnalytics: {
+        type: "object",
+        properties: {
+          totalBookings: { type: "integer" },
+          mostBookedSpaces: { type: "array", items: { type: "object" } },
+          peakHours: { type: "array", items: { type: "object" } },
+          bookingsByType: { type: "array", items: { type: "object" } },
+          averageAttendees: { type: "number" },
+          assistantSearchesTotal: { type: "integer" },
+          mostRequestedResources: { type: "array", items: { type: "object" } },
+          mostRequestedType: { type: "array", items: { type: "object" } },
+          recentAssistantSearches: { type: "array", items: { type: "object" } }
         }
       }
     }
@@ -157,7 +219,14 @@ const createSwaggerSpec = (port) => ({
         summary: "Metricas simples de negocio",
         security: [{ bearerAuth: [] }],
         responses: {
-          200: { description: "Analitica de reservas" },
+          200: {
+            description: "Analitica de reservas y Alpha Assistant",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/DashboardAnalytics" }
+              }
+            }
+          },
           401: { description: "Token faltante o invalido" },
           403: { description: "Solo ADMINISTRADOR" },
           500: { description: "Error interno" }
@@ -166,9 +235,96 @@ const createSwaggerSpec = (port) => ({
     },
     "/assistant/search": {
       post: {
-        summary: "Stub de Alpha Assistant",
+        summary: "Interpreta una solicitud y sugiere espacios disponibles",
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": { schema: { $ref: "#/components/schemas/AssistantSearchInput" } }
+          }
+        },
         responses: {
-          501: { description: "Pendiente de implementacion" }
+          200: {
+            description: "Filtros interpretados y espacios sugeridos",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/AssistantSearchResponse" },
+                examples: {
+                  withSuggestions: {
+                    summary: "Con espacios sugeridos",
+                    value: {
+                      intent: "BUSCAR_ESPACIO",
+                      message: "Encontre espacios disponibles que podrian funcionar para ti.",
+                      interpretedFilters: {
+                        type: "SALA",
+                        capacity: 5,
+                        date: "2026-06-23",
+                        startTime: "09:00",
+                        endTime: "12:00",
+                        timePreference: "MORNING",
+                        resources: ["projector"]
+                      },
+                      missingFields: [],
+                      suggestedSpaces: [
+                        {
+                          id: "1",
+                          name: "Sala Creativa",
+                          type: "SALA",
+                          capacity: 6,
+                          floor: "Piso 3",
+                          has_projector: true,
+                          has_ac: true,
+                          has_screen: true,
+                          has_whiteboard: true,
+                          is_quiet_zone: false,
+                          description: "Sala flexible para sesiones de ideacion."
+                        }
+                      ]
+                    }
+                  },
+                  withoutResults: {
+                    summary: "Sin resultados",
+                    value: {
+                      intent: "BUSCAR_ESPACIO",
+                      message: "No encontre espacios disponibles con esas caracteristicas. Puedes intentar con otro horario, menor capacidad o quitar algun recurso.",
+                      interpretedFilters: {
+                        type: "SALA",
+                        capacity: 20,
+                        date: "2026-06-23",
+                        startTime: "09:00",
+                        endTime: "12:00",
+                        timePreference: "MORNING",
+                        resources: ["projector"]
+                      },
+                      missingFields: [],
+                      suggestedSpaces: []
+                    }
+                  },
+                  missingFields: {
+                    summary: "Faltan datos para buscar",
+                    value: {
+                      intent: "BUSCAR_ESPACIO",
+                      message: "Puedo ayudarte, pero necesito saber la fecha, el horario para recomendarte espacios disponibles.",
+                      interpretedFilters: {
+                        type: "SALA",
+                        capacity: 5,
+                        date: null,
+                        startTime: null,
+                        endTime: null,
+                        timePreference: null,
+                        resources: ["projector"]
+                      },
+                      missingFields: ["date", "time"],
+                      suggestedSpaces: []
+                    }
+                  }
+                }
+              }
+            }
+          },
+          400: { description: "Mensaje faltante o datos invalidos" },
+          401: { description: "Token faltante o invalido" },
+          500: { description: "Error interno" }
         }
       }
     }

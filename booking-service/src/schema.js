@@ -95,6 +95,47 @@ const ensureBookingSchema = async () => {
     CREATE INDEX IF NOT EXISTS idx_bookings_user
       ON bookings (user_id, date ASC, start_time ASC)
   `);
+
+  await db.query(`
+    ALTER TABLE assistant_logs ADD COLUMN IF NOT EXISTS intent VARCHAR(60) DEFAULT 'BUSCAR_ESPACIO';
+    ALTER TABLE assistant_logs ADD COLUMN IF NOT EXISTS detected_type VARCHAR(20);
+    ALTER TABLE assistant_logs ADD COLUMN IF NOT EXISTS detected_capacity INTEGER;
+    ALTER TABLE assistant_logs ADD COLUMN IF NOT EXISTS detected_date DATE;
+    ALTER TABLE assistant_logs ADD COLUMN IF NOT EXISTS detected_time_preference VARCHAR(30);
+    ALTER TABLE assistant_logs ADD COLUMN IF NOT EXISTS detected_resources TEXT[] DEFAULT ARRAY[]::TEXT[];
+  `);
+
+  await db.query(`
+    DO $$
+    BEGIN
+      IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'assistant_logs' AND column_name = 'interpreted_intent'
+      )
+      THEN
+        UPDATE assistant_logs
+        SET intent = COALESCE(intent, interpreted_intent, 'BUSCAR_ESPACIO'),
+            detected_resources = COALESCE(detected_resources, ARRAY[]::TEXT[]);
+      ELSE
+        UPDATE assistant_logs
+        SET intent = COALESCE(intent, 'BUSCAR_ESPACIO'),
+            detected_resources = COALESCE(detected_resources, ARRAY[]::TEXT[]);
+      END IF;
+    END $$;
+  `);
+
+  await db.query(`
+    ALTER TABLE assistant_logs
+      ALTER COLUMN intent SET DEFAULT 'BUSCAR_ESPACIO',
+      ALTER COLUMN intent SET NOT NULL,
+      ALTER COLUMN detected_resources SET DEFAULT ARRAY[]::TEXT[],
+      ALTER COLUMN detected_resources SET NOT NULL
+  `);
+
+  await db.query(`
+    CREATE INDEX IF NOT EXISTS idx_assistant_logs_created_at
+      ON assistant_logs (created_at DESC)
+  `);
 };
 
 module.exports = {

@@ -79,13 +79,61 @@ const getAnalyticsDashboard = async (req, res) => {
       SELECT COALESCE(ROUND(AVG(attendees)::numeric, 2), 0)::float AS average
       FROM bookings
     `);
+    const assistantSearchesTotal = await db.query(`
+      SELECT COUNT(*)::int AS total
+      FROM assistant_logs
+    `);
+    const mostRequestedResources = await db.query(`
+      SELECT resource, COUNT(*)::int AS searches
+      FROM assistant_logs, unnest(detected_resources) AS resource
+      GROUP BY resource
+      ORDER BY searches DESC, resource ASC
+      LIMIT 5
+    `);
+    const mostRequestedType = await db.query(`
+      SELECT detected_type AS type, COUNT(*)::int AS searches
+      FROM assistant_logs
+      WHERE detected_type IS NOT NULL
+      GROUP BY detected_type
+      ORDER BY searches DESC, detected_type ASC
+      LIMIT 5
+    `);
+    const recentAssistantSearches = await db.query(`
+      SELECT
+        id,
+        query_text,
+        intent,
+        detected_type,
+        detected_capacity,
+        detected_date,
+        detected_time_preference,
+        detected_resources,
+        created_at
+      FROM assistant_logs
+      ORDER BY created_at DESC
+      LIMIT 5
+    `);
 
     return res.json({
       totalBookings: totalBookings.rows[0].total,
       mostBookedSpaces: mostBookedSpaces.rows,
       peakHours: peakHours.rows,
       bookingsByType: bookingsByType.rows,
-      averageAttendees: averageAttendees.rows[0].average
+      averageAttendees: averageAttendees.rows[0].average,
+      assistantSearchesTotal: assistantSearchesTotal.rows[0].total,
+      mostRequestedResources: mostRequestedResources.rows,
+      mostRequestedType: mostRequestedType.rows,
+      recentAssistantSearches: recentAssistantSearches.rows.map((search) => ({
+        id: search.id,
+        queryText: search.query_text,
+        intent: search.intent,
+        detectedType: search.detected_type,
+        detectedCapacity: search.detected_capacity,
+        detectedDate: search.detected_date,
+        detectedTimePreference: search.detected_time_preference,
+        detectedResources: search.detected_resources,
+        createdAt: search.created_at
+      }))
     });
   } catch (error) {
     console.error("Dashboard analytics error", error);

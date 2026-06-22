@@ -1,8 +1,8 @@
-# OfficeSpace Advisor
+# OfficeSpace
 
-**Gestion inteligente de espacios para oficinas hibridas**
+**A HYBRID WORKPLACE SOLUTION**
 
-OfficeSpace Advisor es una aplicacion web para gestionar espacios de oficina en entornos hibridos. El objetivo del producto no es solo reservar salas o escritorios, sino acompanar al colaborador con busqueda consultiva, reglas claras de disponibilidad, dashboard de negocio y un asistente llamado **Alpha Assistant**.
+OfficeSpace es una aplicacion web para gestionar espacios de oficina en entornos hibridos. El objetivo del producto no es solo reservar salas o escritorios, sino acompanar al colaborador con busqueda consultiva, reglas claras de disponibilidad, dashboard de negocio y un asistente interno llamado **Alpha Assistant**.
 
 Frase de producto: **Reserva mejor. Ocupa mejor. Decide con datos.**
 
@@ -12,7 +12,7 @@ Las oficinas hibridas suelen tener baja visibilidad sobre ocupacion real, prefer
 
 ## Propuesta
 
-OfficeSpace Advisor centraliza:
+OfficeSpace centraliza:
 
 - Login con roles para administradores y colaboradores.
 - Catalogo de salas, hot desks y espacios colaborativos.

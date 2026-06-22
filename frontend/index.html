@@ -3,22 +3,22 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>OfficeSpace Advisor</title>
+    <title>OfficeSpace</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <header class="topbar">
       <div>
-        <p class="eyebrow">OfficeSpace Advisor</p>
-        <h1>Gestion inteligente de espacios para oficinas hibridas</h1>
+        <p class="eyebrow">OfficeSpace</p>
+        <h1>A HYBRID WORKPLACE SOLUTION</h1>
         <p class="tagline">Reserva mejor. Ocupa mejor. Decide con datos.</p>
       </div>
       <nav class="nav" aria-label="Navegacion principal">
         <button class="nav-button active" data-view="login">Login</button>
-        <button class="nav-button" data-view="search">Buscar</button>
-        <button class="nav-button" data-view="confirm">Reservar</button>
-        <button class="nav-button" data-view="bookings">Mis reservas</button>
-        <button class="nav-button" data-view="dashboard">Dashboard</button>
+        <button class="nav-button protected-nav" data-view="search" hidden>Buscar</button>
+        <button class="nav-button protected-nav" data-view="confirm" hidden>Reservar</button>
+        <button class="nav-button protected-nav" data-view="bookings" hidden>Mis reservas</button>
+        <button class="nav-button admin-nav" data-view="dashboard" hidden>Dashboard</button>
         <button class="nav-button" id="logoutButton" type="button" hidden>Salir</button>
       </nav>
       <div class="session-card" id="sessionCard" hidden>
@@ -29,12 +29,20 @@
 
     <main>
       <section class="view active" id="login">
-        <div class="panel split">
+        <div class="login-hero">
+          <img src="assets/officespace-brand.jpg" alt="OfficeSpace - A HYBRID WORKPLACE SOLUTION" />
+          <div class="login-hero-copy">
+            <p class="section-label">OfficeSpace</p>
+            <h2>A HYBRID WORKPLACE SOLUTION</h2>
+            <p>Gestiona disponibilidad, reservas y ocupacion con una experiencia clara para equipos hibridos.</p>
+          </div>
+        </div>
+        <div class="panel split login-panel">
           <div>
             <p class="section-label">Acceso por roles</p>
             <h2>Entra como administrador o colaborador</h2>
             <p>
-              Autenticacion funcional con usuarios predefinidos, JWT basico y redireccion visual por rol.
+              Autenticacion funcional con usuarios predefinidos, JWT basico y navegacion visual segun rol.
             </p>
             <div class="credential-list">
               <span>admin@corporativoalpha.com</span>
@@ -123,18 +131,62 @@
         <div class="section-header">
           <div>
             <p class="section-label">Admin dashboard</p>
-            <h2>Ocupacion y decisiones con datos</h2>
+            <h2>Panel ejecutivo de ocupacion</h2>
           </div>
         </div>
+        <p class="permission-message" id="dashboardPermissionMessage" hidden>No tienes permisos para ver esta seccion.</p>
         <div class="metric-grid">
           <article><span>Total espacios</span><strong id="metricTotalSpaces">-</strong></article>
           <article><span>Ocupados hoy</span><strong id="metricOccupiedToday">-</strong></article>
           <article><span>Disponibles hoy</span><strong id="metricAvailableToday">-</strong></article>
           <article><span>Reservas totales</span><strong id="metricTotalBookings">-</strong></article>
         </div>
-        <div class="panel">
-          <h3>Senales para negocio</h3>
-          <p id="dashboardSignals">Las metricas de ocupacion y analitica apareceran aqui al iniciar sesion como administrador.</p>
+        <div class="dashboard-grid">
+          <article class="panel occupancy-panel">
+            <div class="panel-title-row">
+              <div>
+                <p class="section-label">Ocupacion del dia</p>
+                <h3>Ocupados hoy vs total</h3>
+              </div>
+              <strong id="occupancyPercent">0%</strong>
+            </div>
+            <div class="progress-track" aria-label="Barra de ocupacion del dia">
+              <div class="progress-fill" id="occupancyBar"></div>
+            </div>
+            <p id="occupancySummary">Inicia sesion como administrador para consultar ocupacion.</p>
+          </article>
+
+          <article class="panel">
+            <p class="section-label">Recomendaciones inteligentes</p>
+            <h3>Recomendaciones inteligentes de ocupacion</h3>
+            <div class="recommendation-list" id="dashboardRecommendations">
+              <p>Aun no hay datos suficientes para generar esta recomendacion.</p>
+            </div>
+          </article>
+        </div>
+
+        <div class="analytics-grid">
+          <article class="panel">
+            <p class="section-label">Espacios mas reservados</p>
+            <h3>Demanda por espacio</h3>
+            <div class="bar-list" id="mostBookedSpacesChart"></div>
+          </article>
+          <article class="panel">
+            <p class="section-label">Horarios pico</p>
+            <h3>Demanda por hora</h3>
+            <div class="bar-list" id="peakHoursChart"></div>
+          </article>
+          <article class="panel">
+            <p class="section-label">Tipo de espacio</p>
+            <h3>Reservas por tipo</h3>
+            <div class="chip-list" id="bookingsByTypeChips"></div>
+          </article>
+          <article class="panel">
+            <p class="section-label">Alpha Assistant</p>
+            <h3>Senales de busqueda</h3>
+            <div class="chip-list" id="assistantResourceChips"></div>
+            <div class="recent-list" id="assistantRecentSearches"></div>
+          </article>
         </div>
         <div class="panel catalog-admin">
           <div class="section-header compact">
@@ -208,16 +260,22 @@
       </section>
     </main>
 
-    <aside class="assistant-card" aria-label="Alpha Assistant">
+    <aside class="assistant-card" id="assistantCard" aria-label="Alpha Assistant" hidden>
       <div class="assistant-header">
         <span>Alpha Assistant</span>
-        <small>Reglas iniciales</small>
+        <div class="assistant-header-actions">
+          <small>Asistente interno</small>
+          <button class="assistant-close" id="assistantCloseButton" type="button" aria-label="Ocultar Alpha Assistant">X</button>
+        </div>
       </div>
-      <p>Cuentame que necesitas y lo convertire en filtros de busqueda.</p>
+      <p>Cuentame que necesitas y buscare espacios disponibles para reservar rapido.</p>
       <textarea id="assistantText">Necesito una sala para 5 personas manana en la manana con proyector</textarea>
-      <button id="assistantButton">Interpretar busqueda</button>
+      <button id="assistantButton" type="button">Buscar sugerencias</button>
       <pre id="assistantOutput">Esperando consulta...</pre>
+      <div class="assistant-filters" id="assistantFilters"></div>
+      <div class="assistant-suggestions" id="assistantSuggestions"></div>
     </aside>
+    <button class="assistant-open" id="assistantOpenButton" type="button" hidden>Alpha Assistant</button>
 
     <script src="app.js"></script>
   </body>

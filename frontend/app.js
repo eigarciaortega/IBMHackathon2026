@@ -1,29 +1,10 @@
 const navButtons = document.querySelectorAll(".nav-button");
+const protectedNavButtons = document.querySelectorAll(".protected-nav");
+const adminNavButtons = document.querySelectorAll(".admin-nav");
 const views = document.querySelectorAll(".view");
 const apiBaseUrl = "http://localhost:3000";
 const catalogApiBaseUrl = "http://localhost:3001";
 const bookingApiBaseUrl = "http://localhost:3002";
-
-const activateView = (viewId) => {
-  navButtons.forEach((item) => item.classList.remove("active"));
-  views.forEach((view) => view.classList.remove("active"));
-
-  const button = document.querySelector(`.nav-button[data-view="${viewId}"]`);
-  const view = document.getElementById(viewId);
-
-  if (button) button.classList.add("active");
-  if (view) view.classList.add("active");
-
-  document.dispatchEvent(new CustomEvent("view:activated", { detail: { viewId } }));
-};
-
-navButtons.forEach((button) => {
-  button.addEventListener("click", () => {
-    if (button.dataset.view) {
-      activateView(button.dataset.view);
-    }
-  });
-});
 
 const loginForm = document.getElementById("loginForm");
 const loginButton = document.getElementById("loginButton");
@@ -53,32 +34,102 @@ const metricTotalSpaces = document.getElementById("metricTotalSpaces");
 const metricOccupiedToday = document.getElementById("metricOccupiedToday");
 const metricAvailableToday = document.getElementById("metricAvailableToday");
 const metricTotalBookings = document.getElementById("metricTotalBookings");
-const dashboardSignals = document.getElementById("dashboardSignals");
+const dashboardPermissionMessage = document.getElementById("dashboardPermissionMessage");
+const occupancyPercent = document.getElementById("occupancyPercent");
+const occupancyBar = document.getElementById("occupancyBar");
+const occupancySummary = document.getElementById("occupancySummary");
+const dashboardRecommendations = document.getElementById("dashboardRecommendations");
+const mostBookedSpacesChart = document.getElementById("mostBookedSpacesChart");
+const peakHoursChart = document.getElementById("peakHoursChart");
+const bookingsByTypeChips = document.getElementById("bookingsByTypeChips");
+const assistantResourceChips = document.getElementById("assistantResourceChips");
+const assistantRecentSearches = document.getElementById("assistantRecentSearches");
+const assistantCard = document.getElementById("assistantCard");
+const assistantOpenButton = document.getElementById("assistantOpenButton");
+const assistantCloseButton = document.getElementById("assistantCloseButton");
+const assistantText = document.getElementById("assistantText");
+const assistantOutput = document.getElementById("assistantOutput");
+const assistantButton = document.getElementById("assistantButton");
+const assistantFilters = document.getElementById("assistantFilters");
+const assistantSuggestions = document.getElementById("assistantSuggestions");
 
 let spacesCache = [];
 let selectedBooking = null;
+let latestAssistantResponse = null;
+let assistantVisible = false;
 
 const getDefaultViewByRole = (role) => (role === "ADMINISTRADOR" ? "dashboard" : "search");
 const getToken = () => localStorage.getItem("officeSpaceToken");
 const getRole = () => localStorage.getItem("officeSpaceUserRole");
 const isAdmin = () => getRole() === "ADMINISTRADOR";
+const isLoggedIn = () => Boolean(getToken() && getRole() && localStorage.getItem("officeSpaceUserName"));
 
-const setLoginMessage = (message, isSuccess = false) => {
-  loginMessage.textContent = message;
-  loginMessage.classList.toggle("success", isSuccess);
+const setMessage = (element, message, isSuccess = false) => {
+  element.textContent = message;
+  element.classList.toggle("success", isSuccess);
+};
+
+const setLoginMessage = (message, isSuccess = false) => setMessage(loginMessage, message, isSuccess);
+const setSpaceMessage = (message, isSuccess = false) => setMessage(spaceMessage, message, isSuccess);
+const setAvailabilityMessage = (message, isSuccess = false) => setMessage(availabilityMessage, message, isSuccess);
+const setBookingMessage = (message, isSuccess = false) => setMessage(bookingMessage, message, isSuccess);
+const setMyBookingsMessage = (message, isSuccess = false) => setMessage(myBookingsMessage, message, isSuccess);
+
+const escapeHtml = (value) =>
+  String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+
+const buildAuthHeaders = () => ({
+  Authorization: `Bearer ${getToken()}`
+});
+
+const setAssistantVisible = (visible) => {
+  assistantVisible = Boolean(visible && isLoggedIn());
+  assistantCard.hidden = !assistantVisible;
+  assistantOpenButton.hidden = assistantVisible || !isLoggedIn();
+};
+
+const activateView = (viewId) => {
+  if (!isLoggedIn() && viewId !== "login") {
+    viewId = "login";
+  }
+
+  if (viewId === "dashboard" && !isAdmin()) {
+    setAvailabilityMessage("No tienes permisos para ver Dashboard. Te llevamos a Buscar.", false);
+    viewId = "search";
+  }
+
+  navButtons.forEach((item) => item.classList.remove("active"));
+  views.forEach((view) => view.classList.remove("active"));
+
+  const button = document.querySelector(`.nav-button[data-view="${viewId}"]`);
+  const view = document.getElementById(viewId);
+
+  if (button) button.classList.add("active");
+  if (view) view.classList.add("active");
+
+  document.dispatchEvent(new CustomEvent("view:activated", { detail: { viewId } }));
 };
 
 const renderSession = () => {
   const name = localStorage.getItem("officeSpaceUserName");
   const role = localStorage.getItem("officeSpaceUserRole");
-  const token = localStorage.getItem("officeSpaceToken");
+  const loggedIn = isLoggedIn();
 
-  const isLoggedIn = Boolean(token && name && role);
+  sessionCard.hidden = !loggedIn;
+  logoutButton.hidden = !loggedIn;
+  protectedNavButtons.forEach((button) => {
+    button.hidden = !loggedIn;
+  });
+  adminNavButtons.forEach((button) => {
+    button.hidden = !loggedIn || role !== "ADMINISTRADOR";
+  });
 
-  sessionCard.hidden = !isLoggedIn;
-  logoutButton.hidden = !isLoggedIn;
-
-  if (isLoggedIn) {
+  if (loggedIn) {
     sessionName.textContent = name;
     sessionRole.textContent = role;
   }
@@ -90,7 +141,29 @@ const renderSession = () => {
   adminOnlyHeaders.forEach((element) => {
     element.hidden = !isAdmin();
   });
+
+  dashboardPermissionMessage.hidden = loggedIn && isAdmin();
+  setAssistantVisible(loggedIn && assistantVisible);
 };
+
+const resetProtectedViews = () => {
+  renderSpacesTable([]);
+  renderAvailability([], {});
+  renderMyBookings([]);
+  selectedBooking = null;
+  bookingSummary.innerHTML = "<span>Selecciona un espacio disponible para preparar la reserva.</span>";
+  assistantSuggestions.innerHTML = "";
+  assistantFilters.innerHTML = "";
+  latestAssistantResponse = null;
+};
+
+navButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    if (button.dataset.view) {
+      activateView(button.dataset.view);
+    }
+  });
+});
 
 loginForm.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -106,12 +179,9 @@ loginForm.addEventListener("submit", async (event) => {
   try {
     const response = await fetch(`${apiBaseUrl}/login`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password })
     });
-
     const data = await response.json();
 
     if (!response.ok) {
@@ -124,6 +194,7 @@ loginForm.addEventListener("submit", async (event) => {
     localStorage.setItem("officeSpaceUserRole", data.user.role);
     localStorage.setItem("officeSpaceUserEmail", data.user.email);
 
+    assistantVisible = true;
     renderSession();
     setLoginMessage("Sesion iniciada correctamente.", true);
     activateView(getDefaultViewByRole(data.user.role));
@@ -140,33 +211,24 @@ logoutButton.addEventListener("click", () => {
   localStorage.removeItem("officeSpaceUserName");
   localStorage.removeItem("officeSpaceUserRole");
   localStorage.removeItem("officeSpaceUserEmail");
+  assistantVisible = false;
   renderSession();
+  resetProtectedViews();
   setLoginMessage("Sesion cerrada.", true);
-  renderSpacesTable([]);
   activateView("login");
 });
 
-const setSpaceMessage = (message, isSuccess = false) => {
-  spaceMessage.textContent = message;
-  spaceMessage.classList.toggle("success", isSuccess);
-};
+const normalizeSpace = (space) => ({
+  ...space,
+  hasProjector: space.hasProjector ?? space.has_projector,
+  hasAc: space.hasAc ?? space.has_ac,
+  hasScreen: space.hasScreen ?? space.has_screen,
+  hasWhiteboard: space.hasWhiteboard ?? space.has_whiteboard,
+  isQuietZone: space.isQuietZone ?? space.is_quiet_zone
+});
 
-const setAvailabilityMessage = (message, isSuccess = false) => {
-  availabilityMessage.textContent = message;
-  availabilityMessage.classList.toggle("success", isSuccess);
-};
-
-const setBookingMessage = (message, isSuccess = false) => {
-  bookingMessage.textContent = message;
-  bookingMessage.classList.toggle("success", isSuccess);
-};
-
-const setMyBookingsMessage = (message, isSuccess = false) => {
-  myBookingsMessage.textContent = message;
-  myBookingsMessage.classList.toggle("success", isSuccess);
-};
-
-const formatResources = (space) => {
+const formatResources = (spaceInput) => {
+  const space = normalizeSpace(spaceInput);
   const resources = [];
 
   if (space.hasProjector) resources.push("Proyector");
@@ -178,32 +240,20 @@ const formatResources = (space) => {
   return resources.length ? resources.join(", ") : "Sin recursos";
 };
 
-const escapeHtml = (value) =>
-  String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-
-const buildAuthHeaders = () => ({
-  Authorization: `Bearer ${getToken()}`
-});
-
 const renderSpacesTable = (spaces) => {
-  spacesCache = spaces;
+  spacesCache = spaces.map(normalizeSpace);
 
   if (!getToken()) {
     spacesTableBody.innerHTML = '<tr><td colspan="6">Inicia sesion para consultar espacios.</td></tr>';
     return;
   }
 
-  if (!spaces.length) {
+  if (!spacesCache.length) {
     spacesTableBody.innerHTML = '<tr><td colspan="6">No hay espacios para mostrar.</td></tr>';
     return;
   }
 
-  spacesTableBody.innerHTML = spaces
+  spacesTableBody.innerHTML = spacesCache
     .map((space) => {
       const actions = isAdmin()
         ? `<td>
@@ -227,11 +277,15 @@ const renderSpacesTable = (spaces) => {
 };
 
 const loadSpaces = async () => {
-  const token = getToken();
-
-  if (!token) {
+  if (!getToken()) {
     renderSpacesTable([]);
     setSpaceMessage("Inicia sesion para cargar el catalogo.");
+    return;
+  }
+
+  if (!isAdmin()) {
+    renderSpacesTable([]);
+    setSpaceMessage("El CRUD de espacios esta disponible solo para administradores.");
     return;
   }
 
@@ -239,9 +293,7 @@ const loadSpaces = async () => {
 
   try {
     const response = await fetch(`${catalogApiBaseUrl}/spaces`, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
+      headers: buildAuthHeaders()
     });
     const data = await response.json();
 
@@ -281,17 +333,18 @@ const clearSpaceForm = () => {
 };
 
 const fillSpaceForm = (space) => {
-  document.getElementById("spaceId").value = space.id;
-  document.getElementById("spaceName").value = space.name;
-  document.getElementById("spaceType").value = space.type;
-  document.getElementById("spaceCapacity").value = space.capacity;
-  document.getElementById("spaceFloor").value = space.floor;
-  document.getElementById("spaceDescription").value = space.description || "";
-  document.getElementById("spaceProjector").checked = space.hasProjector;
-  document.getElementById("spaceAc").checked = space.hasAc;
-  document.getElementById("spaceScreen").checked = space.hasScreen;
-  document.getElementById("spaceWhiteboard").checked = space.hasWhiteboard;
-  document.getElementById("spaceQuietZone").checked = space.isQuietZone;
+  const normalized = normalizeSpace(space);
+  document.getElementById("spaceId").value = normalized.id;
+  document.getElementById("spaceName").value = normalized.name;
+  document.getElementById("spaceType").value = normalized.type;
+  document.getElementById("spaceCapacity").value = normalized.capacity;
+  document.getElementById("spaceFloor").value = normalized.floor;
+  document.getElementById("spaceDescription").value = normalized.description || "";
+  document.getElementById("spaceProjector").checked = normalized.hasProjector;
+  document.getElementById("spaceAc").checked = normalized.hasAc;
+  document.getElementById("spaceScreen").checked = normalized.hasScreen;
+  document.getElementById("spaceWhiteboard").checked = normalized.hasWhiteboard;
+  document.getElementById("spaceQuietZone").checked = normalized.isQuietZone;
   saveSpaceButton.textContent = "Actualizar espacio";
 };
 
@@ -303,7 +356,6 @@ spaceForm.addEventListener("submit", async (event) => {
     return;
   }
 
-  const token = getToken();
   const space = readSpaceForm();
   const isEditing = Boolean(space.id);
   const url = isEditing ? `${catalogApiBaseUrl}/spaces/${space.id}` : `${catalogApiBaseUrl}/spaces`;
@@ -316,7 +368,7 @@ spaceForm.addEventListener("submit", async (event) => {
       method,
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`
+        ...buildAuthHeaders()
       },
       body: JSON.stringify(space)
     });
@@ -368,9 +420,7 @@ spacesTableBody.addEventListener("click", async (event) => {
     try {
       const response = await fetch(`${catalogApiBaseUrl}/spaces/${space.id}`, {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${getToken()}`
-        }
+        headers: buildAuthHeaders()
       });
       const data = await response.json();
 
@@ -388,17 +438,6 @@ spacesTableBody.addEventListener("click", async (event) => {
   }
 });
 
-document.addEventListener("view:activated", (event) => {
-  if (event.detail.viewId === "dashboard") {
-    loadSpaces();
-    loadDashboardMetrics();
-  }
-
-  if (event.detail.viewId === "bookings") {
-    loadMyBookings();
-  }
-});
-
 const buildAvailabilityQuery = () => {
   const formData = new FormData(availabilityForm);
   const params = new URLSearchParams();
@@ -406,10 +445,7 @@ const buildAvailabilityQuery = () => {
   for (const [key, value] of formData.entries()) {
     if (value === "on") {
       params.set(key, "true");
-      continue;
-    }
-
-    if (value !== "") {
+    } else if (value !== "") {
       params.set(key, value);
     }
   }
@@ -418,12 +454,14 @@ const buildAvailabilityQuery = () => {
 };
 
 const renderAvailability = (spaces, request) => {
-  if (!spaces.length) {
+  const normalizedSpaces = spaces.map(normalizeSpace);
+
+  if (!normalizedSpaces.length) {
     availabilityResults.innerHTML = '<article class="space-card"><h3>Sin espacios disponibles</h3><p>Prueba con otro horario, capacidad o recurso.</p></article>';
     return;
   }
 
-  availabilityResults.innerHTML = spaces
+  availabilityResults.innerHTML = normalizedSpaces
     .map(
       (space) => `<article class="space-card">
         <span>${escapeHtml(space.type)}</span>
@@ -438,7 +476,7 @@ const renderAvailability = (spaces, request) => {
 
   availabilityResults.querySelectorAll("button[data-action='reserve']").forEach((button) => {
     button.addEventListener("click", () => {
-      const space = spaces.find((item) => item.id === button.dataset.id);
+      const space = normalizedSpaces.find((item) => item.id === button.dataset.id);
 
       selectedBooking = {
         space,
@@ -497,6 +535,19 @@ availabilityForm.addEventListener("submit", async (event) => {
   }
 });
 
+const createBookingFromPayload = async ({ spaceId, date, startTime, endTime, attendees }) => {
+  const response = await fetch(`${bookingApiBaseUrl}/bookings`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...buildAuthHeaders()
+    },
+    body: JSON.stringify({ spaceId, date, startTime, endTime, attendees })
+  });
+  const data = await response.json();
+  return { response, data };
+};
+
 confirmBookingForm.addEventListener("submit", async (event) => {
   event.preventDefault();
 
@@ -506,21 +557,13 @@ confirmBookingForm.addEventListener("submit", async (event) => {
   }
 
   try {
-    const response = await fetch(`${bookingApiBaseUrl}/bookings`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...buildAuthHeaders()
-      },
-      body: JSON.stringify({
-        spaceId: selectedBooking.space.id,
-        date: selectedBooking.date,
-        startTime: selectedBooking.startTime,
-        endTime: selectedBooking.endTime,
-        attendees: Number(confirmAttendees.value)
-      })
+    const { response, data } = await createBookingFromPayload({
+      spaceId: selectedBooking.space.id,
+      date: selectedBooking.date,
+      startTime: selectedBooking.startTime,
+      endTime: selectedBooking.endTime,
+      attendees: Number(confirmAttendees.value)
     });
-    const data = await response.json();
 
     if (!response.ok) {
       setBookingMessage(data.message || "No se pudo crear la reserva.");
@@ -614,11 +657,116 @@ myBookingsList.addEventListener("click", async (event) => {
   }
 });
 
-const loadDashboardMetrics = async () => {
-  if (!isAdmin()) {
-    dashboardSignals.textContent = "El dashboard de ocupacion esta disponible para administradores.";
+const renderBars = (container, rows, labelKey, valueKey, emptyMessage) => {
+  if (!rows || !rows.length) {
+    container.innerHTML = `<p class="empty-state">${escapeHtml(emptyMessage)}</p>`;
     return;
   }
+
+  const maxValue = Math.max(...rows.map((row) => Number(row[valueKey]) || 0), 1);
+  container.innerHTML = rows
+    .map((row) => {
+      const value = Number(row[valueKey]) || 0;
+      const width = Math.max((value / maxValue) * 100, 6);
+      return `<div class="bar-row">
+        <div class="bar-row-label"><span>${escapeHtml(row[labelKey])}</span><strong>${escapeHtml(value)}</strong></div>
+        <div class="mini-track"><div class="mini-fill" style="width: ${width}%"></div></div>
+      </div>`;
+    })
+    .join("");
+};
+
+const renderChips = (container, rows, labelKey, valueKey, emptyMessage) => {
+  if (!rows || !rows.length) {
+    container.innerHTML = `<p class="empty-state">${escapeHtml(emptyMessage)}</p>`;
+    return;
+  }
+
+  container.innerHTML = rows
+    .map((row) => `<span class="data-chip">${escapeHtml(row[labelKey] || "Sin dato")} <strong>${escapeHtml(row[valueKey] || 0)}</strong></span>`)
+    .join("");
+};
+
+const buildRecommendations = (today, analytics) => {
+  const recommendations = [];
+  const peakHour = analytics.peakHours?.[0];
+  const topSpace = analytics.mostBookedSpaces?.[0];
+  const deskDemand = analytics.bookingsByType?.find((item) => item.type === "DESK");
+  const topResource = analytics.mostRequestedResources?.[0];
+
+  if (peakHour) {
+    recommendations.push(`Alta demanda detectada a las ${peakHour.hour}. Considera promover horarios alternativos para reducir saturacion.`);
+  }
+
+  if (topSpace) {
+    recommendations.push(`${topSpace.name} concentra la mayor cantidad de reservas. Evalua crear mas espacios con caracteristicas similares.`);
+  }
+
+  if (Number(analytics.averageAttendees) >= 5) {
+    recommendations.push(`El promedio de asistentes es de ${Number(analytics.averageAttendees).toFixed(2)}. Conviene priorizar salas medianas o grandes.`);
+  }
+
+  if (deskDemand && Number(deskDemand.bookings) > 0) {
+    recommendations.push("Los escritorios individuales muestran demanda relevante. Se recomienda mantener disponibilidad flexible para trabajo hibrido.");
+  }
+
+  if (topResource) {
+    recommendations.push(`Los usuarios solicitan con frecuencia ${topResource.resource}. Prioriza estos recursos en futuras adecuaciones.`);
+  }
+
+  if (!Number(analytics.totalBookings) && !Number(today.totalBookingsToday)) {
+    recommendations.push("Aun no hay suficientes datos para detectar tendencias solidas. Continua monitoreando el uso de espacios.");
+  }
+
+  if (!recommendations.length) {
+    recommendations.push("Aun no hay datos suficientes para generar esta recomendacion.");
+  }
+
+  return recommendations;
+};
+
+const renderDashboard = (today, analytics) => {
+  const totalSpaces = Number(today.totalSpaces) || 0;
+  const occupiedToday = Number(today.occupiedToday) || 0;
+  const percent = totalSpaces ? Math.round((occupiedToday / totalSpaces) * 100) : 0;
+
+  metricTotalSpaces.textContent = totalSpaces;
+  metricOccupiedToday.textContent = occupiedToday;
+  metricAvailableToday.textContent = today.availableToday ?? "-";
+  metricTotalBookings.textContent = analytics.totalBookings ?? 0;
+  occupancyPercent.textContent = `${percent}%`;
+  occupancyBar.style.width = `${Math.min(percent, 100)}%`;
+  occupancySummary.textContent = `${occupiedToday} de ${totalSpaces} espacios ocupados hoy.`;
+
+  renderBars(mostBookedSpacesChart, analytics.mostBookedSpaces || [], "name", "bookings", "Aun no hay espacios reservados.");
+  renderBars(peakHoursChart, analytics.peakHours || [], "hour", "bookings", "Aun no hay horarios pico.");
+  renderChips(bookingsByTypeChips, analytics.bookingsByType || [], "type", "bookings", "Aun no hay reservas por tipo.");
+  renderChips(assistantResourceChips, analytics.mostRequestedResources || [], "resource", "searches", "Aun no hay recursos solicitados.");
+
+  const recent = analytics.recentAssistantSearches || [];
+  assistantRecentSearches.innerHTML = recent.length
+    ? recent
+        .map(
+          (search) => `<div class="recent-item">
+            <strong>${escapeHtml(search.detectedType || "Consulta")}</strong>
+            <span>${escapeHtml(search.queryText)}</span>
+          </div>`
+        )
+        .join("")
+    : '<p class="empty-state">Aun no hay busquedas recientes del asistente.</p>';
+
+  dashboardRecommendations.innerHTML = buildRecommendations(today, analytics)
+    .map((item) => `<article class="recommendation-card">${escapeHtml(item)}</article>`)
+    .join("");
+};
+
+const loadDashboardMetrics = async () => {
+  if (!isAdmin()) {
+    dashboardPermissionMessage.hidden = false;
+    return;
+  }
+
+  dashboardPermissionMessage.hidden = true;
 
   try {
     const [todayResponse, analyticsResponse] = await Promise.all([
@@ -629,55 +777,159 @@ const loadDashboardMetrics = async () => {
     const analytics = await analyticsResponse.json();
 
     if (!todayResponse.ok || !analyticsResponse.ok) {
-      dashboardSignals.textContent = today.message || analytics.message || "No se pudieron cargar las metricas.";
+      dashboardRecommendations.innerHTML = `<p class="empty-state">${escapeHtml(today.message || analytics.message || "No se pudieron cargar las metricas.")}</p>`;
       return;
     }
 
-    metricTotalSpaces.textContent = today.totalSpaces;
-    metricOccupiedToday.textContent = today.occupiedToday;
-    metricAvailableToday.textContent = today.availableToday;
-    metricTotalBookings.textContent = analytics.totalBookings;
-
-    const topSpace = analytics.mostBookedSpaces[0];
-    const peakHour = analytics.peakHours[0];
-
-    dashboardSignals.textContent = `Promedio de asistentes: ${analytics.averageAttendees}. Espacio mas reservado: ${topSpace ? topSpace.name : "sin datos"}. Horario mas solicitado: ${peakHour ? peakHour.hour : "sin datos"}.`;
+    renderDashboard(today, analytics);
   } catch (error) {
-    dashboardSignals.textContent = "No se pudo conectar con booking-service.";
+    dashboardRecommendations.innerHTML = '<p class="empty-state">No se pudo conectar con booking-service.</p>';
   }
 };
 
-const assistantText = document.getElementById("assistantText");
-const assistantOutput = document.getElementById("assistantOutput");
-const assistantButton = document.getElementById("assistantButton");
+const renderAssistantFilters = (filters) => {
+  if (!filters || !Object.keys(filters).length) {
+    assistantFilters.innerHTML = "";
+    return;
+  }
 
-assistantButton.addEventListener("click", () => {
-  const text = assistantText.value.toLowerCase();
-  const capacityMatch = text.match(/\b(\d+)\b/);
-  const resources = [];
+  const resources = filters.resources?.length ? filters.resources.join(", ") : "Sin recursos detectados";
+  assistantFilters.innerHTML = `
+    <span>Tipo: ${escapeHtml(filters.type || "Sin detectar")}</span>
+    <span>Capacidad: ${escapeHtml(filters.capacity || "Sin detectar")}</span>
+    <span>Fecha: ${escapeHtml(filters.date || "Sin detectar")}</span>
+    <span>Horario: ${escapeHtml(filters.startTime || "-")} - ${escapeHtml(filters.endTime || "-")}</span>
+    <span>Recursos: ${escapeHtml(resources)}</span>
+  `;
+};
 
-  if (text.includes("proyector")) resources.push("proyector");
-  if (text.includes("pantalla")) resources.push("pantalla");
-  if (text.includes("pizarra")) resources.push("pizarra");
-  if (text.includes("aire acondicionado")) resources.push("aire acondicionado");
-  if (text.includes("silencioso")) resources.push("zona silenciosa");
+const renderAssistantSuggestions = (data) => {
+  const spaces = data.suggestedSpaces || [];
 
-  const result = {
-    intent: "BUSCAR_ESPACIO",
-    type: text.includes("desk") || text.includes("escritorio") ? "DESK" : "SALA",
-    capacity: capacityMatch ? Number(capacityMatch[1]) : null,
-    timePreference: text.includes("tarde") ? "AFTERNOON" : text.includes("manana") ? "MORNING" : null,
-    resources,
-    message: "Encontre filtros iniciales para buscar un espacio adecuado para ti."
-  };
+  if (!spaces.length) {
+    assistantSuggestions.innerHTML = "";
+    return;
+  }
 
-  assistantOutput.textContent = JSON.stringify(result, null, 2);
+  assistantSuggestions.innerHTML = spaces
+    .map((spaceInput) => {
+      const space = normalizeSpace(spaceInput);
+      return `<article class="assistant-suggestion-card">
+        <span>${escapeHtml(space.type)}</span>
+        <h4>${escapeHtml(space.name)}</h4>
+        <p>${escapeHtml(space.description || "")}</p>
+        <strong>${escapeHtml(space.capacity)} personas - ${escapeHtml(space.floor)}</strong>
+        <small>${escapeHtml(formatResources(space))}</small>
+        <button type="button" data-action="assistant-reserve" data-id="${space.id}">Reservar</button>
+      </article>`;
+    })
+    .join("");
+};
+
+assistantButton.addEventListener("click", async () => {
+  if (!getToken()) {
+    assistantOutput.textContent = "Inicia sesion para que Alpha Assistant pueda buscar espacios disponibles.";
+    return;
+  }
+
+  assistantButton.disabled = true;
+  assistantButton.textContent = "Buscando...";
+  assistantSuggestions.innerHTML = "";
+
+  try {
+    const response = await fetch(`${bookingApiBaseUrl}/assistant/search`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...buildAuthHeaders()
+      },
+      body: JSON.stringify({ message: assistantText.value })
+    });
+    const data = await response.json();
+    latestAssistantResponse = data;
+    assistantOutput.textContent = data.message || "No pude consultar Alpha Assistant.";
+    renderAssistantFilters(data.interpretedFilters);
+    renderAssistantSuggestions(data);
+  } catch (error) {
+    assistantOutput.textContent = "No se pudo conectar con booking-service.";
+  } finally {
+    assistantButton.disabled = false;
+    assistantButton.textContent = "Buscar sugerencias";
+  }
+});
+
+assistantSuggestions.addEventListener("click", async (event) => {
+  const button = event.target.closest("button[data-action='assistant-reserve']");
+
+  if (!button || !latestAssistantResponse) return;
+
+  const filters = latestAssistantResponse.interpretedFilters || {};
+  const space = (latestAssistantResponse.suggestedSpaces || []).map(normalizeSpace).find((item) => item.id === button.dataset.id);
+  let attendees = Number(filters.capacity);
+
+  if (!space) return;
+
+  if (!attendees || attendees < 1) {
+    attendees = Number(window.prompt("Cuantas personas asistiran?"));
+  }
+
+  if (!attendees || attendees < 1) {
+    assistantOutput.textContent = `${latestAssistantResponse.message}\n\nNecesito un numero valido de asistentes antes de reservar.`;
+    return;
+  }
+
+  button.disabled = true;
+  button.textContent = "Reservando...";
+
+  try {
+    const { response, data } = await createBookingFromPayload({
+      spaceId: space.id,
+      date: filters.date,
+      startTime: filters.startTime,
+      endTime: filters.endTime,
+      attendees
+    });
+
+    if (!response.ok) {
+      assistantOutput.textContent = `${latestAssistantResponse.message}\n\nNo pude reservar ${space.name}: ${data.message || "error desconocido."}`;
+      return;
+    }
+
+    assistantOutput.textContent = `Reserva creada para ${space.name} el ${filters.date} de ${filters.startTime} a ${filters.endTime}.`;
+    await loadMyBookings();
+  } catch (error) {
+    assistantOutput.textContent = "No se pudo conectar con booking-service.";
+  } finally {
+    button.disabled = false;
+    button.textContent = "Reservar";
+  }
+});
+
+assistantCloseButton.addEventListener("click", () => {
+  setAssistantVisible(false);
+});
+
+assistantOpenButton.addEventListener("click", () => {
+  setAssistantVisible(true);
+});
+
+document.addEventListener("view:activated", (event) => {
+  if (event.detail.viewId === "dashboard") {
+    loadSpaces();
+    loadDashboardMetrics();
+  }
+
+  if (event.detail.viewId === "bookings") {
+    loadMyBookings();
+  }
 });
 
 renderSession();
 
-const savedRole = localStorage.getItem("officeSpaceUserRole");
-
-if (savedRole) {
-  activateView(getDefaultViewByRole(savedRole));
+if (isLoggedIn()) {
+  assistantVisible = true;
+  renderSession();
+  activateView(getDefaultViewByRole(getRole()));
+} else {
+  activateView("login");
 }

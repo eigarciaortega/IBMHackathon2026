@@ -44,8 +44,12 @@ CREATE TABLE IF NOT EXISTS assistant_logs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES users(id),
   query_text TEXT NOT NULL,
-  interpreted_intent VARCHAR(60),
-  interpreted_filters JSONB NOT NULL DEFAULT '{}'::JSONB,
+  intent VARCHAR(60) NOT NULL DEFAULT 'BUSCAR_ESPACIO',
+  detected_type VARCHAR(20),
+  detected_capacity INTEGER,
+  detected_date DATE,
+  detected_time_preference VARCHAR(30),
+  detected_resources TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[],
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 

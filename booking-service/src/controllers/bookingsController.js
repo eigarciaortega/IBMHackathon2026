@@ -1,33 +1,10 @@
 const db = require("../db");
 const {
-  parseBooleanQuery,
   parsePositiveInteger,
   uuidPattern,
-  validateInterval,
-  validTypes
+  validateInterval
 } = require("../utils/bookingValidation");
-
-const booleanFilters = {
-  projector: "s.has_projector",
-  ac: "s.has_ac",
-  screen: "s.has_screen",
-  whiteboard: "s.has_whiteboard",
-  quietZone: "s.is_quiet_zone"
-};
-
-const mapSpace = (row) => ({
-  id: row.id,
-  name: row.name,
-  type: row.type,
-  capacity: row.capacity,
-  floor: row.floor,
-  hasProjector: row.has_projector,
-  hasAc: row.has_ac,
-  hasScreen: row.has_screen,
-  hasWhiteboard: row.has_whiteboard,
-  isQuietZone: row.is_quiet_zone,
-  description: row.description
-});
+const { findAvailableSpaces } = require("../services/availabilityService");
 
 const mapBooking = (row) => ({
   id: row.id,
@@ -47,49 +24,6 @@ const mapBooking = (row) => ({
   }
 });
 
-const buildSpaceFilters = (query, values) => {
-  const filters = [];
-
-  if (query.type) {
-    const type = String(query.type).toUpperCase();
-
-    if (!validTypes.has(type)) {
-      return { error: "type debe ser SALA o DESK." };
-    }
-
-    values.push(type);
-    filters.push(`s.type = $${values.length}`);
-  }
-
-  const capacityValue = query.attendees ?? query.minCapacity;
-
-  if (capacityValue !== undefined) {
-    const capacity = parsePositiveInteger(capacityValue);
-
-    if (!capacity) {
-      return { error: "attendees o minCapacity debe ser un entero mayor a 0." };
-    }
-
-    values.push(capacity);
-    filters.push(`s.capacity >= $${values.length}`);
-  }
-
-  for (const [queryName, columnName] of Object.entries(booleanFilters)) {
-    const parsed = parseBooleanQuery(query[queryName]);
-
-    if (parsed === null) {
-      return { error: `${queryName} debe ser true o false.` };
-    }
-
-    if (parsed !== undefined) {
-      values.push(parsed);
-      filters.push(`${columnName} = $${values.length}`);
-    }
-  }
-
-  return { filters };
-};
-
 const getAvailability = async (req, res) => {
   const { date, startTime, endTime } = req.query;
   const intervalErrors = validateInterval({ date, startTime, endTime });
@@ -101,39 +35,18 @@ const getAvailability = async (req, res) => {
     });
   }
 
-  const values = [date, startTime, endTime];
-  const filterResult = buildSpaceFilters(req.query, values);
-
-  if (filterResult.error) {
-    return res.status(400).json({ message: filterResult.error });
-  }
-
-  const whereFilters = filterResult.filters.length ? `AND ${filterResult.filters.join(" AND ")}` : "";
-
   try {
-    const result = await db.query(
-      `SELECT s.id, s.name, s.type, s.capacity, s.floor, s.has_projector, s.has_ac,
-              s.has_screen, s.has_whiteboard, s.is_quiet_zone, s.description
-       FROM spaces s
-       WHERE NOT EXISTS (
-         SELECT 1
-         FROM bookings b
-         WHERE b.space_id = s.id
-           AND b.status = 'ACTIVE'
-           AND b.date = $1::date
-           AND $2::time < b.end_time
-           AND $3::time > b.start_time
-       )
-       ${whereFilters}
-       ORDER BY s.capacity ASC, s.name ASC`,
-      values
-    );
+    const availability = await findAvailableSpaces(req.query);
+
+    if (availability.error) {
+      return res.status(400).json({ message: availability.error, errors: availability.errors });
+    }
 
     return res.json({
       date,
       startTime,
       endTime,
-      spaces: result.rows.map(mapSpace)
+      spaces: availability.spaces
     });
   } catch (error) {
     console.error("Availability error", error);
