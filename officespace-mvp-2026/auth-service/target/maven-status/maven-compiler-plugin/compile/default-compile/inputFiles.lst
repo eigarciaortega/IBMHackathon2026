@@ -1,0 +1,9 @@
+C:\Desarrollo\Hackaton\IBMHackathon2026\officespace-mvp-2026\auth-service\src\main\java\com\corporativoalpha\officespace\auth\AuthServiceApplication.java
+C:\Desarrollo\Hackaton\IBMHackathon2026\officespace-mvp-2026\auth-service\src\main\java\com\corporativoalpha\officespace\auth\config\OpenApiConfig.java
+C:\Desarrollo\Hackaton\IBMHackathon2026\officespace-mvp-2026\auth-service\src\main\java\com\corporativoalpha\officespace\auth\config\SecurityConfig.java
+C:\Desarrollo\Hackaton\IBMHackathon2026\officespace-mvp-2026\auth-service\src\main\java\com\corporativoalpha\officespace\auth\controller\AuthController.java
+C:\Desarrollo\Hackaton\IBMHackathon2026\officespace-mvp-2026\auth-service\src\main\java\com\corporativoalpha\officespace\auth\model\LoginRequest.java
+C:\Desarrollo\Hackaton\IBMHackathon2026\officespace-mvp-2026\auth-service\src\main\java\com\corporativoalpha\officespace\auth\model\LoginResponse.java
+C:\Desarrollo\Hackaton\IBMHackathon2026\officespace-mvp-2026\auth-service\src\main\java\com\corporativoalpha\officespace\auth\model\User.java
+C:\Desarrollo\Hackaton\IBMHackathon2026\officespace-mvp-2026\auth-service\src\main\java\com\corporativoalpha\officespace\auth\service\AuthService.java
+C:\Desarrollo\Hackaton\IBMHackathon2026\officespace-mvp-2026\auth-service\src\main\java\com\corporativoalpha\officespace\auth\util\JwtUtils.java
