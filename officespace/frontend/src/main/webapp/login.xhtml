@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:f="http://xmlns.jcp.org/jsf/core">
+<h:head>
+    <title>OfficeSpace – Iniciar Sesión</title>
+    <h:outputStylesheet library="css" name="style.css"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+</h:head>
+<h:body>
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <h1>🏢 OfficeSpace</h1>
+                <p>Gestión Híbrida Inteligente</p>
+                <h2>Corporativo Alpha</h2>
+            </div>
+            <h:form id="loginForm">
+                <p:messages autoUpdate="true" showDetail="true" closable="true"/>
+                <div class="field">
+                    <p:outputLabel for="email" value="Correo Electrónico"/>
+                    <p:inputText id="email" value="#{authBean.email}"
+                                 placeholder="usuario@corporativoalpha.com"
+                                 required="true" requiredMessage="El correo es requerido"
+                                 styleClass="full-width"/>
+                </div>
+                <div class="field">
+                    <p:outputLabel for="password" value="Contraseña"/>
+                    <p:password id="password" value="#{authBean.password}"
+                                placeholder="Contraseña"
+                                required="true" requiredMessage="La contraseña es requerida"
+                                feedback="false" styleClass="full-width"/>
+                </div>
+                <p:commandButton value="Iniciar Sesión"
+                                 action="#{authBean.login}"
+                                 icon="pi pi-sign-in"
+                                 styleClass="btn-primary full-width"
+                                 update="loginForm"/>
+                <div class="login-hint">
+                    <p>Admin: admin@corporativoalpha.com / Admin123</p>
+                    <p>Colaborador: carlos.mendez@corporativoalpha.com / User123</p>
+                </div>
+            </h:form>
+        </div>
+    </div>
+</h:body>
+</html>

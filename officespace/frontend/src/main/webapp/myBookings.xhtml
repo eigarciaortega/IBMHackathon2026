@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:f="http://xmlns.jcp.org/jsf/core">
+<h:head>
+    <title>OfficeSpace – Mis Reservas</title>
+    <h:outputStylesheet library="css" name="style.css"/>
+</h:head>
+<h:body>
+    <f:event type="preRenderView" listener="#{authBean.checkAuth}"/>
+    <p:growl id="growl" showDetail="true"/>
+
+    <div class="header">
+        <div class="header-left"><h1>🏢 OfficeSpace</h1><span>Mis Reservas</span></div>
+        <div class="header-right">
+            <p:commandLink value="Nueva Búsqueda" action="/search.xhtml?faces-redirect=true"
+                           ajax="false" styleClass="btn-link"/>
+            <p:commandLink value="Cerrar Sesión" action="#{authBean.logout}"
+                           ajax="false" styleClass="btn-link"/>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <h:form id="myBookingsForm">
+            <p:messages autoUpdate="true" showDetail="true"/>
+            <p:panel header="📋 Mis Reservas">
+                <p:dataTable value="#{bookingBean.myBookings}" var="booking"
+                             emptyMessage="No tienes reservas"
+                             styleClass="data-table" paginator="true" rows="10">
+                    <p:column headerText="Espacio">
+                        <h:outputText value="#{booking.spaceName}"/>
+                    </p:column>
+                    <p:column headerText="Fecha">
+                        <h:outputText value="#{booking.date}"/>
+                    </p:column>
+                    <p:column headerText="Horario">
+                        <h:outputText value="#{booking.startTime} – #{booking.endTime}"/>
+                    </p:column>
+                    <p:column headerText="Asistentes">
+                        <h:outputText value="#{booking.attendees}"/>
+                    </p:column>
+                    <p:column headerText="Estado">
+                        <span class="status-badge #{booking.status == 'CONFIRMADA' ? 'status-active' : 'status-cancelled'}">
+                            #{booking.status}
+                        </span>
+                    </p:column>
+                    <p:column headerText="Notas">
+                        <h:outputText value="#{booking.notes}"/>
+                    </p:column>
+                    <p:column headerText="Acciones">
+                        <p:commandButton value="Cancelar" icon="pi pi-times"
+                                         action="#{bookingBean.cancelBooking(booking)}"
+                                         update="myBookingsForm"
+                                         styleClass="btn-danger btn-sm"
+                                         rendered="#{booking.status == 'CONFIRMADA'}">
+                            <p:confirm header="Confirmar" message="¿Cancelar esta reserva?"
+                                       icon="pi pi-exclamation-triangle"/>
+                        </p:commandButton>
+                    </p:column>
+                </p:dataTable>
+            </p:panel>
+            <p:confirmDialog global="true" showEffect="fade">
+                <p:commandButton value="Sí" type="button" styleClass="btn-danger ui-confirmdialog-yes"/>
+                <p:commandButton value="No" type="button" styleClass="btn-secondary ui-confirmdialog-no"/>
+            </p:confirmDialog>
+        </h:form>
+    </div>
+</h:body>
+</html>

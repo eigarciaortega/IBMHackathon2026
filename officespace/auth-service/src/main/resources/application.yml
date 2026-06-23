@@ -1,0 +1,26 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: auth-service
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://localhost:27017/officespace}
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:officespace-mvp-jwt-secret-key-2026-corporativo-alpha-minimum-256-bits!!}
+    expiration-ms: 86400000   # 24 horas
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    try-it-out-enabled: true
+
+logging:
+  level:
+    com.corporativoalpha: DEBUG
+    org.springframework.security: WARN

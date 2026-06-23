@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:f="http://xmlns.jcp.org/jsf/core">
+<h:head>
+    <title>OfficeSpace – Administración</title>
+    <h:outputStylesheet library="css" name="style.css"/>
+</h:head>
+<h:body>
+    <f:event type="preRenderView" listener="#{authBean.checkAuth}"/>
+    <p:growl id="growl" showDetail="true"/>
+
+    <div class="header">
+        <div class="header-left"><h1>🏢 OfficeSpace</h1><span>Panel de Administración</span></div>
+        <div class="header-right">
+            <p:commandLink value="Cerrar Sesión" action="#{authBean.logout}"
+                           ajax="false" styleClass="btn-link"/>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <!-- KPI Dashboard -->
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-value">#{adminBean.activeSpacesCount}</div>
+                <div class="kpi-label">Espacios Activos</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-value">#{adminBean.confirmedCount}</div>
+                <div class="kpi-label">Reservas Hoy</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-value">#{adminBean.todayBookings.size()}</div>
+                <div class="kpi-label">Total Ocupaciones Hoy</div>
+            </div>
+        </div>
+
+        <h:form id="adminForm">
+            <p:messages autoUpdate="true" showDetail="true" closable="true"/>
+
+            <!-- Today's Bookings Dashboard -->
+            <p:panel header="📊 Ocupación del Día" styleClass="dashboard-panel">
+                <p:dataTable value="#{adminBean.todayBookings}" var="b"
+                             emptyMessage="No hay reservas para hoy"
+                             styleClass="data-table">
+                    <p:column headerText="Espacio"><h:outputText value="#{b.spaceName}"/></p:column>
+                    <p:column headerText="Usuario"><h:outputText value="#{b.userName}"/></p:column>
+                    <p:column headerText="Horario"><h:outputText value="#{b.startTime} – #{b.endTime}"/></p:column>
+                    <p:column headerText="Asistentes"><h:outputText value="#{b.attendees}"/></p:column>
+                    <p:column headerText="Estado">
+                        <span class="status-badge status-active">#{b.status}</span>
+                    </p:column>
+                </p:dataTable>
+            </p:panel>
+
+            <!-- Space Management -->
+            <p:panel header="🏢 Gestión de Espacios" styleClass="spaces-panel">
+                <div class="panel-toolbar">
+                    <p:commandButton value="+ Nuevo Espacio"
+                                     icon="pi pi-plus"
+                                     action="#{adminBean.newSpace}"
+                                     update="adminForm"
+                                     oncomplete="PF('spaceDialog').show()"
+                                     styleClass="btn-primary"/>
+                    <p:commandButton value="🔄 Actualizar"
+                                     action="#{adminBean.loadData}"
+                                     update="adminForm"
+                                     styleClass="btn-secondary"/>
+                </div>
+                <p:dataTable value="#{adminBean.spaces}" var="space"
+                             styleClass="data-table" paginator="true" rows="8">
+                    <p:column headerText="Nombre"><h:outputText value="#{space.name}"/></p:column>
+                    <p:column headerText="Tipo"><h:outputText value="#{space.typeLabel}"/></p:column>
+                    <p:column headerText="Capacidad"><h:outputText value="#{space.capacity}"/></p:column>
+                    <p:column headerText="Piso"><h:outputText value="#{space.floor}"/></p:column>
+                    <p:column headerText="Ubicación"><h:outputText value="#{space.location}"/></p:column>
+                    <p:column headerText="Estado">
+                        <span class="status-badge #{space.active ? 'status-active' : 'status-cancelled'}">
+                            #{space.active ? 'Activo' : 'Inactivo'}
+                        </span>
+                    </p:column>
+                    <p:column headerText="Acciones">
+                        <p:commandButton icon="pi pi-pencil" styleClass="btn-secondary btn-sm"
+                                         action="#{adminBean.editSpace(space)}"
+                                         update="adminForm"
+                                         oncomplete="PF('spaceDialog').show()"
+                                         title="Editar"/>
+                        <p:commandButton icon="pi pi-trash" styleClass="btn-danger btn-sm"
+                                         action="#{adminBean.deleteSpace(space)}"
+                                         update="adminForm" title="Eliminar">
+                            <p:confirm header="Eliminar" message="¿Eliminar este espacio?"
+                                       icon="pi pi-exclamation-triangle"/>
+                        </p:commandButton>
+                    </p:column>
+                </p:dataTable>
+            </p:panel>
+
+            <!-- Space Dialog -->
+            <p:dialog header="#{adminBean.editing ? 'Editar Espacio' : 'Nuevo Espacio'}"
+                      widgetVar="spaceDialog" modal="true" resizable="false" width="500">
+                <div class="dialog-content">
+                    <div class="field">
+                        <p:outputLabel for="sName" value="Nombre *"/>
+                        <p:inputText id="sName" value="#{adminBean.editingSpace.name}"
+                                     required="true" styleClass="full-width"/>
+                    </div>
+                    <div class="field">
+                        <p:outputLabel for="sType" value="Tipo *"/>
+                        <p:selectOneMenu id="sType" value="#{adminBean.editingSpace.type}"
+                                         styleClass="full-width">
+                            <f:selectItem itemLabel="Sala de Juntas" itemValue="SALA_JUNTAS"/>
+                            <f:selectItem itemLabel="Escritorio" itemValue="ESCRITORIO"/>
+                        </p:selectOneMenu>
+                    </div>
+                    <div class="field">
+                        <p:outputLabel for="sCap" value="Capacidad *"/>
+                        <p:inputNumber id="sCap" value="#{adminBean.editingSpace.capacity}"
+                                       min="1" max="100" styleClass="full-width"/>
+                    </div>
+                    <div class="field">
+                        <p:outputLabel for="sFloor" value="Piso *"/>
+                        <p:inputText id="sFloor" value="#{adminBean.editingSpace.floor}"
+                                     styleClass="full-width"/>
+                    </div>
+                    <div class="field">
+                        <p:outputLabel for="sLoc" value="Ubicación"/>
+                        <p:inputText id="sLoc" value="#{adminBean.editingSpace.location}"
+                                     styleClass="full-width"/>
+                    </div>
+                </div>
+                <f:facet name="footer">
+                    <p:commandButton value="Guardar" icon="pi pi-save"
+                                     action="#{adminBean.saveSpace}"
+                                     update="adminForm"
+                                     oncomplete="if(!args.validationFailed) PF('spaceDialog').hide()"
+                                     styleClass="btn-primary"/>
+                    <p:commandButton value="Cancelar" icon="pi pi-times"
+                                     onclick="PF('spaceDialog').hide()"
+                                     styleClass="btn-secondary" type="button"/>
+                </f:facet>
+            </p:dialog>
+
+            <p:confirmDialog global="true" showEffect="fade">
+                <p:commandButton value="Sí" type="button" styleClass="btn-danger ui-confirmdialog-yes"/>
+                <p:commandButton value="No" type="button" styleClass="btn-secondary ui-confirmdialog-no"/>
+            </p:confirmDialog>
+        </h:form>
+    </div>
+</h:body>
+</html>

@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:f="http://xmlns.jcp.org/jsf/core"
+      xmlns:c="http://xmlns.jcp.org/jsp/jstl/core">
+<h:head>
+    <title>OfficeSpace – Buscar Espacios</title>
+    <h:outputStylesheet library="css" name="style.css"/>
+</h:head>
+<h:body>
+    <f:event type="preRenderView" listener="#{authBean.checkAuth}"/>
+
+    <p:growl id="growl" showDetail="true"/>
+
+    <!-- Header -->
+    <div class="header">
+        <div class="header-left">
+            <h1>🏢 OfficeSpace</h1>
+            <span>Buscar Espacios Disponibles</span>
+        </div>
+        <div class="header-right">
+            <span class="user-info">
+                #{authBean.userSession.fullName} (#{authBean.userSession.role})
+            </span>
+            <p:commandLink value="Mis Reservas" action="/myBookings.xhtml?faces-redirect=true"
+                           styleClass="btn-link"/>
+            <c:if test="#{authBean.userSession.admin}">
+                <p:commandLink value="Administración" action="/admin.xhtml?faces-redirect=true"
+                               styleClass="btn-link"/>
+            </c:if>
+            <p:commandLink value="Cerrar Sesión" action="#{authBean.logout}"
+                           styleClass="btn-link"/>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <h:form id="searchForm">
+            <!-- Filter Panel -->
+            <p:panel header="Filtros de Búsqueda" styleClass="filter-panel">
+                <div class="filter-grid">
+                    <div class="filter-item">
+                        <p:outputLabel for="searchDate" value="Fecha *"/>
+                        <p:datePicker id="searchDate"
+                                      value="#{searchBean.selectedDate}"
+                                      pattern="yyyy-MM-dd"
+                                      mindate="#{searchBean.selectedDate}"
+                                      placeholder="YYYY-MM-DD"
+                                      styleClass="full-width"/>
+                    </div>
+                    <div class="filter-item">
+                        <p:outputLabel for="startTime" value="Hora Inicio *"/>
+                        <p:inputText id="startTime" value="#{searchBean.startTime}"
+                                     placeholder="09:00" styleClass="full-width"/>
+                    </div>
+                    <div class="filter-item">
+                        <p:outputLabel for="endTime" value="Hora Fin *"/>
+                        <p:inputText id="endTime" value="#{searchBean.endTime}"
+                                     placeholder="10:00" styleClass="full-width"/>
+                    </div>
+                    <div class="filter-item">
+                        <p:outputLabel for="spaceType" value="Tipo de Espacio"/>
+                        <p:selectOneMenu id="spaceType" value="#{searchBean.selectedType}"
+                                         styleClass="full-width">
+                            <f:selectItem itemLabel="-- Todos --" itemValue=""/>
+                            <f:selectItem itemLabel="Sala de Juntas" itemValue="SALA_JUNTAS"/>
+                            <f:selectItem itemLabel="Escritorio" itemValue="ESCRITORIO"/>
+                        </p:selectOneMenu>
+                    </div>
+                    <div class="filter-item">
+                        <p:outputLabel for="minCap" value="Capacidad Mínima"/>
+                        <p:inputNumber id="minCap" value="#{searchBean.minCapacity}"
+                                       min="1" placeholder="1" styleClass="full-width"/>
+                    </div>
+                </div>
+                <div class="filter-actions">
+                    <p:commandButton value="🔍 Buscar Espacios"
+                                     action="#{searchBean.searchSpaces}"
+                                     update="searchForm"
+                                     styleClass="btn-primary"/>
+                </div>
+            </p:panel>
+
+            <!-- Results -->
+            <p:panel header="Espacios Disponibles" styleClass="results-panel"
+                     rendered="#{searchBean.searched}">
+                <p:messages showDetail="true"/>
+
+                <p:outputLabel value="No se encontraron espacios con los filtros seleccionados."
+                               rendered="#{searchBean.noResults}" styleClass="no-results"/>
+
+                <div class="space-grid" rendered="#{not searchBean.noResults}">
+                    <p:dataList value="#{searchBean.availableSpaces}" var="space"
+                                itemType="none" styleClass="space-list">
+                        <div class="space-card">
+                            <div class="space-card-header">
+                                <h3>#{space.name}</h3>
+                                <span class="badge #{space.type == 'SALA_JUNTAS' ? 'badge-sala' : 'badge-desk'}">
+                                    #{space.typeLabel}
+                                </span>
+                            </div>
+                            <div class="space-card-body">
+                                <p>👥 Capacidad: #{space.capacity} personas</p>
+                                <p>📍 #{space.floor} – #{space.location}</p>
+                                <p>🔧 #{space.resourcesDisplay}</p>
+                            </div>
+                            <div class="space-card-footer">
+                                <p:commandButton value="Reservar"
+                                                 icon="pi pi-calendar-plus"
+                                                 action="#{searchBean.selectSpace(space)}"
+                                                 styleClass="btn-primary"
+                                                 ajax="false"/>
+                            </div>
+                        </div>
+                    </p:dataList>
+                </div>
+            </p:panel>
+        </h:form>
+    </div>
+</h:body>
+</html>

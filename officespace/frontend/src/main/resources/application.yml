@@ -1,0 +1,22 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: frontend
+  security:
+    user:
+      name: admin
+      password: disabled
+
+services:
+  auth:
+    url: ${AUTH_SERVICE_URL:http://localhost:8081}
+  catalog:
+    url: ${CATALOG_SERVICE_URL:http://localhost:8082}
+  booking:
+    url: ${BOOKING_SERVICE_URL:http://localhost:8083}
+
+logging:
+  level:
+    com.corporativoalpha: DEBUG

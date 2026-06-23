@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:f="http://xmlns.jcp.org/jsf/core">
+<h:head>
+    <title>OfficeSpace – Confirmar Reserva</title>
+    <h:outputStylesheet library="css" name="style.css"/>
+</h:head>
+<h:body>
+    <f:event type="preRenderView" listener="#{authBean.checkAuth}"/>
+    <p:growl id="growl" showDetail="true"/>
+
+    <div class="header">
+        <div class="header-left"><h1>🏢 OfficeSpace</h1><span>Confirmar Reserva</span></div>
+        <div class="header-right">
+            <p:commandLink value="← Volver a Búsqueda" action="#{bookingBean.goToSearch}"
+                           ajax="false" styleClass="btn-link"/>
+            <p:commandLink value="Cerrar Sesión" action="#{authBean.logout}"
+                           ajax="false" styleClass="btn-link"/>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <h:form id="bookingForm">
+            <p:messages autoUpdate="true" showDetail="true" closable="true"/>
+
+            <!-- Booking Confirmed Panel -->
+            <p:panel header="✅ Reserva Confirmada" styleClass="success-panel"
+                     rendered="#{bookingBean.bookingConfirmed}">
+                <div class="confirmation-box">
+                    <p>🆔 ID: #{bookingBean.confirmedBooking.id}</p>
+                    <p>📅 Fecha: #{bookingBean.confirmedBooking.date}</p>
+                    <p>⏰ Horario: #{bookingBean.confirmedBooking.startTime} – #{bookingBean.confirmedBooking.endTime}</p>
+                    <p>🏢 Espacio: #{bookingBean.confirmedBooking.spaceName}</p>
+                    <p>👥 Asistentes: #{bookingBean.confirmedBooking.attendees}</p>
+                    <p>📋 Estado: #{bookingBean.confirmedBooking.status}</p>
+                </div>
+                <p:commandButton value="Ver Mis Reservas" action="/myBookings.xhtml?faces-redirect=true"
+                                 ajax="false" styleClass="btn-primary"/>
+                <p:commandButton value="Nueva Búsqueda" action="/search.xhtml?faces-redirect=true"
+                                 ajax="false" styleClass="btn-secondary"/>
+            </p:panel>
+
+            <!-- Booking Form -->
+            <p:panel header="Detalles de la Reserva" styleClass="booking-panel"
+                     rendered="#{not bookingBean.bookingConfirmed}">
+
+                <!-- Space Summary -->
+                <div class="space-summary" rendered="#{bookingBean.selectedSpace != null}">
+                    <h3>Espacio Seleccionado</h3>
+                    <div class="summary-grid">
+                        <div><strong>Nombre:</strong> #{bookingBean.selectedSpace.name}</div>
+                        <div><strong>Tipo:</strong> #{bookingBean.selectedSpace.typeLabel}</div>
+                        <div><strong>Capacidad:</strong> #{bookingBean.selectedSpace.capacity} personas</div>
+                        <div><strong>Ubicación:</strong> #{bookingBean.selectedSpace.floor} – #{bookingBean.selectedSpace.location}</div>
+                        <div><strong>Recursos:</strong> #{bookingBean.selectedSpace.resourcesDisplay}</div>
+                    </div>
+                </div>
+
+                <p:separator/>
+
+                <!-- Booking Details -->
+                <div class="booking-fields">
+                    <div class="field">
+                        <p:outputLabel for="bookDate" value="Fecha de Reserva *"/>
+                        <p:inputText id="bookDate" value="#{bookingBean.bookingDate}"
+                                     required="true" styleClass="full-width"
+                                     placeholder="YYYY-MM-DD"/>
+                    </div>
+                    <div class="field">
+                        <p:outputLabel for="startT" value="Hora Inicio *"/>
+                        <p:inputText id="startT" value="#{bookingBean.startTime}"
+                                     required="true" styleClass="full-width"
+                                     placeholder="09:00"/>
+                    </div>
+                    <div class="field">
+                        <p:outputLabel for="endT" value="Hora Fin *"/>
+                        <p:inputText id="endT" value="#{bookingBean.endTime}"
+                                     required="true" styleClass="full-width"
+                                     placeholder="10:00"/>
+                    </div>
+                    <div class="field">
+                        <p:outputLabel for="attendees" value="Número de Asistentes *"/>
+                        <p:inputNumber id="attendees" value="#{bookingBean.attendees}"
+                                       min="1" max="#{bookingBean.selectedSpace.capacity}"
+                                       required="true" styleClass="full-width"/>
+                    </div>
+                    <div class="field full-span">
+                        <p:outputLabel for="notes" value="Notas / Propósito"/>
+                        <p:inputTextarea id="notes" value="#{bookingBean.notes}"
+                                         rows="3" styleClass="full-width"
+                                         placeholder="Ejemplo: Reunión de sprint, capacitación..."/>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <p:commandButton value="✅ Confirmar Reserva"
+                                     action="#{bookingBean.confirmBooking}"
+                                     update="bookingForm"
+                                     icon="pi pi-check"
+                                     styleClass="btn-primary"/>
+                    <p:commandButton value="Cancelar"
+                                     action="/search.xhtml?faces-redirect=true"
+                                     ajax="false"
+                                     styleClass="btn-secondary"/>
+                </div>
+            </p:panel>
+        </h:form>
+    </div>
+</h:body>
+</html>

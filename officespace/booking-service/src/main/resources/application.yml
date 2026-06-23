@@ -1,0 +1,29 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: booking-service
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://localhost:27017/officespace}
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:officespace-mvp-jwt-secret-key-2026-corporativo-alpha-minimum-256-bits!!}
+  service:
+    token: ${SERVICE_TOKEN:officespace-internal-service-token-2026}
+
+services:
+  catalog:
+    url: ${CATALOG_SERVICE_URL:http://localhost:8082}
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+logging:
+  level:
+    com.corporativoalpha: DEBUG

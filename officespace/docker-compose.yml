@@ -1,0 +1,125 @@
+version: '3.9'
+
+services:
+
+  # ─── MongoDB ─────────────────────────────────────────────────────────────
+  mongodb:
+    image: mongo:7.0
+    container_name: officespace-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_DATABASE: officespace
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - officespace-net
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── Auth Service ─────────────────────────────────────────────────────────
+  auth-service:
+    build:
+      context: ./auth-service
+      dockerfile: Dockerfile
+    container_name: officespace-auth
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      MONGODB_URI: mongodb://mongodb:27017/officespace
+      JWT_SECRET: officespace-mvp-jwt-secret-key-2026-corporativo-alpha-minimum-256-bits!!
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - officespace-net
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8081/api/auth/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  # ─── Catalog Service ──────────────────────────────────────────────────────
+  catalog-service:
+    build:
+      context: ./catalog-service
+      dockerfile: Dockerfile
+    container_name: officespace-catalog
+    restart: unless-stopped
+    ports:
+      - "8082:8082"
+    environment:
+      MONGODB_URI: mongodb://mongodb:27017/officespace
+      JWT_SECRET: officespace-mvp-jwt-secret-key-2026-corporativo-alpha-minimum-256-bits!!
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - officespace-net
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8082/api/spaces/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  # ─── Booking Service ──────────────────────────────────────────────────────
+  booking-service:
+    build:
+      context: ./booking-service
+      dockerfile: Dockerfile
+    container_name: officespace-booking
+    restart: unless-stopped
+    ports:
+      - "8083:8083"
+    environment:
+      MONGODB_URI: mongodb://mongodb:27017/officespace
+      JWT_SECRET: officespace-mvp-jwt-secret-key-2026-corporativo-alpha-minimum-256-bits!!
+      CATALOG_SERVICE_URL: http://catalog-service:8082
+      SERVICE_TOKEN: officespace-internal-service-token-2026
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      catalog-service:
+        condition: service_healthy
+    networks:
+      - officespace-net
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8083/api/bookings/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  # ─── Frontend ─────────────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: officespace-frontend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      AUTH_SERVICE_URL: http://auth-service:8081
+      CATALOG_SERVICE_URL: http://catalog-service:8082
+      BOOKING_SERVICE_URL: http://booking-service:8083
+    depends_on:
+      auth-service:
+        condition: service_healthy
+      catalog-service:
+        condition: service_healthy
+      booking-service:
+        condition: service_healthy
+    networks:
+      - officespace-net
+
+volumes:
+  mongodb_data:
+
+networks:
+  officespace-net:
+    driver: bridge
