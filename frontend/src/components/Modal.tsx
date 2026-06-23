@@ -44,7 +44,7 @@ export function Modal({ abierto, onCerrar, titulo, children, footer }: Props) {
         role="dialog"
         aria-modal="true"
         aria-label={titulo}
-        className="anim-aparecer w-full max-w-lg rounded-t-[var(--radius-lg)] bg-surface shadow-elevada outline-none sm:rounded-[var(--radius-lg)]"
+        className="anim-aparecer flex max-h-[92dvh] w-full max-w-lg flex-col rounded-t-[var(--radius-lg)] bg-surface shadow-elevada outline-none sm:rounded-[var(--radius-lg)]"
       >
         <div className="flex items-center justify-between border-b border-border px-5 py-4">
           <h2 className="text-lg font-semibold text-ink">{titulo}</h2>
@@ -52,7 +52,7 @@ export function Modal({ abierto, onCerrar, titulo, children, footer }: Props) {
             <IconCerrar className="size-5" />
           </button>
         </div>
-        <div className="px-5 py-5">{children}</div>
+        <div className="flex-1 overflow-y-auto px-5 py-5">{children}</div>
         {footer && (
           <div className="flex items-center justify-end gap-2.5 border-t border-border bg-surface-muted px-5 py-4 rounded-b-[var(--radius-lg)]">
             {footer}
