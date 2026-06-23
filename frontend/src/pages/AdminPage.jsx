@@ -26,6 +26,7 @@ export default function AdminPage() {
   const [editing, setEditing] = useState(null) // null | 'new' | space object
   const [form, setForm] = useState(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
+  const [scheduleSpace, setScheduleSpace] = useState(null) // space whose schedule modal is open
 
   const load = async () => {
     setLoading(true)
@@ -121,31 +122,43 @@ export default function AdminPage() {
           {/* Occupancy summary */}
           <section className="mt-6">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-              Ocupación de hoy
+              Ocupación en este momento
             </h2>
+            <p className="mt-1 text-xs text-slate-400">{nowLabel()}</p>
             <div className="mt-3 grid grid-cols-3 gap-4">
               <Stat label="Total" value={dashboard?.summary.total ?? 0} tone="slate" />
               <Stat label="Ocupados ahora" value={dashboard?.summary.occupied ?? 0} tone="indigo" />
-              <Stat label="Libres" value={dashboard?.summary.free ?? 0} tone="emerald" />
+              <Stat label="Libres ahora" value={dashboard?.summary.free ?? 0} tone="emerald" />
             </div>
 
-            {/* Per-space occupancy: quick view of who/what is busy today */}
+            {/* Per-space occupancy: click a card to see its full schedule */}
             <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {(dashboard?.spaces ?? []).map((s) => (
-                <div
+                <button
                   key={s.id}
-                  className={`flex items-center justify-between rounded-lg border p-3 ${
+                  type="button"
+                  onClick={() => setScheduleSpace(s)}
+                  className={`flex items-center justify-between rounded-lg border p-3 text-left transition hover:shadow-sm ${
                     s.is_occupied_now
-                      ? 'border-indigo-200 bg-indigo-50'
-                      : 'border-slate-200 bg-white'
+                      ? 'border-indigo-200 bg-indigo-50 hover:border-indigo-300'
+                      : 'border-slate-200 bg-white hover:border-slate-300'
                   }`}
                 >
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium text-slate-900">{s.name}</p>
-                    <p className="text-xs text-slate-500">
-                      {s.type} · {s.floor || 'Sin piso'} · {s.booking_count} reserva
-                      {Number(s.booking_count) === 1 ? '' : 's'} hoy
-                    </p>
+                    {s.is_occupied_now && s.current_booking ? (
+                      <p className="truncate text-xs text-indigo-700">
+                        {s.current_booking.user_name} · hasta{' '}
+                        {formatTime(s.current_booking.end_time)}
+                      </p>
+                    ) : (
+                      <p className="text-xs text-slate-500">
+                        {s.type} · {s.floor || 'Sin piso'} ·{' '}
+                        {s.upcoming_count > 0
+                          ? `${s.upcoming_count} próxima${s.upcoming_count === 1 ? '' : 's'}`
+                          : 'sin reservas'}
+                      </p>
+                    )}
                   </div>
                   <span
                     className={`ml-3 shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${
@@ -154,9 +167,9 @@ export default function AdminPage() {
                         : 'bg-emerald-100 text-emerald-700'
                     }`}
                   >
-                    {s.is_occupied_now ? 'Ocupado' : 'Libre'}
+                    {s.is_occupied_now ? 'Ocupada' : 'Libre'}
                   </span>
-                </div>
+                </button>
               ))}
             </div>
           </section>
@@ -306,12 +319,124 @@ export default function AdminPage() {
           </form>
         </div>
       )}
+
+      {/* Space schedule modal */}
+      {scheduleSpace && (
+        <ScheduleModal space={scheduleSpace} onClose={() => setScheduleSpace(null)} />
+      )}
     </Layout>
+  )
+}
+
+function ScheduleModal({ space, onClose }) {
+  const bookings = space.bookings ?? []
+  return (
+    <div
+      className="fixed inset-0 z-10 grid place-items-center bg-black/40 p-4"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h3 className="text-lg font-semibold text-slate-900">{space.name}</h3>
+            <p className="text-sm text-slate-500">
+              {space.type} · {space.floor || 'Sin piso'} · capacidad {space.capacity}
+            </p>
+          </div>
+          <span
+            className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${
+              space.is_occupied_now
+                ? 'bg-indigo-600 text-white'
+                : 'bg-emerald-100 text-emerald-700'
+            }`}
+          >
+            {space.is_occupied_now ? 'Ocupada ahora' : 'Libre ahora'}
+          </span>
+        </div>
+
+        <h4 className="mt-5 text-sm font-semibold uppercase tracking-wide text-slate-500">
+          Horarios reservados
+        </h4>
+
+        {bookings.length === 0 ? (
+          <p className="mt-3 text-sm text-slate-500">
+            No hay reservas activas ni próximas para este espacio.
+          </p>
+        ) : (
+          <ul className="mt-3 max-h-80 space-y-2 overflow-y-auto">
+            {bookings.map((b) => (
+              <li
+                key={b.id}
+                className={`rounded-lg border p-3 ${
+                  b.is_active_now
+                    ? 'border-indigo-200 bg-indigo-50'
+                    : 'border-slate-200 bg-white'
+                }`}
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm font-medium text-slate-900">{formatRange(b)}</p>
+                  {b.is_active_now && (
+                    <span className="shrink-0 rounded-full bg-indigo-600 px-2 py-0.5 text-xs font-medium text-white">
+                      En curso
+                    </span>
+                  )}
+                </div>
+                <p className="mt-1 text-xs text-slate-500">
+                  {b.user_name} · {b.attendees} asistente{b.attendees === 1 ? '' : 's'}
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <div className="mt-6">
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
   )
 }
 
 const inputClass =
   'w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500'
+
+// Current date/time label, e.g. "domingo, 22 jun 2026, 23:05"
+function nowLabel() {
+  return new Date().toLocaleString('es-MX', {
+    weekday: 'long',
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+// Time only, e.g. "10:00"
+function formatTime(iso) {
+  return new Date(iso).toLocaleTimeString('es-MX', {
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+// Full date + time range for a booking, e.g. "23 jun, 09:00 – 10:00"
+function formatRange(b) {
+  const day = new Date(b.start_time).toLocaleDateString('es-MX', {
+    day: '2-digit',
+    month: 'short',
+  })
+  return `${day}, ${formatTime(b.start_time)} – ${formatTime(b.end_time)}`
+}
 
 function Field({ label, children }) {
   return (

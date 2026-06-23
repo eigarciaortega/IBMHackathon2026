@@ -141,10 +141,13 @@ const definition = {
     '/dashboard/today': {
       get: {
         tags: ['Dashboard'],
-        summary: 'Resumen de ocupación de hoy (ADMIN)',
+        summary: 'Resumen de ocupación en este momento (ADMIN)',
         responses: {
           200: {
-            description: 'Resumen + ocupación por espacio',
+            description:
+              'Resumen (ocupados/libres AHORA mismo) + ocupación por espacio. ' +
+              'Cada espacio incluye is_occupied_now, current_booking (quién lo ocupa ahora) ' +
+              'y bookings (horario de reservas actuales y futuras con su responsable).',
             content: {
               'application/json': {
                 schema: {
