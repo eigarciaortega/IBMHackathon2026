@@ -7,7 +7,7 @@ import { IconAdmin, IconBuscar, IconReservas, IconSalir, Logo } from './icons'
 function enlaceClase({ isActive }: { isActive: boolean }) {
   return [
     'inline-flex items-center gap-2 rounded-[0.5rem] px-3 py-2 text-sm font-medium transition-colors',
-    isActive ? 'bg-pino-soft text-pino-strong' : 'text-muted hover:bg-surface-muted hover:text-body',
+    isActive ? 'bg-azul-soft text-azul-strong' : 'text-muted hover:bg-surface-muted hover:text-body',
   ].join(' ')
 }
 
@@ -25,10 +25,10 @@ export function Layout() {
     <div className="min-h-dvh">
       <header className="sticky top-0 z-[var(--z-sticky)] border-b border-border bg-surface/85 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-6xl items-center gap-4 px-4 sm:px-6">
-          <div className="flex items-center gap-2.5 text-pino">
+          <div className="flex items-center gap-2.5 text-azul">
             <Logo />
             <span className="text-[0.95rem] font-semibold tracking-tight text-ink">
-              Office<span className="text-pino">Space</span>
+              Office<span className="text-azul">Space</span>
             </span>
           </div>
 
@@ -57,7 +57,7 @@ export function Layout() {
               </p>
             </div>
             <div
-              className="grid size-9 place-items-center rounded-full bg-pino-soft text-sm font-semibold text-pino-strong"
+              className="grid size-9 place-items-center rounded-full bg-azul-soft text-sm font-semibold text-azul-strong"
               aria-hidden="true"
             >
               {iniciales(usuario?.nombre ?? '')}

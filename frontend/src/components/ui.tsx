@@ -15,7 +15,7 @@ export function Spinner({ className = 'size-5' }: { className?: string }) {
 export function CargandoBloque({ texto = 'Cargando…' }: { texto?: string }) {
   return (
     <div className="flex items-center justify-center gap-3 py-16 text-muted">
-      <Spinner className="size-5 text-pino" />
+      <Spinner className="size-5 text-azul" />
       <span className="text-sm">{texto}</span>
     </div>
   )
@@ -34,7 +34,7 @@ export function EstadoVacio({
 }) {
   return (
     <div className="flex flex-col items-center justify-center rounded-[var(--radius-lg)] border border-dashed border-border-strong bg-surface-muted px-6 py-14 text-center">
-      <div className="mb-3 grid size-12 place-items-center rounded-full bg-pino-soft text-pino">
+      <div className="mb-3 grid size-12 place-items-center rounded-full bg-azul-soft text-azul">
         {icono}
       </div>
       <h3 className="text-base font-semibold text-ink">{titulo}</h3>
@@ -47,7 +47,7 @@ export function EstadoVacio({
 export function PillTipo({ tipo }: { tipo: TipoEspacio }) {
   const esSala = tipo === 'SALA'
   return (
-    <span className={`pill ${esSala ? 'bg-pino-soft text-pino-strong' : 'bg-ambar-soft text-aviso'}`}>
+    <span className={`pill ${esSala ? 'bg-azul-soft text-azul-strong' : 'bg-ambar-soft text-aviso'}`}>
       {esSala ? <IconSala className="size-3.5" /> : <IconDesk className="size-3.5" />}
       {esSala ? 'Sala' : 'Escritorio'}
     </span>

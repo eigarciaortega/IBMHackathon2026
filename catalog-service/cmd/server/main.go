@@ -112,6 +112,11 @@ func construirRouter(cfg *config.Config, h *handlers.EspacioHandler) http.Handle
 
 	r.Get("/health", handlers.Salud(nombreServicio))
 
+	// La raíz redirige a la documentación interactiva (Swagger).
+	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/api-docs/", http.StatusFound)
+	})
+
 	secret := []byte(cfg.JWTSecret)
 	r.Group(func(r chi.Router) {
 		r.Use(appmw.RequiereJWT(secret))

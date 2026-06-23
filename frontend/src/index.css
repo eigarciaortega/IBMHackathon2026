@@ -3,31 +3,31 @@
 
 /* ==========================================================================
    Sistema de diseño OfficeSpace
-   Estrategia de color: Restrained (producto). Verde pino como color de marca y
-   de acción (también lee como "espacio disponible"); ámbar como acento cálido
-   para ocupación/realces. Superficies blancas sobre un lienzo verde-frío tenue.
+   Estrategia de color: Restrained (producto). Azul azure como color de marca y
+   de acción; ámbar como acento complementario para ocupación/realces. Superficies
+   blancas sobre un lienzo azul-frío muy tenue. Neutros tintados hacia el azul.
    ========================================================================== */
 @theme {
   --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono: ui-monospace, "JetBrains Mono", "SFMono-Regular", Menlo, Consolas, monospace;
 
-  /* Superficies y texto */
-  --color-canvas: #eef2ef;
+  /* Superficies y texto (neutros tintados hacia el azul de marca) */
+  --color-canvas: #eef1f6;
   --color-surface: #ffffff;
-  --color-surface-muted: #f6f8f6;
-  --color-border: #dee5e0;
-  --color-border-strong: #c8d2cb;
-  --color-ink: #16221c;
-  --color-body: #283330;
-  --color-muted: #586862;
+  --color-surface-muted: #f5f7fb;
+  --color-border: #dde3ec;
+  --color-border-strong: #c6cfdd;
+  --color-ink: #131a26;
+  --color-body: #283243;
+  --color-muted: #566175;
 
-  /* Marca: verde pino */
-  --color-pino: #1c5b44;
-  --color-pino-hover: #174e3a;
-  --color-pino-strong: #154534;
-  --color-pino-soft: #e6f0ea;
+  /* Marca: azul azure */
+  --color-azul: #1b50b3;
+  --color-azul-hover: #173f8f;
+  --color-azul-strong: #16357a;
+  --color-azul-soft: #e7edfc;
 
-  /* Acento: ámbar */
+  /* Acento: ámbar (complementario del azul) */
   --color-ambar: #a8631a;
   --color-ambar-soft: #f6ead6;
 
@@ -41,8 +41,8 @@
   --radius-md: 0.625rem;
   --radius-lg: 0.875rem;
 
-  --shadow-sutil: 0 1px 2px rgba(22, 34, 28, 0.05), 0 1px 3px rgba(22, 34, 28, 0.04);
-  --shadow-elevada: 0 10px 30px -12px rgba(22, 34, 28, 0.28);
+  --shadow-sutil: 0 1px 2px rgba(19, 26, 38, 0.06), 0 1px 3px rgba(19, 26, 38, 0.05);
+  --shadow-elevada: 0 12px 32px -12px rgba(19, 26, 38, 0.30);
 
   /* Escala de z-index semántica */
   --z-sticky: 30;
@@ -68,13 +68,13 @@
   }
   /* Foco de teclado siempre visible (requisito de accesibilidad). */
   :focus-visible {
-    outline: 2px solid var(--color-pino);
+    outline: 2px solid var(--color-azul);
     outline-offset: 2px;
     border-radius: 4px;
   }
   ::selection {
-    background: var(--color-pino-soft);
-    color: var(--color-pino-strong);
+    background: var(--color-azul-soft);
+    color: var(--color-azul-strong);
   }
   /* Números tabulares para horas/datos en mono. */
   .tabular {
@@ -99,7 +99,7 @@
            disabled:opacity-50 disabled:pointer-events-none;
   }
   .btn-sm { @apply px-3 py-1.5 text-[0.8125rem]; }
-  .btn-primary { @apply bg-pino text-white hover:bg-pino-hover; }
+  .btn-primary { @apply bg-azul text-white hover:bg-azul-hover; }
   .btn-secondary {
     @apply bg-surface text-body border border-border-strong hover:bg-surface-muted;
   }
@@ -113,7 +113,7 @@
   .input, .select {
     @apply w-full rounded-[0.5rem] border border-border-strong bg-surface px-3 py-2
            text-sm text-body placeholder:text-muted transition-colors
-           focus:border-pino focus:ring-2 focus:ring-pino/20 focus:outline-none;
+           focus:border-azul focus:ring-2 focus:ring-azul/20 focus:outline-none;
   }
   .field-error { @apply text-[0.8125rem] text-peligro mt-1.5; }
 
