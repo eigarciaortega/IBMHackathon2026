@@ -1,0 +1,57 @@
+{
+  "name": "officespace",
+  "version": "1.0.0",
+  "private": true,
+  "description": "OfficeSpace — Gestión Híbrida Inteligente de Espacios Corporativos (Monolito Modular en Monorepo)",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "lint": "eslint \"{apps,packages}/**/*.{ts,tsx}\" --max-warnings=0",
+    "format": "prettier --write \"{apps,packages}/**/*.{ts,tsx,json,md}\"",
+    "format:check": "prettier --check \"{apps,packages}/**/*.{ts,tsx,json,md}\"",
+    "dev:backend": "npm run dev --workspace @officespace/backend",
+    "dev:auth": "npm run dev --workspace @officespace/auth-service",
+    "dev:catalog": "npm run dev --workspace @officespace/catalog-service",
+    "dev:booking": "npm run dev --workspace @officespace/booking-service",
+    "dev:frontend": "npm run dev --workspace @officespace/frontend",
+    "build:services": "npm run build --workspace @officespace/auth-service && npm run build --workspace @officespace/catalog-service && npm run build --workspace @officespace/booking-service",
+    "test": "npm run test --workspaces --if-present",
+    "docker:up": "docker compose up --build",
+    "docker:down": "docker compose down",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:migrate:create": "prisma migrate dev --create-only",
+    "prisma:reset": "prisma migrate reset",
+    "prisma:studio": "prisma studio",
+    "prisma:seed": "prisma db seed"
+  },
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.12.0",
+    "bcrypt": "^5.1.1"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^5.0.2",
+    "@types/node": "^20.11.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.1.3",
+    "prettier": "^3.2.5",
+    "prisma": "^5.12.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.0"
+  },
+  "//": "FASE 4 — Base de datos. Prisma (schema + seed) vive en la raíz; el backend consumirá @prisma/client en la Fase 5. La lógica de negocio (Auth/Users/Spaces/Bookings) no se implementa todavía."
+}

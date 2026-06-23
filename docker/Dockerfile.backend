@@ -1,0 +1,16 @@
+# =====================================================================
+# OfficeSpace — Dockerfile backend (Fase 3: andamiaje)
+# El build multi-stage definitivo (instalación, prisma generate, build,
+# runtime) se completa en la Fase 10.
+# =====================================================================
+FROM node:20-alpine AS base
+WORKDIR /app
+
+# Placeholder de andamiaje. En Fase 10:
+#  - copiar manifiestos y hacer npm ci a nivel monorepo
+#  - prisma generate
+#  - nest build
+#  - etapa runtime ligera con node dist/main.js
+# Por ahora este Dockerfile no construye una imagen funcional.
+
+CMD ["node", "--version"]

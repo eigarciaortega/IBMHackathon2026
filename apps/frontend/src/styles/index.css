@@ -1,0 +1,143 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  body {
+    @apply bg-pearl text-graphite-800 antialiased;
+  }
+}
+
+@layer components {
+  /* ---- Superficies ---- */
+  .card {
+    @apply rounded-2xl border border-graphite-200/70 bg-white shadow-soft transition;
+  }
+  .card-hover {
+    @apply hover:-translate-y-0.5 hover:shadow-lift;
+  }
+  .card-pad {
+    @apply p-5;
+  }
+  .glass {
+    @apply rounded-2xl border border-white/30 bg-white/70 shadow-lift backdrop-blur-xl;
+  }
+
+  /* ---- Botones ---- */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition
+      duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 active:scale-[0.98]
+      disabled:pointer-events-none disabled:opacity-60;
+  }
+  .btn-primary {
+    @apply bg-teal-600 text-white shadow-soft hover:bg-teal-700 hover:shadow-glow focus:ring-teal-400;
+  }
+  .btn-secondary {
+    @apply border border-graphite-200 bg-white text-graphite-700 hover:border-graphite-300 hover:bg-graphite-50 focus:ring-graphite-300;
+  }
+  .btn-danger {
+    @apply bg-rose-600 text-white hover:bg-rose-700 focus:ring-rose-300;
+  }
+  .btn-ghost {
+    @apply text-graphite-600 hover:bg-graphite-100 focus:ring-graphite-200;
+  }
+  .btn-sm {
+    @apply rounded-lg px-3 py-1.5 text-xs;
+  }
+
+  /* ---- Formularios ---- */
+  .label {
+    @apply mb-1.5 block text-sm font-medium text-graphite-700;
+  }
+  .input,
+  .select {
+    @apply w-full rounded-xl border border-graphite-200 bg-white px-3.5 py-2.5 text-sm text-graphite-800 shadow-sm
+      transition placeholder:text-graphite-400 focus:border-teal-400 focus:outline-none focus:ring-4 focus:ring-teal-500/10;
+  }
+  .field-error {
+    @apply mt-1 text-xs text-rose-600;
+  }
+
+  /* ---- Tablas ---- */
+  .table {
+    @apply w-full border-collapse text-sm;
+  }
+  .table thead th {
+    @apply border-b border-graphite-200 px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-graphite-400;
+  }
+  .table tbody td {
+    @apply border-b border-graphite-100 px-3 py-3.5 text-graphite-700;
+  }
+  .table tbody tr {
+    @apply transition-colors;
+  }
+  .table tbody tr:hover {
+    @apply bg-teal-50/40;
+  }
+
+  /* ---- Encabezado de página ---- */
+  .page-title {
+    @apply text-2xl font-bold tracking-tight text-graphite-900;
+  }
+  .page-subtitle {
+    @apply text-sm text-graphite-500;
+  }
+
+  /* ---- Skeleton loading ---- */
+  .skeleton {
+    @apply relative overflow-hidden rounded-lg bg-graphite-100;
+  }
+  .skeleton::after {
+    content: '';
+    @apply absolute inset-0 -translate-x-full animate-shimmer
+      bg-gradient-to-r from-transparent via-white/60 to-transparent;
+  }
+}
+
+@layer components {
+  /* Tarjeta de métrica SaaS (icono + valor + contexto) */
+  .stat {
+    @apply card card-hover relative overflow-hidden p-5;
+  }
+  .stat-icon {
+    @apply flex h-10 w-10 items-center justify-center rounded-xl;
+  }
+  .stat-value {
+    @apply text-3xl font-bold tracking-tight text-graphite-900;
+  }
+  .stat-label {
+    @apply text-sm font-medium text-graphite-500;
+  }
+  .stat-trend-up {
+    @apply inline-flex items-center gap-1 rounded-full bg-mint-50 px-2 py-0.5 text-xs font-semibold text-mint-500;
+  }
+  .stat-trend-flat {
+    @apply inline-flex items-center gap-1 rounded-full bg-graphite-100 px-2 py-0.5 text-xs font-semibold text-graphite-500;
+  }
+  /* Badge base premium */
+  .badge {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ring-inset;
+  }
+}
+
+@layer utilities {
+  /* Patrón de "planos de oficina" / grid arquitectónico para fondos */
+  .bg-blueprint {
+    background-color: #0d1018;
+    background-image:
+      linear-gradient(rgba(25, 155, 142, 0.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(25, 155, 142, 0.08) 1px, transparent 1px),
+      linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    background-size: 96px 96px, 96px 96px, 24px 24px, 24px 24px;
+    background-position: -1px -1px, -1px -1px, -1px -1px, -1px -1px;
+  }
+  .text-gradient {
+    @apply bg-gradient-to-r from-teal-300 via-mint-300 to-lavender-300 bg-clip-text text-transparent;
+  }
+}

@@ -1,0 +1,113 @@
+# =====================================================================
+# OfficeSpace — Microservicios con Base de Datos Compartida
+# Levanta: postgres + auth-service + catalog-service + booking-service + frontend
+# Comando: docker compose up --build
+# =====================================================================
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: officespace-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: officespace
+      POSTGRES_PASSWORD: officespace2025!
+      POSTGRES_DB: officespace
+      TZ: America/Mexico_City
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U officespace -d officespace']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # auth-service aplica el schema (db push), las constraints SQL y el seed
+  # antes de arrancar. Los demás servicios esperan a que esté "healthy".
+  auth-service:
+    build:
+      context: .
+      dockerfile: apps/auth-service/Dockerfile
+    container_name: officespace-auth
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      TZ: America/Mexico_City
+      DATABASE_URL: postgresql://officespace:officespace2025!@postgres:5432/officespace?schema=public
+      JWT_SECRET: replace_with_a_long_random_secret
+      JWT_EXPIRES_IN: 2h
+      AUTH_SERVICE_PORT: 3001
+      THROTTLE_TTL: 900
+      THROTTLE_LIMIT: 5
+      CORS_ORIGIN: http://localhost:5173
+    ports:
+      - '3001:3001'
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -qO- http://localhost:3001/api-docs >/dev/null 2>&1 || exit 1']
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
+
+  catalog-service:
+    build:
+      context: .
+      dockerfile: apps/catalog-service/Dockerfile
+    container_name: officespace-catalog
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      TZ: America/Mexico_City
+      DATABASE_URL: postgresql://officespace:officespace2025!@postgres:5432/officespace?schema=public
+      JWT_SECRET: replace_with_a_long_random_secret
+      CATALOG_SERVICE_PORT: 3002
+      CORS_ORIGIN: http://localhost:5173
+    ports:
+      - '3002:3002'
+
+  booking-service:
+    build:
+      context: .
+      dockerfile: apps/booking-service/Dockerfile
+    container_name: officespace-booking
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      TZ: America/Mexico_City
+      DATABASE_URL: postgresql://officespace:officespace2025!@postgres:5432/officespace?schema=public
+      JWT_SECRET: replace_with_a_long_random_secret
+      BOOKING_SERVICE_PORT: 3003
+      CORS_ORIGIN: http://localhost:5173
+    ports:
+      - '3003:3003'
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+    container_name: officespace-frontend
+    restart: unless-stopped
+    depends_on:
+      - auth-service
+      - catalog-service
+      - booking-service
+    ports:
+      - '5173:80'
+
+volumes:
+  postgres_data:
+    driver: local

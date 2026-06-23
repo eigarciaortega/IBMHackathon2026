@@ -1,0 +1,14 @@
+{
+  "name": "@officespace/shared-utils",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Utilidades compartidas entre backend y frontend",
+  "license": "UNLICENSED",
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "lint": "eslint \"src/**/*.ts\" --max-warnings=0"
+  },
+  "//": "Fase 3: solo estructura. Las utilidades (fechas/zona horaria, normalización, etc.) se añaden cuando se necesiten."
+}

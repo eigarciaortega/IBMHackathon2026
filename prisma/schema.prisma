@@ -1,0 +1,338 @@
+// =====================================================================
+// OfficeSpace — Prisma schema (Fase 4: Base de datos)
+//
+// Motor: PostgreSQL · ORM: Prisma · Arquitectura: Monolito Modular en Monorepo
+// Zona horaria oficial del sistema: America/Mexico_City (decisión T-03)
+//
+// Decisiones aplicadas (ver 09_Decisiones_Aprobadas.md):
+//   C-03  resources con status + updated_at (borrado lógico)
+//   C-04  auditoría de 17 eventos (action como texto; lista oficial en comentarios)
+//   H-01  usuarios con password temporal: temporary_password + must_change_password
+//   H-02  FINISHED es estado DERIVADO en consultas (NO se persiste; no usa cron)
+//   H-03  reservas recurrentes fuera del MVP: campos reservados, sin endpoints;
+//         PENDING_APPROVAL presente en el enum pero inalcanzable en el MVP
+//   H-04  límite de 5 reservas futuras activas (validación en servicio, Fase 5)
+//   H-05  bloqueo de MAINTENANCE/INACTIVE con reservas futuras (servicio, Fase 5)
+//   H-07  notifications internas dentro del MVP
+//   H-09  bookings.created_by conservado
+//   BD-01 protección anti-solapamiento doble: app (servicio) + BD (Exclusion
+//         Constraint). La constraint se aplica vía migración SQL (ver prisma/sql).
+//   BD-05 audit_logs inmutable por diseño (REVOKE UPDATE/DELETE vía migración SQL)
+//   UUIDs por defecto: @default(uuid())
+//   Índice compuesto de disponibilidad: bookings(space_id, booking_date, status)
+//
+// IMPORTANTE: Prisma no soporta de forma nativa CHECK constraints ni EXCLUSION
+// constraints. Esas reglas se aplican mediante migración SQL personalizada
+// (ver prisma/sql/ y prisma/migrations/MIGRATION_PROPOSAL.md).
+// =====================================================================
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  // Extensiones requeridas:
+  //  - btree_gist : soporte de la Exclusion Constraint anti-solapamiento (BD-01)
+  //  - pg_trgm    : búsqueda por similitud / ILIKE eficiente en el Bot FAQ (H-06)
+  //  - unaccent   : búsqueda sin acentos en el Bot FAQ (H-06)
+  extensions = [btree_gist, pg_trgm, unaccent]
+}
+
+// ---------------------------------------------------------------------
+// ENUMS
+// ---------------------------------------------------------------------
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  BLOCKED
+
+  @@map("user_status")
+}
+
+enum SpaceStatus {
+  AVAILABLE
+  MAINTENANCE
+  INACTIVE
+
+  @@map("space_status")
+}
+
+enum ResourceStatus {
+  ACTIVE
+  INACTIVE
+
+  @@map("resource_status")
+}
+
+enum FaqStatus {
+  ACTIVE
+  INACTIVE
+
+  @@map("faq_status")
+}
+
+enum BookingStatus {
+  // Estados que SÍ se persisten en el MVP: CONFIRMED, CANCELLED, NO_SHOW.
+  CONFIRMED
+  CANCELLED
+
+  // FINISHED — ESTADO DERIVADO. (decisión H-02)
+  // NUNCA se persiste en el MVP. Se calcula en tiempo de consulta cuando
+  // status = CONFIRMED y (booking_date + end_time) ya pasó (zona
+  // America/Mexico_City). Ninguna escritura asigna este valor a la columna.
+  // Se mantiene en el enum solo por compatibilidad con Swagger y reportes.
+  FINISHED
+
+  NO_SHOW
+
+  // ATTENDED — asistencia verificada por el gestor (Control de Asistencia).
+  // Estado terminal persistido: el gestor confirma que el usuario asistió tras
+  // finalizar la reserva. Alternativa a NO_SHOW.
+  ATTENDED
+
+  // PENDING_APPROVAL — RESERVADO PARA FUTURO. (decisión H-03)
+  // Pertenece exclusivamente a reservas recurrentes, que están FUERA del MVP.
+  // NUNCA se asigna en el MVP: no existe endpoint, UI ni flujo que lo produzca.
+  // Se mantiene en el enum como preparación para una versión futura.
+  PENDING_APPROVAL
+
+  @@map("booking_status")
+}
+
+// ---------------------------------------------------------------------
+// ROLES
+// ---------------------------------------------------------------------
+
+model Role {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @unique @db.VarChar(50) // Valores oficiales: ADMIN, COLLABORATOR
+  description String?  @db.VarChar(255)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  users User[]
+
+  @@map("roles")
+}
+
+// ---------------------------------------------------------------------
+// USERS
+// ---------------------------------------------------------------------
+
+model User {
+  id           String     @id @default(uuid()) @db.Uuid
+  firstName    String     @map("first_name") @db.VarChar(100)
+  lastName     String     @map("last_name") @db.VarChar(100)
+  email        String     @unique @db.VarChar(255)
+  passwordHash String     @map("password_hash") @db.VarChar(255)
+  roleId       String     @map("role_id") @db.Uuid
+  status       UserStatus @default(ACTIVE)
+
+  // Decisión H-01: gestión de contraseña temporal generada por el admin.
+  // temporaryPassword es una BANDERA; la contraseña siempre se guarda como hash.
+  temporaryPassword  Boolean @default(true) @map("temporary_password")
+  mustChangePassword Boolean @default(true) @map("must_change_password")
+
+  lastLogin DateTime? @map("last_login") @db.Timestamptz(6)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relaciones
+  role            Role           @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  bookings        Booking[]      @relation("BookingOwner")
+  createdBookings Booking[]      @relation("BookingCreator")
+  createdSpaces   Space[]        @relation("SpaceCreator")
+  auditLogs       AuditLog[]
+  notifications   Notification[]
+
+  @@index([email])
+  @@index([status])
+  @@map("users")
+}
+
+// ---------------------------------------------------------------------
+// SPACES
+// ---------------------------------------------------------------------
+
+model Space {
+  id          String      @id @default(uuid()) @db.Uuid
+  name        String      @db.VarChar(150)
+  spaceType   String      @map("space_type") @db.VarChar(100)
+  capacity    Int // CHECK capacity > 0 (vía migración SQL)
+  floor       String      @db.VarChar(50)
+  zone        String      @db.VarChar(100)
+  description String?     @db.Text
+  status      SpaceStatus @default(AVAILABLE)
+
+  // created_by nullable: permite seeds y registros del sistema (H-09 conserva la
+  // trazabilidad del creador cuando aplica).
+  createdBy String?  @map("created_by") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relaciones
+  creator        User?           @relation("SpaceCreator", fields: [createdBy], references: [id], onDelete: SetNull)
+  bookings       Booking[]
+  spaceResources SpaceResource[]
+
+  @@index([name])
+  @@index([status])
+  @@map("spaces")
+}
+
+// ---------------------------------------------------------------------
+// RESOURCES  (decisión C-03: + status, + updated_at, borrado lógico)
+// ---------------------------------------------------------------------
+
+model Resource {
+  id          String         @id @default(uuid()) @db.Uuid
+  name        String         @unique @db.VarChar(100)
+  description String?        @db.Text
+  status      ResourceStatus @default(ACTIVE)
+  createdAt   DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  spaceResources SpaceResource[]
+
+  @@index([status])
+  @@map("resources")
+}
+
+// ---------------------------------------------------------------------
+// SPACE_RESOURCES  (N:M entre Space y Resource)
+// ---------------------------------------------------------------------
+
+model SpaceResource {
+  spaceId    String @map("space_id") @db.Uuid
+  resourceId String @map("resource_id") @db.Uuid
+
+  space    Space    @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  resource Resource @relation(fields: [resourceId], references: [id], onDelete: Restrict)
+
+  @@id([spaceId, resourceId])
+  @@index([resourceId])
+  @@map("space_resources")
+}
+
+// ---------------------------------------------------------------------
+// BOOKINGS  (entidad central del negocio)
+// ---------------------------------------------------------------------
+
+model Booking {
+  id          String        @id @default(uuid()) @db.Uuid
+  userId      String        @map("user_id") @db.Uuid
+  spaceId     String        @map("space_id") @db.Uuid
+  bookingDate DateTime      @map("booking_date") @db.Date
+  startTime   DateTime      @map("start_time") @db.Time(6)
+  endTime     DateTime      @map("end_time") @db.Time(6)
+  attendeesCount Int        @map("attendees_count") // CHECK > 0 (migración SQL)
+  purpose     String        @db.VarChar(255)
+  status      BookingStatus @default(CONFIRMED)
+
+  // Decisión H-03: reservas recurrentes fuera del MVP. Campos reservados.
+  isRecurring      Boolean @default(false) @map("is_recurring")
+  recurringGroupId String? @map("recurring_group_id") @db.Uuid
+
+  // Decisión H-09: se conserva created_by (futuras reservas creadas por admin).
+  createdBy String   @map("created_by") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relaciones
+  user    User  @relation("BookingOwner", fields: [userId], references: [id], onDelete: Restrict)
+  creator User  @relation("BookingCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+  space   Space @relation(fields: [spaceId], references: [id], onDelete: Restrict)
+
+  // Índices individuales
+  @@index([bookingDate])
+  @@index([spaceId])
+  @@index([userId])
+  @@index([status])
+  // Índice compuesto para la consulta crítica de disponibilidad (BD-04)
+  @@index([spaceId, bookingDate, status])
+  // CHECK start_time < end_time y la EXCLUSION CONSTRAINT anti-solapamiento
+  // se aplican vía migración SQL personalizada (BD-01):
+  //   prisma/sql/0002_constraints_and_hardening.sql
+  // La constraint `no_overlapping_bookings` filtra EXCLUSIVAMENTE
+  // WHERE status = 'CONFIRMED'. Motivo: en el MVP solo las reservas CONFIRMED
+  // ocupan disponibilidad. CANCELLED/NO_SHOW no participan (RN-052), FINISHED
+  // es derivado (no se persiste, H-02) y PENDING_APPROVAL/recurrentes están
+  // fuera del MVP (H-03). No debe ampliarse el filtro hasta habilitar
+  // recurrentes en una versión futura.
+  @@map("bookings")
+}
+
+// ---------------------------------------------------------------------
+// AUDIT_LOGS  (decisión C-04 + BD-05: inmutable por diseño)
+// ---------------------------------------------------------------------
+
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  // Lista oficial de 17 acciones (C-04):
+  //  LOGIN, LOGOUT, CREATE_USER, UPDATE_USER, DISABLE_USER, CREATE_SPACE,
+  //  UPDATE_SPACE, DISABLE_SPACE, CREATE_BOOKING, CANCEL_BOOKING, MARK_NO_SHOW,
+  //  CREATE_RESOURCE, UPDATE_RESOURCE, DELETE_RESOURCE, CREATE_FAQ, UPDATE_FAQ,
+  //  DELETE_FAQ
+  action     String   @db.VarChar(100)
+  entityType String   @map("entity_type") @db.VarChar(50) // USER, SPACE, BOOKING, RESOURCE, AUTH, FAQ
+  entityId   String?  @map("entity_id") @db.Uuid
+  oldValues  Json?    @map("old_values") @db.JsonB
+  newValues  Json?    @map("new_values") @db.JsonB
+  ipAddress  String?  @map("ip_address") @db.VarChar(100)
+  success    Boolean
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@index([entityType, entityId])
+  @@map("audit_logs")
+}
+
+// ---------------------------------------------------------------------
+// NOTIFICATIONS  (decisión H-07: internas, dentro del MVP)
+// ---------------------------------------------------------------------
+
+model Notification {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  title     String   @db.VarChar(150)
+  message   String   @db.Text
+  isRead    Boolean  @default(false) @map("is_read")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, isRead])
+  @@map("notifications")
+}
+
+// ---------------------------------------------------------------------
+// CHATBOT_FAQ  (decisión H-06: búsqueda ILIKE + normalización sin acentos)
+// ---------------------------------------------------------------------
+
+model ChatbotFaq {
+  id        String    @id @default(uuid()) @db.Uuid
+  question  String    @db.Text
+  answer    String    @db.Text
+  category  String    @db.VarChar(100) // Reservations, Spaces, Users, Policies, General
+  // Borrado lógico de FAQ (coherente con DF-007). DELETE => status = INACTIVE.
+  status    FaqStatus @default(ACTIVE)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Búsqueda del Bot FAQ (H-06), Opción A: índice FUNCIONAL GIN trgm sobre
+  // f_unaccent(lower(question)) creado vía migración SQL personalizada
+  // (prisma/sql/0002_constraints_and_hardening.sql). El servicio debe consultar
+  // con la MISMA expresión: f_unaccent(lower(question)) ILIKE f_unaccent(lower($1)).
+  @@index([category])
+  @@index([status])
+  @@map("chatbot_faq")
+}
