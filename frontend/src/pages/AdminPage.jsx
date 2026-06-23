@@ -566,17 +566,7 @@ export default function AdminPage() {
                         })()}
                       </td>
                       <td className="admin-table__actions">
-                        <button type="button" onClick={() => abrirEdicionReserva(r)}>
-                          Editar
-                        </button>
-                        <button
-                          type="button"
-                          className="boton--peligro"
-                          onClick={() => solicitarEliminacionReserva(r)}
-                        >
-                          Eliminar
-                        </button>
-                        {reservaEditandoId === r.id_reserva && (
+                        {reservaEditandoId === r.id_reserva ? (
                           <form
                             className="mr-edit"
                             onSubmit={(e) => guardarEdicionReserva(e, r)}
@@ -633,6 +623,19 @@ export default function AdminPage() {
                               </button>
                             </div>
                           </form>
+                        ) : (
+                          <>
+                            <button type="button" onClick={() => abrirEdicionReserva(r)}>
+                              Editar
+                            </button>
+                            <button
+                              type="button"
+                              className="boton--peligro"
+                              onClick={() => solicitarEliminacionReserva(r)}
+                            >
+                              Eliminar
+                            </button>
+                          </>
                         )}
                       </td>
                     </tr>

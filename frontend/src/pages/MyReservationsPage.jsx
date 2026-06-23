@@ -235,25 +235,7 @@ export default function MyReservationsPage() {
                       )}
                   </td>
                   <td className="mr-table__actions">
-                    {editable ? (
-                      <>
-                        <button type="button" onClick={() => abrirEdicion(reserva)}>
-                          Editar
-                        </button>
-                        <button
-                          type="button"
-                          className="boton--peligro"
-                          onClick={() => cancelar(reserva)}
-                          disabled={cancelandoId === reserva.id_reserva}
-                        >
-                          {cancelandoId === reserva.id_reserva ? 'Cancelando…' : 'Cancelar'}
-                        </button>
-                      </>
-                    ) : (
-                      <span className="mr-table__nota">—</span>
-                    )}
-
-                    {enEdicion && (
+                    {enEdicion ? (
                       <form className="mr-edit" onSubmit={(e) => guardarEdicion(e, reserva)} noValidate>
                         <label>
                           Fecha
@@ -302,6 +284,22 @@ export default function MyReservationsPage() {
                           </button>
                         </div>
                       </form>
+                    ) : editable ? (
+                      <>
+                        <button type="button" onClick={() => abrirEdicion(reserva)}>
+                          Editar
+                        </button>
+                        <button
+                          type="button"
+                          className="boton--peligro"
+                          onClick={() => cancelar(reserva)}
+                          disabled={cancelandoId === reserva.id_reserva}
+                        >
+                          {cancelandoId === reserva.id_reserva ? 'Cancelando…' : 'Cancelar'}
+                        </button>
+                      </>
+                    ) : (
+                      <span className="mr-table__nota">—</span>
                     )}
                   </td>
                 </tr>

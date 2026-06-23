@@ -214,8 +214,14 @@ function createReservaRepository(pool) {
    */
   async function listarReservasDeUsuario(idUsuario, executor = pool) {
     const [rows] = await executor.query(
-      `SELECT ${RESERVA_COLUMNS} FROM reserva WHERE id_usuario = ? ` +
-        'ORDER BY fecha_inicio DESC',
+      `SELECT r.id_reserva, r.id_espacio, r.id_usuario, r.fecha_inicio, r.fecha_fin,
+              r.cantidad_asistentes, r.estado_reserva, r.estado_asistencia,
+              r.fecha_creacion, r.fecha_cancelacion,
+              e.nombre AS espacio_nombre, e.piso AS espacio_piso, e.ubicacion AS espacio_ubicacion
+         FROM reserva r
+         JOIN espacio e ON e.id_espacio = r.id_espacio
+        WHERE r.id_usuario = ?
+        ORDER BY r.fecha_inicio DESC`,
       [idUsuario],
     );
     return rows;
