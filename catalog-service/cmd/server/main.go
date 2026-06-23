@@ -60,7 +60,11 @@ func main() {
 	svc := services.NewEspacioService(repo).ConNotificador(notifRepo)
 	handler := handlers.NewEspacioHandler(svc)
 
-	router := construirRouter(cfg, handler)
+	recursoRepo := repository.NewRecursoRepository(pool)
+	recursoSvc := services.NewRecursoService(recursoRepo)
+	recursoHandler := handlers.NewRecursoHandler(recursoSvc)
+
+	router := construirRouter(cfg, handler, recursoHandler)
 
 	servidor := &http.Server{
 		Addr:              ":" + cfg.Puerto,
@@ -102,7 +106,7 @@ func conectarBD(ctx context.Context, url string) (*pgxpool.Pool, error) {
 	return pool, nil
 }
 
-func construirRouter(cfg *config.Config, h *handlers.EspacioHandler) http.Handler {
+func construirRouter(cfg *config.Config, h *handlers.EspacioHandler, rh *handlers.RecursoHandler) http.Handler {
 	r := chi.NewRouter()
 
 	r.Use(chimw.RequestID)
@@ -130,6 +134,12 @@ func construirRouter(cfg *config.Config, h *handlers.EspacioHandler) http.Handle
 		r.With(appmw.RequiereRol(models.RolAdministrador)).Post("/spaces", h.Crear)
 		r.With(appmw.RequiereRol(models.RolAdministrador)).Put("/spaces/{id}", h.Actualizar)
 		r.With(appmw.RequiereRol(models.RolAdministrador)).Delete("/spaces/{id}", h.Eliminar)
+
+		// Catálogo de recursos: lectura para cualquier autenticado, escritura ADMIN.
+		r.Get("/resources", rh.Listar)
+		r.With(appmw.RequiereRol(models.RolAdministrador)).Post("/resources", rh.Crear)
+		r.With(appmw.RequiereRol(models.RolAdministrador)).Put("/resources/{id}", rh.Actualizar)
+		r.With(appmw.RequiereRol(models.RolAdministrador)).Delete("/resources/{id}", rh.Eliminar)
 	})
 
 	// Swagger UI servido en /api-docs (requisito del brief).

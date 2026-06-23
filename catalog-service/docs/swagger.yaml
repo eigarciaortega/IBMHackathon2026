@@ -1,6 +1,6 @@
 basePath: /
 definitions:
-  github_com_i0dk1_OfficeSpace_catalog-service_internal_apperror.AppError:
+  apperror.AppError:
     properties:
       codigo:
         type: string
@@ -9,7 +9,16 @@ definitions:
       status:
         type: integer
     type: object
-  github_com_i0dk1_OfficeSpace_catalog-service_internal_models.Espacio:
+  handlers.SaludResponse:
+    properties:
+      servicio:
+        example: catalog-service
+        type: string
+      status:
+        example: ok
+        type: string
+    type: object
+  models.Espacio:
     properties:
       capacidad:
         example: 8
@@ -25,17 +34,15 @@ definitions:
       piso:
         example: Piso 1
         type: string
-      tiene_aire:
-        example: true
-        type: boolean
-      tiene_proyector:
-        example: true
-        type: boolean
+      recursos:
+        items:
+          $ref: '#/definitions/models.Recurso'
+        type: array
       tipo:
         example: SALA
         type: string
     type: object
-  github_com_i0dk1_OfficeSpace_catalog-service_internal_models.EspacioRequest:
+  models.EspacioRequest:
     properties:
       capacidad:
         example: 8
@@ -46,23 +53,32 @@ definitions:
       piso:
         example: Piso 1
         type: string
-      tiene_aire:
-        example: true
-        type: boolean
-      tiene_proyector:
-        example: true
-        type: boolean
+      recurso_ids:
+        example:
+        - 1
+        - 2
+        items:
+          type: integer
+        type: array
       tipo:
         example: SALA
         type: string
     type: object
-  internal_handlers.SaludResponse:
+  models.Recurso:
     properties:
-      servicio:
-        example: catalog-service
+      creado_en:
         type: string
-      status:
-        example: ok
+      id:
+        example: 1
+        type: integer
+      nombre:
+        example: Proyector
+        type: string
+    type: object
+  models.RecursoRequest:
+    properties:
+      nombre:
+        example: Proyector
         type: string
     type: object
 info:
@@ -81,10 +97,121 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/internal_handlers.SaludResponse'
+            $ref: '#/definitions/handlers.SaludResponse'
       summary: Sonda de salud
       tags:
       - salud
+  /resources:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Recurso'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/apperror.AppError'
+      security:
+      - BearerAuth: []
+      summary: Listar recursos
+      tags:
+      - recursos
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Datos del recurso
+        in: body
+        name: recurso
+        required: true
+        schema:
+          $ref: '#/definitions/models.RecursoRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Recurso'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.AppError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/apperror.AppError'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/apperror.AppError'
+      security:
+      - BearerAuth: []
+      summary: Crear recurso
+      tags:
+      - recursos
+  /resources/{id}:
+    delete:
+      parameters:
+      - description: ID del recurso
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Sin contenido
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/apperror.AppError'
+      security:
+      - BearerAuth: []
+      summary: Eliminar recurso
+      tags:
+      - recursos
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID del recurso
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Datos del recurso
+        in: body
+        name: recurso
+        required: true
+        schema:
+          $ref: '#/definitions/models.RecursoRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Recurso'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/apperror.AppError'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/apperror.AppError'
+      security:
+      - BearerAuth: []
+      summary: Actualizar recurso
+      tags:
+      - recursos
   /spaces:
     get:
       description: Lista los espacios. Soporta filtros por tipo y capacidad mínima,
@@ -105,12 +232,12 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_i0dk1_OfficeSpace_catalog-service_internal_models.Espacio'
+              $ref: '#/definitions/models.Espacio'
             type: array
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_i0dk1_OfficeSpace_catalog-service_internal_apperror.AppError'
+            $ref: '#/definitions/apperror.AppError'
       security:
       - BearerAuth: []
       summary: Listar espacios
@@ -125,26 +252,26 @@ paths:
         name: espacio
         required: true
         schema:
-          $ref: '#/definitions/github_com_i0dk1_OfficeSpace_catalog-service_internal_models.EspacioRequest'
+          $ref: '#/definitions/models.EspacioRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_i0dk1_OfficeSpace_catalog-service_internal_models.Espacio'
+            $ref: '#/definitions/models.Espacio'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_i0dk1_OfficeSpace_catalog-service_internal_apperror.AppError'
+            $ref: '#/definitions/apperror.AppError'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_i0dk1_OfficeSpace_catalog-service_internal_apperror.AppError'
+            $ref: '#/definitions/apperror.AppError'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/github_com_i0dk1_OfficeSpace_catalog-service_internal_apperror.AppError'
+            $ref: '#/definitions/apperror.AppError'
       security:
       - BearerAuth: []
       summary: Crear espacio
@@ -166,7 +293,7 @@ paths:
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_i0dk1_OfficeSpace_catalog-service_internal_apperror.AppError'
+            $ref: '#/definitions/apperror.AppError'
       security:
       - BearerAuth: []
       summary: Eliminar espacio
@@ -185,11 +312,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_i0dk1_OfficeSpace_catalog-service_internal_models.Espacio'
+            $ref: '#/definitions/models.Espacio'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_i0dk1_OfficeSpace_catalog-service_internal_apperror.AppError'
+            $ref: '#/definitions/apperror.AppError'
       security:
       - BearerAuth: []
       summary: Obtener espacio
@@ -209,22 +336,22 @@ paths:
         name: espacio
         required: true
         schema:
-          $ref: '#/definitions/github_com_i0dk1_OfficeSpace_catalog-service_internal_models.EspacioRequest'
+          $ref: '#/definitions/models.EspacioRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_i0dk1_OfficeSpace_catalog-service_internal_models.Espacio'
+            $ref: '#/definitions/models.Espacio'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_i0dk1_OfficeSpace_catalog-service_internal_apperror.AppError'
+            $ref: '#/definitions/apperror.AppError'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_i0dk1_OfficeSpace_catalog-service_internal_apperror.AppError'
+            $ref: '#/definitions/apperror.AppError'
       security:
       - BearerAuth: []
       summary: Actualizar espacio

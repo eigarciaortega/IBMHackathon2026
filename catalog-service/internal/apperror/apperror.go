@@ -39,6 +39,9 @@ var (
 	ErrTokenInvalido       = &AppError{http.StatusUnauthorized, "TOKEN_INVALIDO", "El token es inválido o expiró."}
 	ErrAccesoDenegado      = &AppError{http.StatusForbidden, "ACCESO_DENEGADO", "No tienes permisos para esta acción."}
 	ErrEspacioNoEncontrado = &AppError{http.StatusNotFound, "ESPACIO_NO_ENCONTRADO", "El espacio no existe."}
+	ErrRecursoNoEncontrado = &AppError{http.StatusNotFound, "RECURSO_NO_ENCONTRADO", "El recurso no existe."}
+	ErrRecursoDuplicado    = &AppError{http.StatusConflict, "RECURSO_DUPLICADO", "Ya existe un recurso con ese nombre."}
+	ErrRecursoInvalido     = &AppError{http.StatusBadRequest, "RECURSO_INVALIDO", "Uno o más recursos asignados no existen."}
 	ErrInterno             = &AppError{http.StatusInternalServerError, "ERROR_INTERNO", "Ocurrió un error interno."}
 )
 

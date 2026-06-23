@@ -15,26 +15,26 @@ const (
 	RolColaborador   = "COLABORADOR"
 )
 
-// Espacio es la representación de dominio de un espacio reservable.
+// Espacio es la representación de dominio de un espacio reservable. Los recursos
+// (proyector, aire, etc.) son un catálogo gestionable asociado por relación N:M.
 type Espacio struct {
-	ID             int       `json:"id" example:"1"`
-	Nombre         string    `json:"nombre" example:"Sala Monterrey"`
-	Tipo           string    `json:"tipo" example:"SALA"`
-	Capacidad      int       `json:"capacidad" example:"8"`
-	TieneProyector bool      `json:"tiene_proyector" example:"true"`
-	TieneAire      bool      `json:"tiene_aire" example:"true"`
-	Piso           string    `json:"piso" example:"Piso 1"`
-	CreadoEn       time.Time `json:"creado_en"`
+	ID        int       `json:"id" example:"1"`
+	Nombre    string    `json:"nombre" example:"Sala Monterrey"`
+	Tipo      string    `json:"tipo" example:"SALA"`
+	Capacidad int       `json:"capacidad" example:"8"`
+	Piso      string    `json:"piso" example:"Piso 1"`
+	Recursos  []Recurso `json:"recursos"`
+	CreadoEn  time.Time `json:"creado_en"`
 }
 
-// EspacioRequest es el cuerpo para crear o actualizar un espacio.
+// EspacioRequest es el cuerpo para crear o actualizar un espacio. recurso_ids son
+// los identificadores de los recursos que se le asignan.
 type EspacioRequest struct {
-	Nombre         string `json:"nombre" example:"Sala Monterrey"`
-	Tipo           string `json:"tipo" example:"SALA"`
-	Capacidad      int    `json:"capacidad" example:"8"`
-	TieneProyector bool   `json:"tiene_proyector" example:"true"`
-	TieneAire      bool   `json:"tiene_aire" example:"true"`
-	Piso           string `json:"piso" example:"Piso 1"`
+	Nombre     string `json:"nombre" example:"Sala Monterrey"`
+	Tipo       string `json:"tipo" example:"SALA"`
+	Capacidad  int    `json:"capacidad" example:"8"`
+	Piso       string `json:"piso" example:"Piso 1"`
+	RecursoIDs []int  `json:"recurso_ids" example:"1,2"`
 }
 
 // FiltroEspacios agrupa los filtros opcionales de GET /spaces.
