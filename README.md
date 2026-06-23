@@ -12,10 +12,20 @@ Arquitectura de **microservicios en Go** con base de datos **PostgreSQL** compar
 y una **SPA en React**. La prevención de solapamiento está garantizada por la capa de
 aplicación **y** por una restricción de exclusión en la base de datos.
 
+## Demo
+
+Demo en vivo: **https://officespace.spcter.cc**
+
+Entra con una de las [cuentas de prueba](#credenciales-de-prueba) (p. ej.
+`admin@corporativoalpha.com` / `Admin123`). La demo se sirve por un túnel de
+Cloudflare; si no responde, es porque el entorno local que la alimenta está
+apagado.
+
 ---
 
 ## Tabla de contenido
 
+- [Demo](#demo)
 - [Arquitectura](#arquitectura)
 - [Stack](#stack)
 - [Cómo levantarlo](#cómo-levantarlo)
