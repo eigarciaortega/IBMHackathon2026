@@ -98,10 +98,11 @@ services:
     build:
       context: ./frontend
       args:
-        # URLs públicas (las usa el navegador, no la red interna de Docker).
-        VITE_AUTH_URL: ${PUBLIC_AUTH_URL:-http://localhost:8081}
-        VITE_CATALOG_URL: ${PUBLIC_CATALOG_URL:-http://localhost:8082}
-        VITE_BOOKING_URL: ${PUBLIC_BOOKING_URL:-http://localhost:8083}
+        # Rutas relativas: nginx (puerta de enlace) proxea /api/* a los servicios.
+        # Mismo origen para el navegador, sin CORS y con un solo host expuesto.
+        VITE_AUTH_URL: /api/auth
+        VITE_CATALOG_URL: /api/catalog
+        VITE_BOOKING_URL: /api/booking
     container_name: officespace-frontend
     restart: unless-stopped
     ports:
