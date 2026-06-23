@@ -1,0 +1,86 @@
+version: '3.8'
+
+services:
+  # Servicio de Autenticación
+  auth-service:
+    build: ./auth-service
+    container_name: auth-service
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - JWT_SECRET=oficina2026
+      - MONGO_URI=mongodb+srv://palaciosleslienoemi_db_user:XpGNYINn71Rmul6I@ibmhackhaton.iytwird.mongodb.net/?appName=IBMHackhaton
+    volumes:
+      - ./auth-service:/app
+      - /app/node_modules
+    command: npm run dev
+    networks:
+      - app-network
+
+  # Servicio de Catálogo
+  catalog-service:
+    build: ./catalog-service
+    container_name: catalog-service
+    ports:
+      - "3002:3002"
+    environment:
+      - PORT=3002
+      - MONGO_URI=mongodb+srv://palaciosleslienoemi_db_user:XpGNYINn71Rmul6I@ibmhackhaton.iytwird.mongodb.net/?appName=IBMHackhaton
+      - AUTH_SERVICE_URL=http://auth-service:3001
+    volumes:
+      - ./catalog-service:/app
+      - /app/node_modules
+    command: npm run dev
+    depends_on:
+      - auth-service
+    networks:
+      - app-network
+
+  # Servicio de Reservas
+  booking-service:
+    build: ./booking-service
+    container_name: booking-service
+    ports:
+      - "3003:3003"
+    environment:
+      - PORT=3003
+      - MONGO_URI=mongodb+srv://palaciosleslienoemi_db_user:XpGNYINn71Rmul6I@ibmhackhaton.iytwird.mongodb.net/?appName=IBMHackhaton
+      - AUTH_SERVICE_URL=http://auth-service:3001
+      - CATALOG_SERVICE_URL=http://catalog-service:3002
+    volumes:
+      - ./booking-service:/app
+      - /app/node_modules
+    command: npm run dev
+    depends_on:
+      - auth-service
+      - catalog-service
+    networks:
+      - app-network
+
+  # Frontend
+  frontend:
+    build: ./frontend
+    container_name: frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_AUTH_URL=http://localhost:3001/api/auth
+      - VITE_CATALOG_URL=http://localhost:3002/api/spaces
+      - VITE_BOOKING_URL=http://localhost:3003/api/bookings
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: npm run dev -- --host
+    depends_on:
+      - auth-service
+      - catalog-service
+      - booking-service
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+# Made with Bob
