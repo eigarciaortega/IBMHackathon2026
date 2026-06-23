@@ -22,6 +22,6 @@ COPY --from=build /bin/auth-service /usr/local/bin/auth-service
 
 EXPOSE 8081
 HEALTHCHECK --interval=10s --timeout=3s --retries=5 \
-  CMD wget -q -O /dev/null http://localhost:8081/health || exit 1
+  CMD wget -q -O /dev/null http://127.0.0.1:8081/health || exit 1
 
 ENTRYPOINT ["auth-service"]

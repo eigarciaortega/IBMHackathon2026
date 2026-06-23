@@ -55,7 +55,7 @@ services:
     # Healthcheck explícito (no depende del HEALTHCHECK de la imagen): así
     # 'service_healthy' funciona aunque exista una imagen cacheada antigua.
     healthcheck:
-      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:8081/health || exit 1"]
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8081/health || exit 1"]
       interval: 10s
       timeout: 3s
       retries: 5
@@ -80,7 +80,7 @@ services:
     ports:
       - "${CATALOG_PORT:-8082}:8082"
     healthcheck:
-      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:8082/health || exit 1"]
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8082/health || exit 1"]
       interval: 10s
       timeout: 3s
       retries: 5
@@ -107,7 +107,7 @@ services:
     ports:
       - "${BOOKING_PORT:-8083}:8083"
     healthcheck:
-      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:8083/health || exit 1"]
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8083/health || exit 1"]
       interval: 10s
       timeout: 3s
       retries: 5
@@ -115,8 +115,10 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      # booking solo necesita a catalog en tiempo de petición (HTTP), no al arrancar.
+      # 'service_started' evita que un catalog que tarde en sanar bloquee a booking.
       catalog-service:
-        condition: service_healthy
+        condition: service_started
     networks:
       - officespace
 
@@ -140,13 +142,16 @@ services:
       timeout: 3s
       retries: 5
       start_period: 20s
+    # El frontend (nginx) solo sirve la SPA y proxea; no necesita que los backends
+    # estén sanos para arrancar. 'service_started' garantiza que la UI y, por tanto,
+    # los Swagger de cada servicio queden accesibles aunque uno tarde en sanar.
     depends_on:
       auth-service:
-        condition: service_healthy
+        condition: service_started
       catalog-service:
-        condition: service_healthy
+        condition: service_started
       booking-service:
-        condition: service_healthy
+        condition: service_started
     networks:
       - officespace
 

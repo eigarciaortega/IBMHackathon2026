@@ -19,6 +19,6 @@ COPY --from=build /bin/booking-service /usr/local/bin/booking-service
 
 EXPOSE 8083
 HEALTHCHECK --interval=10s --timeout=3s --retries=5 \
-  CMD wget -q -O /dev/null http://localhost:8083/health || exit 1
+  CMD wget -q -O /dev/null http://127.0.0.1:8083/health || exit 1
 
 ENTRYPOINT ["booking-service"]
