@@ -22,7 +22,7 @@ cd accounts-service            # or processor-service
 pnpm install
 pnpm dev                       # nodemon, hot reload
 pnpm start                     # node src/index.js
-pnpm test                      # jest with --coverage --forceExit
+pnpm test                      # jest with --coverage --runInBand (serial: tests share real DBs)
 pnpm test -- account.unit      # run a single test file by name fragment
 pnpm test -- -t "insufficient" # run tests matching a name pattern
 ```
@@ -34,11 +34,11 @@ Jest picks up any `**/tests/**/*.test.js`.
 There are two distinct kinds of test, distinguished by filename:
 
 - **`*.unit.test.js`** — mock the external boundary. `account.unit.test.js` mocks the service layer (`jest.mock('../src/services/accountService')`) to drive controller error paths. `transfer.unit.test.js` mocks `axios` (so accounts-service need not be running) but **connects to a real processor DB** to assert saga transaction state.
-- **`*.integration.test.js`** — no mocks. `transfer.integration.test.js` drives the real processor against a **running accounts-service** and resets balances by writing directly to the accounts DB.
+- **`*.integration.test.js`** — no mocks. `transfer.integration.test.js` drives the real processor end-to-end against a **running accounts-service** and resets balances by writing directly to the accounts DB.
 
-Because tests hit real databases, the Postgres containers (and, for integration tests, accounts-service) must be up before running them. Tests `DELETE FROM transactions` and reset seed user balances in `beforeEach`, so **never run them against a production DB**.
+Because tests hit real databases, the Postgres containers (and, for integration tests, accounts-service) must be up before running them. Tests `DELETE FROM transactions` and reset seed user balances in `beforeEach`, so **never run them against a production DB**. Suites run with `--runInBand` because the unit and integration files share `processor_db` and would otherwise wipe each other's rows in parallel. Each test file closes both its own test pool and the app's pool (`require('../src/db/connection').end()`) in `afterAll` to avoid leaked handles.
 
-Note: DB host/port in tests come from env vars with hardcoded fallbacks, and the fallback ports across test files are inconsistent (5433 vs 5435). Set `DB_HOST`/`DB_PORT`/`DB_NAME` explicitly when running tests outside Docker to point at the right container (see port mapping below).
+Note: DB host/port in tests come from env vars (loaded via `dotenv` from each service's `.env`) with hardcoded fallbacks. The fallback ports across test files are inconsistent, but the `.env` values override them; set `DB_HOST`/`DB_PORT`/`DB_NAME` explicitly when running outside Docker (see port mapping below).
 
 ## Architecture notes
 
