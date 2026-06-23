@@ -1,11 +1,6 @@
-# ══════════════════════════════════════════════════════════════════════
-# NeoWallet Frontend — Dockerfile
-# Stage 1: Build con Maven 3.9 + JDK 21
-# Stage 2: Runtime con Tomcat 10.1 + JRE 21
-# ══════════════════════════════════════════════════════════════════════
-
 # ── Stage 1: Build ──────────────────────────────────────────────────
-FROM eclipse-temurin:21-jdk-noble
+FROM eclipse-temurin:21-jdk-noble AS build
+#                                    ^^^^^^^^ Add this!
 
 WORKDIR /app
 
