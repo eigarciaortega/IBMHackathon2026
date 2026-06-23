@@ -7,6 +7,7 @@
 
 const TOKEN_KEY = 'officespace.token';
 const ROLE_KEY = 'officespace.role';
+const NOMBRE_KEY = 'officespace.nombre';
 
 /** Roles válidos del sistema. */
 export const ROLES = Object.freeze({
@@ -31,13 +32,14 @@ function safeStorage() {
 
 /**
  * Persiste la sesión tras un login exitoso.
- * @param {{ token: string, role: string }} session
+ * @param {{ token: string, role: string, nombre?: string }} session
  */
-export function setSession({ token, role }) {
+export function setSession({ token, role, nombre }) {
   const storage = safeStorage();
   if (!storage) return;
   if (token) storage.setItem(TOKEN_KEY, token);
   if (role) storage.setItem(ROLE_KEY, role);
+  if (nombre) storage.setItem(NOMBRE_KEY, nombre);
 }
 
 /** Elimina la sesión almacenada (logout o expiración por 401). */
@@ -46,6 +48,7 @@ export function clearSession() {
   if (!storage) return;
   storage.removeItem(TOKEN_KEY);
   storage.removeItem(ROLE_KEY);
+  storage.removeItem(NOMBRE_KEY);
 }
 
 /** @returns {string|null} El Token_JWT almacenado o null. */
@@ -58,6 +61,12 @@ export function getToken() {
 export function getRole() {
   const storage = safeStorage();
   return storage ? storage.getItem(ROLE_KEY) : null;
+}
+
+/** @returns {string|null} El nombre del Usuario almacenado o null. */
+export function getNombre() {
+  const storage = safeStorage();
+  return storage ? storage.getItem(NOMBRE_KEY) : null;
 }
 
 /** @returns {boolean} true si hay un token presente. */

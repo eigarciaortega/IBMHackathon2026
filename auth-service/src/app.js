@@ -134,14 +134,19 @@ function createAuthApp(deps = {}) {
           return next(new Error('JWT_SECRET no configurado'));
         }
 
-        const token = jwt.sign({ sub: result.sub, role: result.role }, jwtSecret, {
-          algorithm: 'HS256',
-          expiresIn: jwtExpiresIn,
-        });
+        const token = jwt.sign(
+          { sub: result.sub, role: result.role, nombre: result.nombre },
+          jwtSecret,
+          {
+            algorithm: 'HS256',
+            expiresIn: jwtExpiresIn,
+          },
+        );
 
         return res.status(200).json({
           token,
           role: result.role,
+          nombre: result.nombre,
           expiresIn: jwtExpiresIn,
         });
       }

@@ -35,3 +35,14 @@ Característica: Autenticación y control de acceso
   Escenario: Acceso a un endpoint protegido sin token
     Cuando solicito "GET /reservas/mias" sin token de autenticación
     Entonces recibo un código HTTP 401
+
+  Escenario: La barra superior muestra el nombre del usuario autenticado
+    Cuando inicio sesión con "ana.torres@corporativoalpha.com" y "User123"
+    Entonces la respuesta incluye el nombre "Ana Torres"
+    Y la barra superior muestra ese nombre junto al botón de cerrar sesión
+
+  Escenario: Un colaborador no puede acceder a la vista de administración
+    Dado que inicié sesión como colaborador
+    Cuando intento abrir la ruta "/admin" editando la URL
+    Entonces soy redirigido a mi panel de búsqueda
+    Y cualquier operación administrativa contra la API responde con código HTTP 403

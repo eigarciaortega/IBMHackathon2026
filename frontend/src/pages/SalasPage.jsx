@@ -52,7 +52,9 @@ export default function SalasPage() {
 
   function abrirDetalle(espacio) {
     const proximas = reunionesPorEspacio.get(espacio.id_espacio) || [];
-    navigate(`/salas/${espacio.id_espacio}`, { state: { espacio, reuniones: proximas } });
+    navigate(`/salas/${encodeURIComponent(espacio.nombre)}`, {
+      state: { espacio, reuniones: proximas },
+    });
   }
 
   return (

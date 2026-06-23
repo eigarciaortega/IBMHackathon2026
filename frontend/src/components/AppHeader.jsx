@@ -11,7 +11,7 @@ import { ROLES } from '../auth/session';
 import './AppHeader.css';
 
 export default function AppHeader() {
-  const { role, logout } = useAuth();
+  const { role, nombre, logout } = useAuth();
   const navigate = useNavigate();
 
   /** Cierra sesión y redirige al login. */
@@ -46,9 +46,12 @@ export default function AppHeader() {
         )}
       </nav>
 
-      <button type="button" className="app-header__logout" onClick={handleLogout}>
-        Cerrar sesión
-      </button>
+      <div className="app-header__user">
+        {nombre && <span className="app-header__nombre">{nombre}</span>}
+        <button type="button" className="app-header__logout" onClick={handleLogout}>
+          Cerrar sesión
+        </button>
+      </div>
     </header>
   );
 }

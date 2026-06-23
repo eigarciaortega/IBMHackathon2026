@@ -10,6 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   getToken,
   getRole,
+  getNombre,
   setSession,
   clearSession,
 } from './session';
@@ -25,12 +26,14 @@ export function AuthProvider({ children }) {
   const navigate = useNavigate();
   const [token, setToken] = useState(() => getToken());
   const [role, setRole] = useState(() => getRole());
+  const [nombre, setNombre] = useState(() => getNombre());
 
   /** Persiste la sesión tras un login exitoso y actualiza el estado React. */
-  const login = useCallback(({ token: newToken, role: newRole }) => {
-    setSession({ token: newToken, role: newRole });
+  const login = useCallback(({ token: newToken, role: newRole, nombre: newNombre }) => {
+    setSession({ token: newToken, role: newRole, nombre: newNombre });
     setToken(newToken);
     setRole(newRole);
+    setNombre(newNombre || null);
   }, []);
 
   /** Limpia la sesión (logout o expiración). */
@@ -38,6 +41,7 @@ export function AuthProvider({ children }) {
     clearSession();
     setToken(null);
     setRole(null);
+    setNombre(null);
   }, []);
 
   // Registrar el handler de 401: limpiar sesión y redirigir a /login.
@@ -46,6 +50,7 @@ export function AuthProvider({ children }) {
       clearSession();
       setToken(null);
       setRole(null);
+      setNombre(null);
       navigate('/login', { replace: true });
     });
   }, [navigate]);
@@ -54,11 +59,12 @@ export function AuthProvider({ children }) {
     () => ({
       token,
       role,
+      nombre,
       isAuthenticated: Boolean(token),
       login,
       logout,
     }),
-    [token, role, login, logout],
+    [token, role, nombre, login, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

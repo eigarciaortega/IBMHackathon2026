@@ -229,7 +229,7 @@ Cada servicio expone su especificación **OpenAPI 3.0 / Swagger UI** (con los co
 curl -X POST http://localhost:3001/auth/login \
   -H "Content-Type: application/json" \
   -d '{"usuario":"carlos.mendez@corporativoalpha.com","password":"User123"}'
-# -> { "token": "<JWT>", "role": "COLABORADOR", "expiresIn": 3600 }
+# -> { "token": "<JWT>", "role": "COLABORADOR", "nombre": "Carlos Méndez", "expiresIn": 3600 }
 
 TOKEN="<pega-aqui-el-token>"
 
@@ -267,7 +267,9 @@ curl -X POST http://localhost:3002/espacios \
 3. Pulsa **Entrar**.
    - Si eres **ADMINISTRADOR**, se te redirige a la **vista de administración**.
    - Si eres **COLABORADOR**, se te redirige al **panel de búsqueda**.
-4. Para salir, usa el botón **Cerrar sesión** de la barra superior (disponible en ambos roles).
+4. En la **barra superior** verás, a la derecha, tu **nombre de usuario** y el botón **Cerrar sesión** (disponible en ambos roles).
+
+> **Protección por rol:** las vistas están protegidas según el rol. Si un COLABORADOR intenta entrar a `/admin` (por ejemplo, editando la URL), es **redirigido** automáticamente a su panel; además, el backend rechaza con `403` cualquier operación administrativa hecha sin rol ADMINISTRADOR. La autorización real se valida en el servidor (el JWT lleva el rol), no solo en la interfaz.
 
 ### Cómo buscar y reservar un espacio (COLABORADOR)
 
@@ -285,7 +287,7 @@ curl -X POST http://localhost:3002/espacios \
 
 1. En la barra superior, entra a **Salas**.
 2. Verás todas las salas existentes; cada una indica si **tiene reuniones programadas** próximas o está libre.
-3. Pulsa una sala para abrir su **detalle**: información de la sala, sus **características** (recursos) y las **reuniones programadas en orden de fecha próxima**.
+3. Pulsa una sala para abrir su **detalle** (la URL usa el **nombre de la sala**, p. ej. `/salas/01`, para que coincida con lo que ves): información de la sala, sus **características** (recursos) y las **reuniones programadas en orden de fecha próxima**.
 4. Desde el detalle puedes **Agregar reservación** para esa sala indicando fecha, hora de inicio/fin y asistentes. El sistema verifica que **no se solape** con las reuniones existentes (rechaza con `409` si choca).
 
 ### Estado de asistencia (ambos roles)
@@ -319,7 +321,9 @@ Cada reserva tiene un **estado de asistencia** visible para colaboradores y admi
 - **Alta desde el detalle de sala:** cualquier usuario autenticado puede crear una reservación desde el detalle de una sala; se aplica la misma verificación de solapamiento (`409` si choca).
 - **Estado de asistencia:** cada reserva tiene un estado de asistencia (`show`/`no-show`). Se muestra **SHOW en rojo** y **NO_SHOW en gris** en ambos roles.
 - **Ventana de registro de asistencia:** el colaborador solo puede registrar la asistencia de su reserva desde **15 minutos antes** del inicio hasta el **fin** de la misma; fuera de esa ventana se rechaza (`400`).
-- **Salas y agenda:** cualquier usuario autenticado puede ver las salas y sus reuniones programadas (próximas), ordenadas por fecha.
+- **Salas y agenda:** cualquier usuario autenticado puede ver las salas y sus reuniones programadas (próximas), ordenadas por fecha. La URL del detalle usa el **nombre** de la sala.
+- **Identificadores visibles:** en toda la interfaz el espacio se muestra por su **nombre/identificador asignado por el administrador** (no por el id interno de base de datos).
+- **Seguridad por rol:** las rutas del frontend están protegidas (un COLABORADOR es redirigido fuera de `/admin`) y el backend valida el rol del JWT en cada operación (`401` sin token válido, `403` sin permisos). La barra superior muestra el **nombre del usuario** autenticado.
 
 ## Pruebas
 

@@ -129,7 +129,12 @@ async function verifyCredentials(credentials, userRecord, options = {}) {
         ? userRecord.email
         : null;
 
-  return { authenticated: true, role: userRecord.rol || null, sub };
+  return {
+    authenticated: true,
+    role: userRecord.rol || null,
+    sub,
+    nombre: userRecord.nombre !== undefined ? userRecord.nombre : null,
+  };
 }
 
 module.exports = {

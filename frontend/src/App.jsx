@@ -85,7 +85,7 @@ export default function App() {
       />
 
       <Route
-        path="/salas/:id"
+        path="/salas/:nombre"
         element={
           <ProtectedRoute allowedRoles={[ROLES.COLABORADOR, ROLES.ADMINISTRADOR]}>
             <Layout>

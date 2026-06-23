@@ -80,6 +80,7 @@ function buildSpec() {
               enum: ['ADMINISTRADOR', 'COLABORADOR'],
               example: 'ADMINISTRADOR',
             },
+            nombre: { type: 'string', example: 'Administrador Alpha' },
             expiresIn: { type: 'integer', example: 3600 },
           },
         },
@@ -122,6 +123,7 @@ function buildSpec() {
                   example: {
                     token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
                     role: 'ADMINISTRADOR',
+                    nombre: 'Administrador Alpha',
                     expiresIn: 3600,
                   },
                 },

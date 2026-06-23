@@ -19,7 +19,7 @@ function formatFecha(valor) {
 }
 
 export default function SalaDetallePage() {
-  const { id } = useParams();
+  const { nombre: nombreParam } = useParams();
   const location = useLocation();
   const estadoNav = location.state || {};
 
@@ -41,8 +41,8 @@ export default function SalaDetallePage() {
   const recargarReuniones = useCallback(async () => {
     const dataAgenda = await agenda();
     const todas = Array.isArray(dataAgenda?.reservas) ? dataAgenda.reservas : [];
-    setReuniones(todas.filter((r) => String(r.id_espacio) === String(id)));
-  }, [id]);
+    setReuniones(todas.filter((r) => String(r.espacio_nombre) === String(nombreParam)));
+  }, [nombreParam]);
 
   const cargar = useCallback(async () => {
     setCargando(true);
@@ -54,17 +54,17 @@ export default function SalaDetallePage() {
 
       if (!espacio && dataEspacios) {
         const lista = Array.isArray(dataEspacios.espacios) ? dataEspacios.espacios : [];
-        const encontrado = lista.find((e) => String(e.id_espacio) === String(id));
+        const encontrado = lista.find((e) => String(e.nombre) === String(nombreParam));
         setEspacio(encontrado || null);
       }
       const todas = Array.isArray(dataAgenda?.reservas) ? dataAgenda.reservas : [];
-      setReuniones(todas.filter((r) => String(r.id_espacio) === String(id)));
+      setReuniones(todas.filter((r) => String(r.espacio_nombre) === String(nombreParam)));
     } catch (err) {
       setError(err?.message || 'No se pudo cargar el detalle de la sala.');
     } finally {
       setCargando(false);
     }
-  }, [espacio, id]);
+  }, [espacio, nombreParam]);
 
   useEffect(() => {
     // Si falta información (entrada directa por URL) o no hay reuniones aún, cargar.

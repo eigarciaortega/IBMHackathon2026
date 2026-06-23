@@ -42,10 +42,10 @@ export default function LoginPage() {
     setSubmitting(true);
 
     try {
-      const { token, role } = await authApi.login({ usuario, password });
+      const { token, role, nombre } = await authApi.login({ usuario, password });
 
       // R8.4 / R8.5: persistir sesión y redirigir según el Rol.
-      persistSession({ token, role });
+      persistSession({ token, role, nombre });
       navigate(homePathForRole(role), { replace: true });
     } catch (err) {
       // R8.3: credenciales inválidas → mensaje claro, permanecer en login y

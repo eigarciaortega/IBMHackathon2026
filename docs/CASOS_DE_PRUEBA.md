@@ -241,6 +241,28 @@ Documento de pruebas manuales del MVP. Cada caso indica **precondiciones**, **pa
   3. Repetir intentando un rango que **solape** con una reunión existente de esa sala.
 - **Resultado esperado:** El primer alta responde **201** y aparece en la lista de reuniones. El alta solapada se rechaza con **409** (mensaje de conflicto), conservando los datos del formulario.
 
+## CP-29 — La barra superior muestra el nombre del usuario autenticado
+
+- **Precondiciones:** Sesión iniciada (cualquier rol).
+- **Pasos:**
+  1. Observar la **barra superior** tras iniciar sesión.
+- **Resultado esperado:** A la derecha aparece el **nombre del usuario** con el que se inició sesión (p. ej. "Ana Torres") junto al botón **Cerrar sesión**. El nombre proviene del login (`nombre` en la respuesta y en los claims del JWT).
+
+## CP-30 — Protección de la vista de administración por rol
+
+- **Precondiciones:** Sesión iniciada como **COLABORADOR**.
+- **Pasos:**
+  1. Editar la URL del navegador a `/admin` y entrar.
+  2. Intentar directamente `POST /espacios` (3002) con el token de colaborador.
+- **Resultado esperado:** En la UI, el COLABORADOR es **redirigido** a su panel (`/buscar`) y no ve la vista de administración. En la API, la operación administrativa se rechaza con **403** (sin modificar datos).
+
+## CP-31 — La URL del detalle de sala usa el nombre de la sala
+
+- **Precondiciones:** Sesión iniciada. Existe una sala (p. ej. "01").
+- **Pasos:**
+  1. En **Salas**, abrir el detalle de la sala "01".
+- **Resultado esperado:** La URL es `/salas/01` (el nombre asignado por el administrador), coincidiendo con el espacio mostrado en pantalla.
+
 ---
 
 ### Matriz de cobertura (caso → requisito / código HTTP)
@@ -274,3 +296,6 @@ Documento de pruebas manuales del MVP. Cada caso indica **precondiciones**, **pa
 | CP-26 | Asistencia de reserva ajena   | 403              |
 | CP-27 | Admin edita reserva ajena     | 200              |
 | CP-28 | Alta desde detalle de sala / solapamiento | 201 / 409 |
+| CP-29 | Nombre de usuario en la barra | (UI)             |
+| CP-30 | Protección de /admin por rol  | (redirección) / 403 |
+| CP-31 | URL de sala por nombre        | (UI)             |
