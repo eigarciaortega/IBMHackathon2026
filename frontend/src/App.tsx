@@ -1,5 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
+import { NotificationsProvider } from './context/NotificationsProvider'
 import { Layout } from './components/Layout'
 import { RutaProtegida } from './components/RutaProtegida'
 import { Toaster } from './components/Toaster'
@@ -20,7 +21,9 @@ export default function App() {
           <Route
             element={
               <RutaProtegida>
-                <Layout />
+                <NotificationsProvider>
+                  <Layout />
+                </NotificationsProvider>
               </RutaProtegida>
             }
           >
