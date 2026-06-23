@@ -4,7 +4,7 @@ import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { ApiError } from '../lib/api'
-import { IconCheck, Logo } from '../components/icons'
+import { IconChevron, IconCheck, Logo } from '../components/icons'
 import { Spinner } from '../components/ui'
 
 const VENTAJAS = [
@@ -26,6 +26,8 @@ export function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [enviando, setEnviando] = useState(false)
+  // Las cuentas de prueba arrancan ocultas; se revelan con el desplegable.
+  const [verCuentas, setVerCuentas] = useState(false)
 
   async function alEnviar(e: FormEvent) {
     e.preventDefault()
@@ -168,29 +170,44 @@ export function LoginPage() {
             </button>
           </form>
 
-          <div className="mt-8 rounded-[0.625rem] border border-border bg-surface-muted px-4 py-3.5">
-            <p className="mb-2 flex items-baseline justify-between gap-2 text-xs font-semibold uppercase tracking-wide text-muted">
-              Cuentas de prueba
-              <span className="font-normal normal-case tracking-normal text-muted/80">Toca para autocompletar</span>
-            </p>
-            <ul className="-mx-1.5 space-y-0.5">
-              {CUENTAS_PRUEBA.map((c) => (
-                <li key={c.email}>
-                  <button
-                    type="button"
-                    onClick={() => usarCuenta(c)}
-                    aria-label={`Autocompletar con la cuenta de ${c.rol}: ${c.email}`}
-                    className="flex w-full items-center justify-between gap-3 rounded-md px-1.5 py-1.5 text-left transition-colors hover:bg-surface focus-visible:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-azul/40"
-                  >
-                    <span className="min-w-0">
-                      <span className="block truncate font-mono text-xs text-body">{c.email}</span>
-                      <span className="font-mono text-[0.7rem] text-muted">{c.password}</span>
-                    </span>
-                    <span className="pill shrink-0 bg-azul-soft text-azul">{c.rol}</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
+          <div className="mt-8">
+            <button
+              type="button"
+              onClick={() => setVerCuentas((v) => !v)}
+              aria-expanded={verCuentas}
+              aria-controls="cuentas-prueba"
+              className="flex w-full items-center justify-between gap-2 rounded-[0.625rem] border border-border bg-surface-muted px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted transition-colors hover:text-body"
+            >
+              <span>Cuentas de prueba</span>
+              <IconChevron className={`size-4 transition-transform motion-reduce:transition-none ${verCuentas ? 'rotate-180' : ''}`} />
+            </button>
+
+            {verCuentas && (
+              <div
+                id="cuentas-prueba"
+                className="anim-aparecer mt-2 rounded-[0.625rem] border border-border bg-surface-muted px-2 py-2"
+              >
+                <p className="px-1.5 pb-1.5 text-xs text-muted">Toca una cuenta para autocompletar.</p>
+                <ul className="space-y-0.5">
+                  {CUENTAS_PRUEBA.map((c) => (
+                    <li key={c.email}>
+                      <button
+                        type="button"
+                        onClick={() => usarCuenta(c)}
+                        aria-label={`Autocompletar con la cuenta de ${c.rol}: ${c.email}`}
+                        className="flex w-full items-center justify-between gap-3 rounded-md px-1.5 py-1.5 text-left transition-colors hover:bg-surface focus-visible:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-azul/40"
+                      >
+                        <span className="min-w-0">
+                          <span className="block truncate font-mono text-xs text-body">{c.email}</span>
+                          <span className="font-mono text-[0.7rem] text-muted">{c.password}</span>
+                        </span>
+                        <span className="pill shrink-0 bg-azul-soft text-azul">{c.rol}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
 
           <p className="mt-8 text-center text-xs text-muted lg:hidden">
