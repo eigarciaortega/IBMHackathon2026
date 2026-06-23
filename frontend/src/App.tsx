@@ -4,6 +4,7 @@ import { Layout } from './components/Layout'
 import { RutaProtegida } from './components/RutaProtegida'
 import { Toaster } from './components/Toaster'
 import { LoginPage } from './pages/LoginPage'
+import { AboutPage } from './pages/AboutPage'
 import { BuscarPage } from './pages/BuscarPage'
 import { MisReservasPage } from './pages/MisReservasPage'
 import { AdminPage } from './pages/AdminPage'
@@ -14,6 +15,7 @@ export default function App() {
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/about" element={<AboutPage />} />
 
           <Route
             element={
