@@ -1,0 +1,162 @@
+@import "tailwindcss";
+@import "@fontsource-variable/inter";
+
+/* ==========================================================================
+   Sistema de diseño OfficeSpace
+   Estrategia de color: Restrained (producto). Verde pino como color de marca y
+   de acción (también lee como "espacio disponible"); ámbar como acento cálido
+   para ocupación/realces. Superficies blancas sobre un lienzo verde-frío tenue.
+   ========================================================================== */
+@theme {
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "JetBrains Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+
+  /* Superficies y texto */
+  --color-canvas: #eef2ef;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f6f8f6;
+  --color-border: #dee5e0;
+  --color-border-strong: #c8d2cb;
+  --color-ink: #16221c;
+  --color-body: #283330;
+  --color-muted: #586862;
+
+  /* Marca: verde pino */
+  --color-pino: #1c5b44;
+  --color-pino-hover: #174e3a;
+  --color-pino-strong: #154534;
+  --color-pino-soft: #e6f0ea;
+
+  /* Acento: ámbar */
+  --color-ambar: #a8631a;
+  --color-ambar-soft: #f6ead6;
+
+  /* Semánticos */
+  --color-exito: #1b6e49;
+  --color-exito-soft: #e3f1e9;
+  --color-peligro: #a93b33;
+  --color-peligro-soft: #fae9e7;
+  --color-aviso: #8c5b12;
+
+  --radius-md: 0.625rem;
+  --radius-lg: 0.875rem;
+
+  --shadow-sutil: 0 1px 2px rgba(22, 34, 28, 0.05), 0 1px 3px rgba(22, 34, 28, 0.04);
+  --shadow-elevada: 0 10px 30px -12px rgba(22, 34, 28, 0.28);
+
+  /* Escala de z-index semántica */
+  --z-sticky: 30;
+  --z-backdrop: 40;
+  --z-modal: 50;
+  --z-toast: 60;
+
+  /* Curva de salida exponencial para la motion */
+  --ease-salida: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+  }
+  body {
+    @apply bg-canvas text-body font-sans antialiased;
+    font-synthesis-weight: none;
+  }
+  h1, h2, h3, h4 {
+    @apply text-ink font-semibold tracking-tight;
+    text-wrap: balance;
+  }
+  /* Foco de teclado siempre visible (requisito de accesibilidad). */
+  :focus-visible {
+    outline: 2px solid var(--color-pino);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  ::selection {
+    background: var(--color-pino-soft);
+    color: var(--color-pino-strong);
+  }
+  /* Números tabulares para horas/datos en mono. */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+  /* Respeta prefers-reduced-motion: sin animaciones para quien las desactiva. */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  /* --- Botones (misma forma en toda la app) --- */
+  .btn, .btn-primary, .btn-secondary, .btn-danger, .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-[0.5rem] px-4 py-2
+           text-sm font-medium transition-colors duration-150 select-none
+           disabled:opacity-50 disabled:pointer-events-none;
+  }
+  .btn-sm { @apply px-3 py-1.5 text-[0.8125rem]; }
+  .btn-primary { @apply bg-pino text-white hover:bg-pino-hover; }
+  .btn-secondary {
+    @apply bg-surface text-body border border-border-strong hover:bg-surface-muted;
+  }
+  .btn-danger {
+    @apply bg-surface text-peligro border border-peligro/30 hover:bg-peligro-soft;
+  }
+  .btn-ghost { @apply text-muted hover:bg-surface-muted hover:text-body; }
+
+  /* --- Formularios --- */
+  .label { @apply block text-sm font-medium text-body mb-1.5; }
+  .input, .select {
+    @apply w-full rounded-[0.5rem] border border-border-strong bg-surface px-3 py-2
+           text-sm text-body placeholder:text-muted transition-colors
+           focus:border-pino focus:ring-2 focus:ring-pino/20 focus:outline-none;
+  }
+  .field-error { @apply text-[0.8125rem] text-peligro mt-1.5; }
+
+  /* --- Tarjetas y superficies --- */
+  .card {
+    @apply rounded-[var(--radius-lg)] border border-border bg-surface shadow-sutil;
+  }
+
+  /* --- Píldoras de estado --- */
+  .pill {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium;
+  }
+}
+
+/* ==========================================================================
+   Motion (intencional, con curvas de salida). Toda anim tiene su alternativa
+   instantánea bajo prefers-reduced-motion (ver @layer base).
+   ========================================================================== */
+@keyframes aparecer {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes entrar-toast {
+  from { opacity: 0; transform: translateX(12px) scale(0.98); }
+  to   { opacity: 1; transform: translateX(0) scale(1); }
+}
+@keyframes pulso-pista {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
+.anim-aparecer {
+  animation: aparecer 0.32s var(--ease-salida) both;
+}
+.anim-toast {
+  animation: entrar-toast 0.28s var(--ease-salida) both;
+}
+/* Escalonado sutil para listas de resultados. */
+.anim-lista > * {
+  animation: aparecer 0.34s var(--ease-salida) both;
+}
+.anim-lista > *:nth-child(2) { animation-delay: 0.04s; }
+.anim-lista > *:nth-child(3) { animation-delay: 0.08s; }
+.anim-lista > *:nth-child(4) { animation-delay: 0.12s; }
+.anim-lista > *:nth-child(5) { animation-delay: 0.16s; }
+.anim-lista > *:nth-child(n+6) { animation-delay: 0.2s; }
