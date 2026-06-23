@@ -1,0 +1,10 @@
+# Contexto de build a nivel de raíz (compartido por los servicios backend).
+# Evita copiar dependencias del host (Windows) dentro de las imágenes Linux y
+# artefactos que no deben formar parte de la imagen.
+**/node_modules
+**/npm-debug.log
+**/.env
+**/Dockerfile
+**/.dockerignore
+.git
+frontend/dist

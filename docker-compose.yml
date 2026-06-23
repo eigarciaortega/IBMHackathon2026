@@ -1,0 +1,101 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: officespace-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-officespace}
+      MYSQL_USER: ${MYSQL_USER:-officespace}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-officespace}
+    ports:
+      # El host 3306 suele estar ocupado por un MySQL local; exponemos en 3307.
+      # Los servicios backend conectan por la red interna de Docker (db:3306).
+      - "3307:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./db/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${MYSQL_ROOT_PASSWORD:-root}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: auth-service/Dockerfile
+    container_name: officespace-auth-service
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PORT: 3001
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-3600}
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: ${MYSQL_DATABASE:-officespace}
+      DB_USER: ${MYSQL_USER:-officespace}
+      DB_PASSWORD: ${MYSQL_PASSWORD:-officespace}
+    ports:
+      - "3001:3001"
+
+  catalog-service:
+    build:
+      context: .
+      dockerfile: catalog-service/Dockerfile
+    container_name: officespace-catalog-service
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PORT: 3002
+      JWT_SECRET: ${JWT_SECRET}
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: ${MYSQL_DATABASE:-officespace}
+      DB_USER: ${MYSQL_USER:-officespace}
+      DB_PASSWORD: ${MYSQL_PASSWORD:-officespace}
+    ports:
+      - "3002:3002"
+
+  booking-service:
+    build:
+      context: .
+      dockerfile: booking-service/Dockerfile
+    container_name: officespace-booking-service
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PORT: 3003
+      JWT_SECRET: ${JWT_SECRET}
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: ${MYSQL_DATABASE:-officespace}
+      DB_USER: ${MYSQL_USER:-officespace}
+      DB_PASSWORD: ${MYSQL_PASSWORD:-officespace}
+    ports:
+      - "3003:3003"
+
+  frontend:
+    build: ./frontend
+    container_name: officespace-frontend
+    restart: unless-stopped
+    depends_on:
+      - auth-service
+      - catalog-service
+      - booking-service
+    environment:
+      VITE_AUTH_URL: http://localhost:3001
+      VITE_CATALOG_URL: http://localhost:3002
+      VITE_BOOKING_URL: http://localhost:3003
+    ports:
+      - "5173:5173"
+
+volumes:
+  db_data:

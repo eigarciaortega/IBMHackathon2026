@@ -1,0 +1,23 @@
+# Dependencias
+node_modules/
+**/node_modules/
+
+# Variables de entorno (no versionar secretos)
+.env
+
+# Build / artefactos
+dist/
+build/
+coverage/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Kiro IDE
+.kiro/
+.config.kiro
