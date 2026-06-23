@@ -14,6 +14,7 @@ import CIcon from '@coreui/icons-react'
 import {
   cilSpeedometer,
   cilSearch,
+  cilCalendar,
   cilCalendarCheck,
   cilMicrophone,
   cilRoom,
@@ -53,6 +54,7 @@ const AppSidebar = () => {
       to: '/mis-reservas',
       icon: icon(cilCalendarCheck),
     },
+    { component: CNavItem, name: t('nav.calendar'), to: '/calendario', icon: icon(cilCalendar) },
     { component: CNavItem, name: t('nav.assistant'), to: '/asistente', icon: icon(cilMicrophone) },
     isAdmin && { component: CNavTitle, name: t('nav.administration') },
     isAdmin && {

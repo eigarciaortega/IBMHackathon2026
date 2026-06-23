@@ -12,6 +12,8 @@ const {
   DELIVERY_STATUSES,
   REMINDER_STATUSES,
 } = require('../services/reminderService')
+const googleCalendar = require('../services/googleCalendarService')
+const { exportOfficeData, importOfficeData } = require('../services/dataExchangeService')
 
 function todayStr() {
   const d = new Date()
@@ -162,8 +164,25 @@ async function createBooking(req, res, next) {
     })
     await createReminderRecord(client, ins.rows[0].id, reminderPlan)
     await client.query('COMMIT')
+
+    // Sincronización con Google Calendar (mejor esfuerzo, FUERA de la transacción).
+    // Si Google no está configurado o falla, la reserva sigue siendo válida.
+    let googleEvent = null
+    try {
+      googleEvent = await googleCalendar.createEvent(ins.rows[0], space, req.user)
+      if (googleEvent && googleEvent.eventId) {
+        await query('UPDATE bookings SET google_event_id = $1 WHERE id = $2', [
+          googleEvent.eventId,
+          ins.rows[0].id,
+        ])
+      }
+    } catch (gcalErr) {
+      console.warn('[booking-service] No se pudo sincronizar la reserva con Google Calendar:', gcalErr.message)
+    }
+
     return res.status(201).json({
       ...ins.rows[0],
+      google_event_id: googleEvent && googleEvent.eventId ? googleEvent.eventId : null,
       reminder: {
         booking_id: ins.rows[0].id,
         status: REMINDER_STATUSES.PENDING,
@@ -247,6 +266,14 @@ async function cancelBooking(req, res, next) {
     }
     await query("UPDATE bookings SET status = 'CANCELADA' WHERE id = $1", [id])
     await markReminderCancelled(id)
+
+    // Quitar el evento del Google Calendar compartido (mejor esfuerzo).
+    try {
+      await googleCalendar.deleteEvent(booking.google_event_id)
+    } catch (gcalErr) {
+      console.warn('[booking-service] No se pudo eliminar el evento de Google Calendar:', gcalErr.message)
+    }
+
     return res.json({ message: 'Reserva cancelada', id: Number(id) })
   } catch (err) {
     return next(err)
@@ -260,7 +287,7 @@ async function occupancy(req, res, next) {
     const { rows } = await query(
       `SELECT b.id, b.space_id, b.title, b.booking_date, b.start_time, b.end_time,
               b.attendees, b.status, s.name AS space_name, s.type AS space_type,
-              s.floor, s.capacity, u.full_name AS user_name
+              s.floor, s.capacity, u.full_name AS user_name, u.role AS user_role
        FROM bookings b
        JOIN spaces s ON s.id = b.space_id
        JOIN users u ON u.id = b.user_id
@@ -279,6 +306,39 @@ async function occupancy(req, res, next) {
       occupancyRate: total ? Math.round((occupiedSpaces / total) * 100) : 0,
       bookings: rows,
     })
+  } catch (err) {
+    return next(err)
+  }
+}
+
+/** GET /bookings/calendar?start&end — reservas confirmadas para calendario interno */
+async function calendarBookings(req, res, next) {
+  try {
+    const start = req.query.start || todayStr()
+    const end = req.query.end || start
+
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(start) || !/^\d{4}-\d{2}-\d{2}$/.test(end)) {
+      return res.status(400).json({ error: 'Los parámetros start y end deben usar YYYY-MM-DD' })
+    }
+    if (start > end) {
+      return res.status(400).json({ error: 'El rango de fechas es inválido' })
+    }
+
+    const { rows } = await query(
+      `SELECT b.id, b.space_id, b.title, b.booking_date, b.start_time, b.end_time,
+              b.attendees, b.status, b.google_event_id,
+              s.name AS space_name, s.type AS space_type, s.floor, s.location, s.capacity,
+              u.full_name AS user_name, u.role AS user_role
+       FROM bookings b
+       JOIN spaces s ON s.id = b.space_id
+       JOIN users u ON u.id = b.user_id
+       WHERE b.status = 'CONFIRMADA'
+         AND b.booking_date BETWEEN $1::date AND $2::date
+       ORDER BY b.booking_date, b.start_time, s.name`,
+      [start, end],
+    )
+
+    return res.json({ start, end, bookings: rows })
   } catch (err) {
     return next(err)
   }
@@ -399,6 +459,44 @@ async function suggestions(req, res, next) {
   }
 }
 
+/**
+ * GET /bookings/calendar/embed
+ * Devuelve la configuración del Google Calendar embebido (URL para el iframe).
+ * Accesible a ambos roles: admin y colaboradores ven el mismo calendario.
+ */
+function calendarEmbed(req, res) {
+  return res.json(googleCalendar.getEmbedConfig())
+}
+
+async function exportData(req, res, next) {
+  try {
+    return res.json(await exportOfficeData())
+  } catch (err) {
+    return next(err)
+  }
+}
+
+async function importData(req, res, next) {
+  try {
+    const { spaces = [], bookings = [] } = req.body || {}
+    if (!Array.isArray(spaces) || !Array.isArray(bookings)) {
+      return res.status(400).json({ error: 'Se esperan arreglos spaces y bookings' })
+    }
+    const summary = await importOfficeData({
+      spaces,
+      bookings,
+      fallbackUserId: req.user.sub,
+    })
+    return res.json(summary)
+  } catch (err) {
+    if (err.statusCode) {
+      return res.status(err.statusCode).json({ error: err.message })
+    }
+    return next(err)
+  }
+}
+
 module.exports = {
   searchAvailability, createBooking, myBookings, cancelBooking, occupancy, analytics, suggestions,
+  calendarBookings, calendarEmbed, exportData, importData,
 }

@@ -14,6 +14,7 @@
 
 const RE_TIME = /^\d{2}:\d{2}(:\d{2})?$/
 const RE_DATE = /^\d{4}-\d{2}-\d{2}$/
+const APP_TIME_ZONE = process.env.APP_TIME_ZONE || 'America/Mexico_City'
 
 function timeToMinutes(t) {
   const [h, m] = String(t).split(':').map(Number)
@@ -30,11 +31,30 @@ function rangesOverlap(aStart, aEnd, bStart, bEnd) {
 /**
  * ¿La fecha+hora de inicio está en el pasado respecto a `now`?
  */
+function nowStampInTimeZone(now, timeZone = APP_TIME_ZONE) {
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hourCycle: 'h23',
+  })
+  const parts = Object.fromEntries(
+    formatter.formatToParts(now).map((part) => [part.type, part.value]),
+  )
+  return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}:${parts.second}`
+}
+
+function normalizeTimeStamp(t) {
+  const [h, m, s = '00'] = String(t).split(':')
+  return `${h}:${m}:${s}`
+}
+
 function isPastDateTime(dateStr, startStr, now = new Date()) {
-  const [y, mo, d] = String(dateStr).split('-').map(Number)
-  const [h, mi] = String(startStr).split(':').map(Number)
-  const dt = new Date(y, mo - 1, d, h, mi, 0, 0)
-  return dt.getTime() < now.getTime()
+  return `${dateStr}T${normalizeTimeStamp(startStr)}` < nowStampInTimeZone(now)
 }
 
 /**

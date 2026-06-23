@@ -6,13 +6,15 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
-    "test": "node src/validators/bookingValidators.test.js"
+    "test": "node src/validators/bookingValidators.test.js && node src/services/googleCalendarService.test.js",
+    "backfill:google": "node scripts/backfill-google.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "express-validator": "^7.2.0",
+    "googleapis": "^144.0.0",
     "jsonwebtoken": "^9.0.2",
     "nodemailer": "^9.0.1",
     "pg": "^8.12.0",

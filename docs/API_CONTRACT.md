@@ -106,3 +106,33 @@ Sugerencias de franjas libres óptimas (base del asistente).
 ```json
 { "date":"2026-06-22", "duration":60, "suggestions":[ { "space_name":"Sala Turing", "floor":"Piso 3", "start":"12:00", "end":"13:00", ... } ] }
 ```
+
+### `GET /bookings/export-data` · solo ADMIN
+Devuelve espacios y reservas en JSON para generar Excel o CSV desde el frontend.
+
+```json
+{
+  "exportedAt": "2026-06-23T18:00:00.000Z",
+  "spaces": [{ "id": 1, "name": "Sala Watson", "type": "SALA", "capacity": 12 }],
+  "bookings": [{ "id": 1, "space_name": "Sala Watson", "user_email": "carlos.mendez@corporativoalpha.com" }]
+}
+```
+
+### `POST /bookings/import-data` · solo ADMIN
+Importa y fusiona datos parseados desde Excel o CSV. Los espacios se crean o actualizan por `id` o `name`; las reservas se crean o actualizan por `id` o por espacio+usuario+fecha+horario. Las filas con conflictos se omiten y aparecen en `errors`.
+
+```json
+{
+  "spaces": [{ "name": "Sala Nueva", "type": "SALA", "capacity": 6, "floor": "Piso 2" }],
+  "bookings": [{ "space_name": "Sala Nueva", "user_email": "ana.torres@corporativoalpha.com", "booking_date": "2026-06-25", "start_time": "09:00", "end_time": "10:00", "attendees": 4 }]
+}
+```
+
+**200**
+```json
+{
+  "spaces": { "created": 1, "updated": 0, "skipped": 0 },
+  "bookings": { "created": 1, "updated": 0, "skipped": 0 },
+  "errors": []
+}
+```

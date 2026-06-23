@@ -57,6 +57,8 @@ CREATE TABLE IF NOT EXISTS bookings (
     attendees    INTEGER     NOT NULL CHECK (attendees > 0),
     status       VARCHAR(20) NOT NULL DEFAULT 'CONFIRMADA'
                  CHECK (status IN ('CONFIRMADA', 'CANCELADA')),
+    -- Id del evento espejo en Google Calendar (null si la sync no está activa).
+    google_event_id TEXT,
     created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
 
     -- Consistencia temporal: la hora de fin debe ser mayor que la de inicio.

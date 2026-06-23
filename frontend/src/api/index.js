@@ -5,7 +5,11 @@ import { api, setToken } from './client'
 
 // ---- Auth ----
 export async function login(email, password) {
-  const r = await api.auth('/auth/login', { method: 'POST', body: { email, password }, auth: false })
+  const r = await api.auth('/auth/login', {
+    method: 'POST',
+    body: { email, password },
+    auth: false,
+  })
   setToken(r.token)
   return r
 }
@@ -25,8 +29,13 @@ export const createBooking = (body) => api.booking('/bookings', { method: 'POST'
 export const myBookings = () => api.booking('/bookings/me')
 export const cancelBooking = (id) => api.booking(`/bookings/${id}`, { method: 'DELETE' })
 export const fetchOccupancy = (date) => api.booking('/bookings/occupancy', { params: { date } })
+export const fetchCalendarEmbed = () => api.booking('/bookings/calendar/embed')
+export const fetchCalendarBookings = (params) => api.booking('/bookings/calendar', { params })
 export const fetchAnalytics = () => api.booking('/bookings/analytics')
 export const fetchSuggestions = (params) => api.booking('/bookings/suggestions', { params })
+export const exportOfficeData = () => api.booking('/bookings/export-data')
+export const importOfficeData = (body) =>
+  api.booking('/bookings/import-data', { method: 'POST', body })
 
 export { setToken, getToken } from './client'
 export { ApiError } from './client'

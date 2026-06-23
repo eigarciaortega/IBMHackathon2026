@@ -7,13 +7,26 @@ const cors = require('cors')
 const swaggerUi = require('swagger-ui-express')
 const swaggerSpec = require('./config/swagger')
 const bookingRoutes = require('./routes/bookingRoutes')
-const { pool } = require('./config/db')
+const { pool, query } = require('./config/db')
+const googleCalendar = require('./services/googleCalendarService')
 const { startReminderScheduler, stopReminderScheduler } = require('./services/reminderService')
+
+/**
+ * Asegura columnas añadidas después del init-db.sql original, para que el
+ * servicio funcione también sobre volúmenes de BD ya existentes (idempotente).
+ */
+async function ensureSchema() {
+  try {
+    await query('ALTER TABLE bookings ADD COLUMN IF NOT EXISTS google_event_id TEXT')
+  } catch (err) {
+    console.warn('[booking-service] No se pudo asegurar la columna google_event_id:', err.message)
+  }
+}
 
 const app = express()
 app.set('trust proxy', 1)
 app.use(cors())
-app.use(express.json({ limit: process.env.JSON_BODY_LIMIT || '1mb' }))
+app.use(express.json({ limit: process.env.JSON_BODY_LIMIT || '5mb' }))
 
 function serviceError(err) {
   if (err.type === 'entity.too.large') {
@@ -42,9 +55,24 @@ process.on('unhandledRejection', (err) => {
   console.error('[booking-service] Promesa no manejada', err)
 })
 
-const server = app.listen(PORT, () => {
+const server = app.listen(PORT, async () => {
   console.log(`📅 booking-service en http://localhost:${PORT}`)
   console.log(`API docs: http://localhost:${PORT}/api-docs`)
+  await ensureSchema()
+  if (googleCalendar.isSyncConfigured()) {
+    googleCalendar
+      .backfillConfirmedBookings(query)
+      .then((result) => {
+        if (result && !result.skipped) {
+          console.log(
+            `[booking-service] Google Calendar listo: ${result.created}/${result.total} reservas históricas sincronizadas`,
+          )
+        }
+      })
+      .catch((err) => {
+        console.warn('[booking-service] No se pudo ejecutar el backfill de Google Calendar:', err.message)
+      })
+  }
   startReminderScheduler()
 })
 server.requestTimeout = Number(process.env.REQUEST_TIMEOUT_MS) || 30000

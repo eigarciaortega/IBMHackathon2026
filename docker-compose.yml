@@ -106,6 +106,15 @@ services:
       JWT_SECRET: ${JWT_SECRET:-ibm-officespace-shared-secret-change-me}
       CATALOG_SERVICE_URL: http://catalog-service:4002
       CATALOG_TIMEOUT_MS: 1500
+      # Google Calendar (opcional). Definir en officespace-ibm/.env.
+      # Sin estas variables, el calendario se muestra como "no configurado"
+      # y las reservas siguen funcionando con normalidad.
+      GOOGLE_CALENDAR_ID: ${GOOGLE_CALENDAR_ID:-}
+      GOOGLE_SERVICE_ACCOUNT_KEY: ${GOOGLE_SERVICE_ACCOUNT_KEY:-}
+      GOOGLE_CALENDAR_EMBED_URL: ${GOOGLE_CALENDAR_EMBED_URL:-}
+      GOOGLE_CALENDAR_TIMEZONE: ${GOOGLE_CALENDAR_TIMEZONE:-America/Mexico_City}
+      GOOGLE_EVENT_COLOR_ADMIN: ${GOOGLE_EVENT_COLOR_ADMIN:-11}
+      GOOGLE_EVENT_COLOR_COLLABORATOR: ${GOOGLE_EVENT_COLOR_COLLABORATOR:-9}
     ports:
       - "4003:4003"
     depends_on:

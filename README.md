@@ -23,6 +23,7 @@ flujos orientados a operación diaria.
 - Restricción anti-solapamiento también en PostgreSQL con `EXCLUDE USING gist`.
 - Mis Reservas con historial, estado y cancelación de reservas futuras.
 - Dashboard de ocupación diaria para administradores.
+- Calendario de Google embebido y auto-sincronizado: cada reserva (de admin y de colaboradores) se publica como evento, con color por rol. Ver [`GOOGLE_CALENDAR_SETUP.md`](GOOGLE_CALENDAR_SETUP.md).
 - Analíticas con totales, cancelaciones, espacios top, horas pico y reservas por tipo.
 - Asistente local con texto, micrófono y síntesis de voz mediante Web Speech API.
 - Respuestas del asistente basadas en datos reales del backend.
@@ -122,12 +123,11 @@ docker compose -f docker-compose.yml -f docker-compose.local.yml up --build -d
 Después abre:
 
 ```text
-http://localhost:3005
+http://localhost:3000
 ```
 
-El archivo `docker-compose.local.yml` publica el frontend en `3005` y PostgreSQL en
-`55432` para evitar choques con otros proyectos que usen `3000` o `5432`. Los
-microservicios quedan en `4001`, `4002` y `4003`.
+El archivo `docker-compose.local.yml` publica el frontend en `3000` y PostgreSQL en
+`55432`. Los microservicios quedan en `4001`, `4002` y `4003`.
 
 Para detener todo:
 
@@ -299,6 +299,7 @@ flujo de búsqueda/reserva y solo gestionan sus propias reservas.
 |---|---|---|
 | `/login` | Público | Login animado IBM, selector de idioma y formulario manual |
 | `/dashboard` | Admin | KPIs de ocupación y reservas confirmadas del día |
+| `/calendario` | Autenticado | Google Calendar embebido con todas las reservas (admin y colaboradores) |
 | `/buscar` | Autenticado | Búsqueda de disponibilidad por fecha, hora, tipo y capacidad |
 | `/reservar` | Autenticado | Confirmación de reserva con asistentes, motivo y validaciones |
 | `/mis-reservas` | Autenticado | Próximas, pasadas y canceladas; permite cancelar futuras |
@@ -343,6 +344,7 @@ Authorization: Bearer <token>
 | `GET` | `/bookings/me` | Autenticado | Reservas del usuario |
 | `DELETE` | `/bookings/:id` | Dueño/Admin | Cancela reserva futura |
 | `GET` | `/bookings/occupancy` | Autenticado | Ocupación del día |
+| `GET` | `/bookings/calendar/embed` | Autenticado | Config del Google Calendar embebido (URL para iframe) |
 | `GET` | `/bookings/analytics` | Autenticado | Métricas agregadas |
 | `GET` | `/bookings/suggestions` | Autenticado | Sugerencias de franjas libres |
 
@@ -427,7 +429,8 @@ Datos de referencia de la base:
 | `catalog-service` | `npm run dev` | Inicia catalog-service con watch |
 | `booking-service` | `npm start` | Inicia booking-service |
 | `booking-service` | `npm run dev` | Inicia booking-service con watch |
-| `booking-service` | `npm test` | Ejecuta tests puros del motor de reservas |
+| `booking-service` | `npm test` | Ejecuta tests puros del motor de reservas y de Google Calendar |
+| `booking-service` | `npm run backfill:google` | Sincroniza reservas existentes con Google Calendar |
 | `frontend` | `npm start` | Inicia Vite en `:3000` |
 | `frontend` | `npm run build` | Compila frontend en `frontend/build` |
 | `frontend` | `npm run lint` | Ejecuta ESLint |
@@ -507,6 +510,7 @@ officespace-ibm/
 ## Documentación Relacionada
 
 - [`PRODUCT.md`](PRODUCT.md): visión de producto, usuarios, principios y accesibilidad.
+- [`GOOGLE_CALENDAR_SETUP.md`](GOOGLE_CALENDAR_SETUP.md): guía para conectar el Google Calendar embebido y la auto-sincronización.
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md): decisión arquitectónica, ERD y regla crítica.
 - [`docs/API_CONTRACT.md`](docs/API_CONTRACT.md): endpoints, ejemplos y códigos de respuesta.
 - [`docs/CASOS_DE_PRUEBA.md`](docs/CASOS_DE_PRUEBA.md): casos manuales, BDD y pruebas unitarias.

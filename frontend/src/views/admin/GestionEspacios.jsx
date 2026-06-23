@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useRef, useState, useCallback } from 'react'
 import {
   CCard,
   CCardBody,
@@ -22,14 +22,24 @@ import {
   CFormInput,
   CFormSelect,
   CFormCheck,
+  CFormText,
   CRow,
   CCol,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
-import { cilPlus, cilPencil, cilTrash } from '@coreui/icons'
+import { cilCloudDownload, cilCloudUpload, cilPlus, cilPencil, cilTrash } from '@coreui/icons'
 
-import { listSpaces, createSpace, updateSpace, deleteSpace, ApiError } from '../../api'
+import {
+  listSpaces,
+  createSpace,
+  updateSpace,
+  deleteSpace,
+  exportOfficeData,
+  importOfficeData,
+  ApiError,
+} from '../../api'
 import { useTranslation } from '../../i18n'
+import { exportOfficeDataFile, parseOfficeDataFile } from '../../utils/dataExchange'
 
 const EMPTY = {
   name: '',
@@ -55,6 +65,11 @@ export default function GestionEspacios() {
   const [form, setForm] = useState(EMPTY)
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState('')
+  const [exchangeBusy, setExchangeBusy] = useState('')
+  const [exchangeError, setExchangeError] = useState('')
+  const [importFile, setImportFile] = useState(null)
+  const [importSummary, setImportSummary] = useState(null)
+  const fileInputRef = useRef(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -69,7 +84,8 @@ export default function GestionEspacios() {
   }, [t])
 
   useEffect(() => {
-    load()
+    const timer = window.setTimeout(load, 0)
+    return () => window.clearTimeout(timer)
   }, [load])
 
   const openNew = () => {
@@ -132,6 +148,51 @@ export default function GestionEspacios() {
     }
   }
 
+  const downloadData = async (format) => {
+    setExchangeBusy(`export-${format}`)
+    setExchangeError('')
+    setImportSummary(null)
+    try {
+      const data = await exportOfficeData()
+      await exportOfficeDataFile(data, format)
+      setNotice(t('admin.exchange.exportOk', { format: format.toUpperCase() }))
+    } catch (err) {
+      setExchangeError(err.message || t('admin.exchange.exportError'))
+    } finally {
+      setExchangeBusy('')
+    }
+  }
+
+  const uploadData = async () => {
+    if (!importFile) {
+      setExchangeError(t('admin.exchange.fileRequired'))
+      return
+    }
+
+    setExchangeBusy('import')
+    setExchangeError('')
+    setImportSummary(null)
+    try {
+      const parsed = await parseOfficeDataFile(importFile)
+      if (!parsed.spaces.length && !parsed.bookings.length) {
+        setExchangeError(t('admin.exchange.emptyFile'))
+        return
+      }
+      const summary = await importOfficeData(parsed)
+      setImportSummary(summary)
+      setNotice(t('admin.exchange.importOk'))
+      setImportFile(null)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+      await load()
+    } catch (err) {
+      setExchangeError(err.message || t('admin.exchange.importError'))
+    } finally {
+      setExchangeBusy('')
+    }
+  }
+
+  const importErrors = importSummary?.errors || []
+
   return (
     <div>
       <div className="d-flex flex-wrap justify-content-between align-items-end mb-4 gap-2">
@@ -152,6 +213,103 @@ export default function GestionEspacios() {
       )}
       {error && <CAlert color="danger">{error}</CAlert>}
 
+      <CCard className="mb-4">
+        <CCardBody>
+          <div className="d-flex flex-wrap justify-content-between align-items-start gap-3">
+            <div>
+              <h2 className="h5 mb-1">{t('admin.exchange.title')}</h2>
+              <p className="text-body-secondary mb-0">{t('admin.exchange.subtitle')}</p>
+            </div>
+            <div className="d-flex flex-wrap gap-2">
+              <CButton
+                color="secondary"
+                variant="outline"
+                disabled={!!exchangeBusy}
+                onClick={() => downloadData('xlsx')}
+              >
+                {exchangeBusy === 'export-xlsx' ? (
+                  <CSpinner size="sm" className="me-2" />
+                ) : (
+                  <CIcon icon={cilCloudDownload} className="me-2" />
+                )}
+                {t('admin.exchange.exportExcel')}
+              </CButton>
+              <CButton
+                color="secondary"
+                variant="outline"
+                disabled={!!exchangeBusy}
+                onClick={() => downloadData('csv')}
+              >
+                {exchangeBusy === 'export-csv' ? (
+                  <CSpinner size="sm" className="me-2" />
+                ) : (
+                  <CIcon icon={cilCloudDownload} className="me-2" />
+                )}
+                {t('admin.exchange.exportCsv')}
+              </CButton>
+            </div>
+          </div>
+
+          <CRow className="g-3 align-items-end mt-1">
+            <CCol lg={7}>
+              <CFormLabel>{t('admin.exchange.fileLabel')}</CFormLabel>
+              <CFormInput
+                ref={fileInputRef}
+                type="file"
+                accept=".xlsx,.csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                disabled={!!exchangeBusy}
+                onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+              />
+              <CFormText>{t('admin.exchange.fileHelp')}</CFormText>
+            </CCol>
+            <CCol lg={5} className="d-flex justify-content-lg-end">
+              <CButton
+                color="primary"
+                disabled={!!exchangeBusy || !importFile}
+                onClick={uploadData}
+              >
+                {exchangeBusy === 'import' ? (
+                  <CSpinner size="sm" className="me-2" />
+                ) : (
+                  <CIcon icon={cilCloudUpload} className="me-2" />
+                )}
+                {t('admin.exchange.import')}
+              </CButton>
+            </CCol>
+          </CRow>
+
+          {exchangeError && (
+            <CAlert color="danger" className="mt-3 mb-0">
+              {exchangeError}
+            </CAlert>
+          )}
+
+          {importSummary && (
+            <CAlert color="info" className="mt-3 mb-0">
+              <div className="fw-semibold mb-1">{t('admin.exchange.summaryTitle')}</div>
+              <div className="small">
+                {t('admin.exchange.summarySpaces', importSummary.spaces)} ·{' '}
+                {t('admin.exchange.summaryBookings', importSummary.bookings)}
+              </div>
+              {importErrors.length > 0 && (
+                <div className="small mt-2">
+                  <div className="fw-semibold">
+                    {t('admin.exchange.errorsTitle', { count: importErrors.length })}
+                  </div>
+                  <ul className="mb-0 ps-3">
+                    {importErrors.slice(0, 5).map((item, index) => (
+                      <li key={`${item.section}-${item.row}-${index}`}>
+                        {item.section} #{item.row}: {item.message}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </CAlert>
+          )}
+        </CCardBody>
+      </CCard>
+
       <CCard>
         <CCardBody>
           {loading ? (
@@ -166,7 +324,9 @@ export default function GestionEspacios() {
                 <CTableRow>
                   <CTableHeaderCell>{t('admin.fields.name')}</CTableHeaderCell>
                   <CTableHeaderCell>{t('admin.fields.type')}</CTableHeaderCell>
-                  <CTableHeaderCell className="text-center">{t('admin.fields.capacity')}</CTableHeaderCell>
+                  <CTableHeaderCell className="text-center">
+                    {t('admin.fields.capacity')}
+                  </CTableHeaderCell>
                   <CTableHeaderCell>{t('admin.fields.floor')}</CTableHeaderCell>
                   <CTableHeaderCell>{t('common.resources')}</CTableHeaderCell>
                   <CTableHeaderCell>{t('common.status')}</CTableHeaderCell>
@@ -185,13 +345,27 @@ export default function GestionEspacios() {
                     <CTableDataCell className="text-center">{s.capacity}</CTableDataCell>
                     <CTableDataCell>
                       {s.floor}
-                      {s.location ? <div className="small text-body-secondary">{s.location}</div> : null}
+                      {s.location ? (
+                        <div className="small text-body-secondary">{s.location}</div>
+                      ) : null}
                     </CTableDataCell>
                     <CTableDataCell>
                       <div className="d-flex flex-wrap gap-1">
-                        {s.has_projector && <CBadge color="light" textColor="dark" className="border">{t('resources.projector')}</CBadge>}
-                        {s.has_ac && <CBadge color="light" textColor="dark" className="border">{t('resources.ac')}</CBadge>}
-                        {s.has_videoconference && <CBadge color="light" textColor="dark" className="border">{t('resources.videoconference')}</CBadge>}
+                        {s.has_projector && (
+                          <CBadge color="light" textColor="dark" className="border">
+                            {t('resources.projector')}
+                          </CBadge>
+                        )}
+                        {s.has_ac && (
+                          <CBadge color="light" textColor="dark" className="border">
+                            {t('resources.ac')}
+                          </CBadge>
+                        )}
+                        {s.has_videoconference && (
+                          <CBadge color="light" textColor="dark" className="border">
+                            {t('resources.videoconference')}
+                          </CBadge>
+                        )}
                       </div>
                     </CTableDataCell>
                     <CTableDataCell>
@@ -200,10 +374,22 @@ export default function GestionEspacios() {
                       </CBadge>
                     </CTableDataCell>
                     <CTableDataCell className="text-end">
-                      <CButton color="secondary" variant="ghost" size="sm" onClick={() => openEdit(s)} title={t('common.edit')}>
+                      <CButton
+                        color="secondary"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => openEdit(s)}
+                        title={t('common.edit')}
+                      >
                         <CIcon icon={cilPencil} />
                       </CButton>
-                      <CButton color="danger" variant="ghost" size="sm" onClick={() => remove(s)} title={t('common.delete')}>
+                      <CButton
+                        color="danger"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => remove(s)}
+                        title={t('common.delete')}
+                      >
                         <CIcon icon={cilTrash} />
                       </CButton>
                     </CTableDataCell>
@@ -221,7 +407,11 @@ export default function GestionEspacios() {
             <CModalTitle>{editing ? t('admin.editSpace') : t('admin.newSpace')}</CModalTitle>
           </CModalHeader>
           <CModalBody>
-            {formError && <CAlert color="danger" className="py-2">{formError}</CAlert>}
+            {formError && (
+              <CAlert color="danger" className="py-2">
+                {formError}
+              </CAlert>
+            )}
             <div className="mb-3">
               <CFormLabel>{t('admin.fields.name')}</CFormLabel>
               <CFormInput value={form.name} onChange={set('name')} required minLength={2} />
@@ -236,7 +426,13 @@ export default function GestionEspacios() {
               </CCol>
               <CCol sm={6}>
                 <CFormLabel>{t('admin.fields.capacity')}</CFormLabel>
-                <CFormInput type="number" min={1} value={form.capacity} onChange={set('capacity')} required />
+                <CFormInput
+                  type="number"
+                  min={1}
+                  value={form.capacity}
+                  onChange={set('capacity')}
+                  required
+                />
               </CCol>
               <CCol sm={6}>
                 <CFormLabel>{t('admin.fields.floor')}</CFormLabel>
@@ -248,16 +444,37 @@ export default function GestionEspacios() {
               </CCol>
             </CRow>
             <div className="mt-3 d-flex flex-column gap-2">
-              <CFormCheck label={t('resources.projector')} checked={!!form.has_projector} onChange={set('has_projector')} />
-              <CFormCheck label={t('resources.ac')} checked={!!form.has_ac} onChange={set('has_ac')} />
-              <CFormCheck label={t('resources.videoconference')} checked={!!form.has_videoconference} onChange={set('has_videoconference')} />
+              <CFormCheck
+                label={t('resources.projector')}
+                checked={!!form.has_projector}
+                onChange={set('has_projector')}
+              />
+              <CFormCheck
+                label={t('resources.ac')}
+                checked={!!form.has_ac}
+                onChange={set('has_ac')}
+              />
+              <CFormCheck
+                label={t('resources.videoconference')}
+                checked={!!form.has_videoconference}
+                onChange={set('has_videoconference')}
+              />
               {editing && (
-                <CFormCheck label={t('admin.active')} checked={!!form.active} onChange={set('active')} />
+                <CFormCheck
+                  label={t('admin.active')}
+                  checked={!!form.active}
+                  onChange={set('active')}
+                />
               )}
             </div>
           </CModalBody>
           <CModalFooter>
-            <CButton color="secondary" variant="outline" onClick={() => setModal(false)} type="button">
+            <CButton
+              color="secondary"
+              variant="outline"
+              onClick={() => setModal(false)}
+              type="button"
+            >
               {t('common.cancel')}
             </CButton>
             <CButton color="primary" type="submit" disabled={saving}>

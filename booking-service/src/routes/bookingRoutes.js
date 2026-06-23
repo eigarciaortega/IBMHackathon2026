@@ -83,6 +83,47 @@ router.get("/bookings/occupancy", authenticate, ctrl.occupancy);
 
 /**
  * @openapi
+ * /bookings/calendar:
+ *   get:
+ *     tags: [Reservas]
+ *     summary: Lista reservas confirmadas para pintar el calendario interno
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - { in: query, name: start, schema: { type: string, format: date } }
+ *       - { in: query, name: end, schema: { type: string, format: date } }
+ *     responses:
+ *       200: { description: Reservas confirmadas del rango solicitado }
+ *       400: { description: Rango inválido }
+ */
+router.get("/bookings/calendar", authenticate, ctrl.calendarBookings);
+
+/**
+ * @openapi
+ * /bookings/calendar/embed:
+ *   get:
+ *     tags: [Reservas]
+ *     summary: Configuración del Google Calendar embebido (URL para iframe)
+ *     description: >
+ *       Devuelve la URL para embeber el calendario de Google compartido donde se
+ *       ven todas las reservas (admin y colaboradores). Disponible para ambos roles.
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       200:
+ *         description: Configuración del calendario
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 configured: { type: boolean }
+ *                 embedUrl:   { type: string }
+ *                 timeZone:   { type: string }
+ *                 calendarId: { type: string, nullable: true }
+ */
+router.get("/bookings/calendar/embed", authenticate, ctrl.calendarEmbed);
+
+/**
+ * @openapi
  * /bookings/analytics:
  *   get:
  *     tags: [Analítica]
@@ -115,6 +156,65 @@ router.get(
  *       200: { description: Sugerencias }
  */
 router.get("/bookings/suggestions", authenticate, ctrl.suggestions);
+
+/**
+ * @openapi
+ * /bookings/export-data:
+ *   get:
+ *     tags: [Importacion/Exportacion]
+ *     summary: Exporta espacios y reservas para Excel o CSV (solo ADMINISTRADOR)
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       200:
+ *         description: Datos completos para generar archivo de intercambio
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 exportedAt: { type: string, format: date-time }
+ *                 spaces: { type: array, items: { type: object } }
+ *                 bookings: { type: array, items: { type: object } }
+ *       403: { description: Solo administradores }
+ */
+router.get(
+  "/bookings/export-data",
+  authenticate,
+  requireRole("ADMINISTRADOR"),
+  ctrl.exportData,
+);
+
+/**
+ * @openapi
+ * /bookings/import-data:
+ *   post:
+ *     tags: [Importacion/Exportacion]
+ *     summary: Importa y fusiona espacios/reservas desde Excel o CSV parseado (solo ADMINISTRADOR)
+ *     description: >
+ *       Recibe arreglos JSON `spaces` y `bookings`. Los espacios se crean o actualizan por id/nombre.
+ *       Las reservas se crean o actualizan por id o por espacio+usuario+fecha+horario. Las reservas
+ *       conflictivas se omiten y se reportan en `errors`.
+ *     security: [{ bearerAuth: [] }]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               spaces: { type: array, items: { type: object } }
+ *               bookings: { type: array, items: { type: object } }
+ *     responses:
+ *       200: { description: Resumen de filas creadas, actualizadas y omitidas }
+ *       400: { description: Formato invalido }
+ *       403: { description: Solo administradores }
+ */
+router.post(
+  "/bookings/import-data",
+  authenticate,
+  requireRole("ADMINISTRADOR"),
+  ctrl.importData,
+);
 
 /**
  * @openapi
