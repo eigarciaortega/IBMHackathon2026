@@ -1,0 +1,302 @@
+<div class="p-6 max-w-7xl mx-auto">
+
+  <!-- Page title -->
+  <div class="mb-6">
+    <h2 class="text-2xl font-bold text-white">Buscar espacios</h2>
+    <p class="text-gray-400 text-sm mt-1">Encuentra y reserva el espacio perfecto para tu equipo</p>
+  </div>
+
+  <!-- Filters -->
+  <div class="bg-gray-900 border border-gray-800 rounded-xl p-5 mb-6">
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+      <!-- Type -->
+      <div>
+        <label class="block text-xs font-medium text-gray-400 mb-1.5">Tipo</label>
+        <select [(ngModel)]="filterType" name="filterType"
+          class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500">
+          <option value="">Todos</option>
+          <option value="ROOM">Sala</option>
+          <option value="DESK">Escritorio</option>
+        </select>
+      </div>
+
+      <!-- Date -->
+      <div>
+        <label class="block text-xs font-medium text-gray-400 mb-1.5">Fecha</label>
+        <input type="date" [(ngModel)]="filterDate" name="filterDate"
+          class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500">
+      </div>
+
+      <!-- Start time -->
+      <div>
+        <label class="block text-xs font-medium text-gray-400 mb-1.5">Hora inicio</label>
+        <input type="time" [(ngModel)]="filterStartTime" name="filterStartTime"
+          class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500">
+      </div>
+
+      <!-- End time -->
+      <div>
+        <label class="block text-xs font-medium text-gray-400 mb-1.5">Hora fin</label>
+        <input type="time" [(ngModel)]="filterEndTime" name="filterEndTime"
+          class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500">
+      </div>
+
+      <!-- Min capacity -->
+      <div>
+        <label class="block text-xs font-medium text-gray-400 mb-1.5">Capacidad mínima</label>
+        <input type="number" [(ngModel)]="filterMinCapacity" name="filterMinCapacity" min="1" placeholder="Cualquiera"
+          class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500">
+      </div>
+    </div>
+
+    <div class="mt-4 flex items-center justify-between">
+      <button (click)="clearFilters()"
+        class="text-gray-400 hover:text-white text-sm flex items-center gap-1.5 transition-colors">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M18 6 6 18M6 6l12 12"/>
+        </svg>
+        Limpiar filtros
+      </button>
+      <button (click)="search()"
+        class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-5 py-2 rounded-lg transition-colors flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        Buscar disponibilidad
+      </button>
+    </div>
+  </div>
+
+  <!-- Results -->
+  @if (loading()) {
+    <div class="flex items-center justify-center py-16">
+      <svg class="w-8 h-8 animate-spin text-blue-500" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+      </svg>
+    </div>
+  } @else if (spaces().length === 0) {
+    <div class="text-center py-16">
+      <svg class="w-12 h-12 text-gray-600 mx-auto mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+        <path d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
+      </svg>
+      <p class="text-gray-400">No se encontraron espacios disponibles</p>
+      <p class="text-gray-600 text-sm mt-1">Ajusta los filtros e intenta de nuevo</p>
+    </div>
+  } @else {
+
+    <!-- Context banner: solo aparece después de buscar -->
+    @if (searched()) {
+      <div class="flex items-center gap-2 mb-4 text-sm text-gray-400">
+        <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>
+        </svg>
+        Disponibilidad para
+        <span class="text-white font-medium">{{ filterDate }}</span>
+        de <span class="text-white font-medium">{{ filterStartTime }}</span>
+        a <span class="text-white font-medium">{{ filterEndTime }}</span>
+      </div>
+    }
+
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+      @for (space of spaces(); track space.publicId) {
+        <div class="rounded-xl p-5 flex flex-col transition-colors"
+          [class]="searched() && isOccupied(space.publicId)
+            ? 'bg-gray-900/60 border border-gray-800 opacity-70'
+            : 'bg-gray-900 border border-gray-800 hover:border-gray-600'">
+
+          <!-- Header -->
+          <div class="flex items-start justify-between mb-3">
+            <div>
+              <h3 class="font-semibold text-white">{{ space.name }}</h3>
+              <p class="text-gray-400 text-sm mt-0.5 flex items-center gap-1">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+                </svg>
+                {{ space.location }}
+              </p>
+            </div>
+            <div class="flex flex-col items-end gap-1">
+              <span class="shrink-0 text-xs font-medium px-2 py-1 rounded-full"
+                [class]="space.type === 'ROOM' ? 'bg-purple-900 text-purple-300' : 'bg-teal-900 text-teal-300'">
+                {{ space.type === 'ROOM' ? 'Sala' : 'Escritorio' }}
+              </span>
+              @if (searched()) {
+                @if (isOccupied(space.publicId)) {
+                  <span class="text-xs font-medium px-2 py-0.5 rounded-full bg-red-900 text-red-300">Ocupado</span>
+                } @else {
+                  <span class="text-xs font-medium px-2 py-0.5 rounded-full bg-green-900 text-green-300">Disponible</span>
+                }
+              }
+            </div>
+          </div>
+
+          <!-- Capacity -->
+          <div class="flex items-center gap-1.5 text-gray-400 text-sm mb-3">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+            Capacidad: <span class="text-white font-medium">{{ space.capacity }}</span> personas
+          </div>
+
+          <!-- Features -->
+          @if (featureChips(space.features).length > 0) {
+            <div class="flex flex-wrap gap-1.5 mb-4">
+              @for (chip of featureChips(space.features); track chip) {
+                <span class="text-xs bg-gray-800 text-gray-300 px-2 py-1 rounded-md">{{ chip }}</span>
+              }
+            </div>
+          }
+
+          <!-- CTA -->
+          @if (searched() && isOccupied(space.publicId)) {
+            <div class="mt-auto w-full bg-gray-800 border border-gray-700 text-gray-500 text-sm font-medium py-2.5 rounded-lg flex items-center justify-center gap-2 pointer-events-none select-none">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+              Reservado
+            </div>
+          } @else {
+            <button (click)="openBooking(space)"
+              class="mt-auto w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2.5 rounded-lg transition-colors">
+              Reservar
+            </button>
+          }
+        </div>
+      }
+    </div>
+  }
+
+</div>
+
+<!-- Booking modal -->
+@if (selectedSpace()) {
+  <div class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+    (click)="closeModal()">
+    <div class="bg-gray-900 border border-gray-700 rounded-xl w-full max-w-md shadow-2xl"
+      (click)="$event.stopPropagation()">
+
+      <!-- Modal header -->
+      <div class="flex items-center justify-between px-6 py-4 border-b border-gray-800">
+        <div>
+          <h3 class="font-semibold text-white">Confirmar reserva</h3>
+          <p class="text-sm text-gray-400 mt-0.5">{{ selectedSpace()!.name }}</p>
+        </div>
+        <button (click)="closeModal()" class="text-gray-400 hover:text-white transition-colors p-1">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M18 6 6 18M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Modal body -->
+      <div class="px-6 py-5 space-y-4">
+
+        @if (bookingSuccess()) {
+          <div class="flex flex-col items-center py-6 text-center">
+            <div class="w-12 h-12 bg-green-900 rounded-full flex items-center justify-center mb-3">
+              <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M20 6 9 17l-5-5"/>
+              </svg>
+            </div>
+            <p class="text-white font-medium">¡Reserva confirmada!</p>
+            <p class="text-gray-400 text-sm mt-1">Redirigiendo...</p>
+          </div>
+        } @else {
+
+          <!-- Resumen fijo (viene de la búsqueda, no editable) -->
+          <div class="bg-gray-800/70 border border-gray-700 rounded-lg p-4 space-y-2.5 text-sm">
+            <p class="text-xs text-gray-500 uppercase tracking-wide font-medium mb-1">Horario seleccionado en tu búsqueda</p>
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2 text-gray-400">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>
+                </svg>
+                Fecha
+              </div>
+              <span class="text-white font-medium">{{ filterDate }}</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2 text-gray-400">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+                </svg>
+                Horario
+              </div>
+              <span class="text-white font-medium">{{ filterStartTime }} – {{ filterEndTime }}</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2 text-gray-400">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+                </svg>
+                Ubicación
+              </div>
+              <span class="text-white font-medium">{{ selectedSpace()!.location }}</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2 text-gray-400">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                </svg>
+                Capacidad máx.
+              </div>
+              <span class="text-white font-medium">{{ selectedSpace()!.capacity }} personas</span>
+            </div>
+          </div>
+
+          <!-- Asistentes -->
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-1.5">
+              ¿Cuántos asistentes? <span class="text-gray-500 font-normal">(máx. {{ selectedSpace()!.capacity }})</span>
+            </label>
+            <input type="number" name="attendees" [(ngModel)]="bookingAttendees"
+              [min]="1" [max]="selectedSpace()!.capacity"
+              class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500">
+          </div>
+
+          <!-- Notas -->
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-1.5">
+              Propósito / Notas <span class="text-gray-500 font-normal">(opcional)</span>
+            </label>
+            <textarea name="notes" [(ngModel)]="bookingNotes" rows="2" placeholder="Ej: Reunión de kick-off proyecto X..."
+              class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500 resize-none">
+            </textarea>
+          </div>
+
+          @if (bookingError()) {
+            <div class="flex items-center gap-2 p-3 bg-red-950 border border-red-800 rounded-lg text-red-400 text-sm">
+              <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/>
+              </svg>
+              {{ bookingError() }}
+            </div>
+          }
+        }
+      </div>
+
+      <!-- Modal footer -->
+      @if (!bookingSuccess()) {
+        <div class="px-6 pb-5 flex gap-3">
+          <button (click)="closeModal()"
+            class="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm font-medium py-2.5 rounded-lg transition-colors">
+            Cancelar
+          </button>
+          <button (click)="submitBooking()" [disabled]="bookingLoading()"
+            class="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-medium py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2">
+            @if (bookingLoading()) {
+              <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+              </svg>
+            }
+            Confirmar reserva
+          </button>
+        </div>
+      }
+
+    </div>
+  </div>
+}

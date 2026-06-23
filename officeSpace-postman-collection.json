@@ -1,0 +1,618 @@
+{
+  "info": {
+    "name": "OfficeSpace API",
+    "description": "Colección completa de la API de OfficeSpace — auth, catalog y booking services. Ejecutar en orden: primero Login para obtener el token JWT.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "officeSpace-hackathon-2026"
+  },
+  "variable": [
+    { "key": "AUTH_URL",    "value": "http://localhost:8083" },
+    { "key": "CATALOG_URL", "value": "http://localhost:8081" },
+    { "key": "BOOKING_URL", "value": "http://localhost:8082" },
+    { "key": "TOKEN",       "value": "" },
+    { "key": "SPACE_ID",    "value": "" },
+    { "key": "BOOKING_ID",  "value": "" }
+  ],
+  "item": [
+    {
+      "name": "1. Auth Service",
+      "item": [
+        {
+          "name": "Login (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "pm.collectionVariables.set('TOKEN', json.token);",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Token received', () => pm.expect(json.token).to.be.a('string'));",
+                  "pm.test('Role is ADMIN', () => pm.expect(json.role).to.eql('ADMIN'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@corporativoalpha.com\",\n  \"password\": \"Admin123\"\n}"
+            },
+            "url": { "raw": "{{AUTH_URL}}/api/auth/login", "host": ["{{AUTH_URL}}"], "path": ["api","auth","login"] }
+          }
+        },
+        {
+          "name": "Login (Collaborator)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Role is COLLABORATOR', () => pm.expect(json.role).to.eql('COLLABORATOR'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"carlos.mendez@corporativoalpha.com\",\n  \"password\": \"User123\"\n}"
+            },
+            "url": { "raw": "{{AUTH_URL}}/api/auth/login", "host": ["{{AUTH_URL}}"], "path": ["api","auth","login"] }
+          }
+        },
+        {
+          "name": "Login (credenciales inválidas)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"noexiste@test.com\",\n  \"password\": \"wrong\"\n}"
+            },
+            "url": { "raw": "{{AUTH_URL}}/api/auth/login", "host": ["{{AUTH_URL}}"], "path": ["api","auth","login"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Catalog Service — Espacios",
+      "item": [
+        {
+          "name": "Listar todos los espacios",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Es un array', () => pm.expect(json).to.be.an('array'));",
+                  "if (json.length > 0) {",
+                  "  pm.collectionVariables.set('SPACE_ID', json[0].publicId);",
+                  "  pm.test('Espacio tiene publicId', () => pm.expect(json[0].publicId).to.be.a('string'));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{CATALOG_URL}}/api/resources", "host": ["{{CATALOG_URL}}"], "path": ["api","resources"] }
+          }
+        },
+        {
+          "name": "Filtrar por tipo ROOM",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Todos son ROOM', () => json.forEach(s => pm.expect(s.type).to.eql('ROOM')));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{CATALOG_URL}}/api/resources?type=ROOM",
+              "host": ["{{CATALOG_URL}}"], "path": ["api","resources"],
+              "query": [{ "key": "type", "value": "ROOM" }]
+            }
+          }
+        },
+        {
+          "name": "Filtrar por tipo DESK",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Todos son DESK', () => json.forEach(s => pm.expect(s.type).to.eql('DESK')));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{CATALOG_URL}}/api/resources?type=DESK",
+              "host": ["{{CATALOG_URL}}"], "path": ["api","resources"],
+              "query": [{ "key": "type", "value": "DESK" }]
+            }
+          }
+        },
+        {
+          "name": "Filtrar por capacidad mínima",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Todos tienen capacidad >= 8', () => json.forEach(s => pm.expect(s.capacity).to.be.at.least(8)));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{CATALOG_URL}}/api/resources?minCapacity=8",
+              "host": ["{{CATALOG_URL}}"], "path": ["api","resources"],
+              "query": [{ "key": "minCapacity", "value": "8" }]
+            }
+          }
+        },
+        {
+          "name": "Detalle de un espacio",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Tiene publicId', () => pm.expect(json.publicId).to.be.a('string'));",
+                  "pm.test('Tiene name', () => pm.expect(json.name).to.be.a('string'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{CATALOG_URL}}/api/resources/{{SPACE_ID}}", "host": ["{{CATALOG_URL}}"], "path": ["api","resources","{{SPACE_ID}}"] }
+          }
+        },
+        {
+          "name": "Crear espacio (ADMIN)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('SPACE_ID', json.publicId);",
+                  "pm.test('Espacio creado con publicId', () => pm.expect(json.publicId).to.be.a('string'));",
+                  "pm.test('Nombre correcto', () => pm.expect(json.name).to.eql('Sala Test Postman'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{TOKEN}}" },
+              { "key": "Content-Type",   "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Sala Test Postman\",\n  \"type\": \"ROOM\",\n  \"capacity\": 8,\n  \"location\": \"Piso 99\",\n  \"features\": {\n    \"has_projector\": true,\n    \"whiteboard\": false,\n    \"monitors\": 1\n  }\n}"
+            },
+            "url": { "raw": "{{CATALOG_URL}}/api/resources", "host": ["{{CATALOG_URL}}"], "path": ["api","resources"] }
+          }
+        },
+        {
+          "name": "Actualizar espacio (ADMIN)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "var json = pm.response.json();",
+                  "pm.test('Capacidad actualizada', () => pm.expect(json.capacity).to.eql(12));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{TOKEN}}" },
+              { "key": "Content-Type",   "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Sala Test Postman (actualizada)\",\n  \"type\": \"ROOM\",\n  \"capacity\": 12,\n  \"location\": \"Piso 99\",\n  \"features\": {}\n}"
+            },
+            "url": { "raw": "{{CATALOG_URL}}/api/resources/{{SPACE_ID}}", "host": ["{{CATALOG_URL}}"], "path": ["api","resources","{{SPACE_ID}}"] }
+          }
+        },
+        {
+          "name": "Eliminar espacio (ADMIN — soft delete)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{TOKEN}}" }],
+            "url": { "raw": "{{CATALOG_URL}}/api/resources/{{SPACE_ID}}", "host": ["{{CATALOG_URL}}"], "path": ["api","resources","{{SPACE_ID}}"] }
+          }
+        },
+        {
+          "name": "Crear espacio sin auth (debe fallar 401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 401 o 403', () => pm.expect(pm.response.code).to.be.oneOf([401, 403]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"No debería crearse\",\n  \"type\": \"ROOM\",\n  \"capacity\": 4,\n  \"location\": \"X\"\n}"
+            },
+            "url": { "raw": "{{CATALOG_URL}}/api/resources", "host": ["{{CATALOG_URL}}"], "path": ["api","resources"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Booking Service — Reservas",
+      "item": [
+        {
+          "name": "Espacios ocupados en rango horario",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Es un array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{TOKEN}}" }],
+            "url": {
+              "raw": "{{BOOKING_URL}}/api/bookings/occupied?date=2026-07-01&startTime=09:00&endTime=11:00",
+              "host": ["{{BOOKING_URL}}"], "path": ["api","bookings","occupied"],
+              "query": [
+                { "key": "date",      "value": "2026-07-01" },
+                { "key": "startTime", "value": "09:00" },
+                { "key": "endTime",   "value": "11:00" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Crear reserva",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Asegurarse de tener un espacio activo — reutiliza el SPACE_ID del catálogo",
+                  "// Si no, primero ejecuta 'Listar todos los espacios' para obtener SPACE_ID"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('BOOKING_ID', json.publicId);",
+                  "pm.test('Reserva tiene publicId', () => pm.expect(json.publicId).to.be.a('string'));",
+                  "pm.test('Status es ACTIVE', () => pm.expect(json.status).to.eql('ACTIVE'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{TOKEN}}" },
+              { "key": "Content-Type",   "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"spacePublicId\": \"{{SPACE_ID}}\",\n  \"bookingDate\": \"2026-07-15\",\n  \"startTime\": \"10:00\",\n  \"endTime\": \"12:00\",\n  \"attendees\": 3,\n  \"notes\": \"Reunión de prueba Postman\"\n}"
+            },
+            "url": { "raw": "{{BOOKING_URL}}/api/bookings", "host": ["{{BOOKING_URL}}"], "path": ["api","bookings"] }
+          }
+        },
+        {
+          "name": "Crear reserva con solapamiento (debe fallar 409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 409 Conflict', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{TOKEN}}" },
+              { "key": "Content-Type",   "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"spacePublicId\": \"{{SPACE_ID}}\",\n  \"bookingDate\": \"2026-07-15\",\n  \"startTime\": \"10:30\",\n  \"endTime\": \"11:30\",\n  \"attendees\": 2\n}"
+            },
+            "url": { "raw": "{{BOOKING_URL}}/api/bookings", "host": ["{{BOOKING_URL}}"], "path": ["api","bookings"] }
+          }
+        },
+        {
+          "name": "Crear reserva en fecha pasada (debe fallar 400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400 Bad Request', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{TOKEN}}" },
+              { "key": "Content-Type",   "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"spacePublicId\": \"{{SPACE_ID}}\",\n  \"bookingDate\": \"2020-01-01\",\n  \"startTime\": \"09:00\",\n  \"endTime\": \"10:00\",\n  \"attendees\": 1\n}"
+            },
+            "url": { "raw": "{{BOOKING_URL}}/api/bookings", "host": ["{{BOOKING_URL}}"], "path": ["api","bookings"] }
+          }
+        },
+        {
+          "name": "Mis reservas activas",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Es un array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{TOKEN}}" }],
+            "url": { "raw": "{{BOOKING_URL}}/api/bookings/my", "host": ["{{BOOKING_URL}}"], "path": ["api","bookings","my"] }
+          }
+        },
+        {
+          "name": "Mi historial de reservas",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Es un array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{TOKEN}}" }],
+            "url": { "raw": "{{BOOKING_URL}}/api/bookings/my/history", "host": ["{{BOOKING_URL}}"], "path": ["api","bookings","my","history"] }
+          }
+        },
+        {
+          "name": "Dashboard de reservas del día (ADMIN)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Es un array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{TOKEN}}" }],
+            "url": {
+              "raw": "{{BOOKING_URL}}/api/bookings/dashboard",
+              "host": ["{{BOOKING_URL}}"], "path": ["api","bookings","dashboard"]
+            }
+          }
+        },
+        {
+          "name": "Obtener links de calendario",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "var json = pm.response.json();",
+                  "pm.test('Tiene googleCalendarUrl', () => pm.expect(json.googleCalendarUrl).to.be.a('string'));",
+                  "pm.test('Tiene outlookUrl', () => pm.expect(json.outlookUrl).to.be.a('string'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{TOKEN}}" }],
+            "url": { "raw": "{{BOOKING_URL}}/api/bookings/{{BOOKING_ID}}/calendar-links", "host": ["{{BOOKING_URL}}"], "path": ["api","bookings","{{BOOKING_ID}}","calendar-links"] }
+          }
+        },
+        {
+          "name": "Cancelar reserva propia",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{TOKEN}}" }],
+            "url": { "raw": "{{BOOKING_URL}}/api/bookings/{{BOOKING_ID}}", "host": ["{{BOOKING_URL}}"], "path": ["api","bookings","{{BOOKING_ID}}"] }
+          }
+        },
+        {
+          "name": "Cancelar reserva sin auth (debe fallar 401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 401 o 403', () => pm.expect(pm.response.code).to.be.oneOf([401, 403]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{BOOKING_URL}}/api/bookings/{{BOOKING_ID}}", "host": ["{{BOOKING_URL}}"], "path": ["api","bookings","{{BOOKING_ID}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Analytics & Exports (ADMIN)",
+      "item": [
+        {
+          "name": "Dashboard de analíticas",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "var json = pm.response.json();",
+                  "pm.test('Tiene totalBookings', () => pm.expect(json).to.have.property('totalBookings'));",
+                  "pm.test('Tiene topSpaces', () => pm.expect(json).to.have.property('topSpaces'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{TOKEN}}" }],
+            "url": { "raw": "{{BOOKING_URL}}/api/analytics/dashboard", "host": ["{{BOOKING_URL}}"], "path": ["api","analytics","dashboard"] }
+          }
+        },
+        {
+          "name": "Exportar a CSV",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Content-Type es text/csv', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('text/csv'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{TOKEN}}" }],
+            "url": {
+              "raw": "{{BOOKING_URL}}/api/bookings/export/csv?from=2026-06-01&to=2026-06-30",
+              "host": ["{{BOOKING_URL}}"], "path": ["api","bookings","export","csv"],
+              "query": [
+                { "key": "from", "value": "2026-06-01" },
+                { "key": "to",   "value": "2026-06-30" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Exportar a Excel",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Content-Type es xlsx', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('spreadsheetml'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{TOKEN}}" }],
+            "url": {
+              "raw": "{{BOOKING_URL}}/api/bookings/export/excel",
+              "host": ["{{BOOKING_URL}}"], "path": ["api","bookings","export","excel"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

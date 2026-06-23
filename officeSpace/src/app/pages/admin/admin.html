@@ -1,0 +1,512 @@
+<div class="p-6 max-w-7xl mx-auto">
+
+  <!-- Header -->
+  <div class="mb-6">
+    <h2 class="text-2xl font-bold text-white">Administración</h2>
+    <p class="text-gray-400 text-sm mt-1">Gestión de espacios, reservas y analíticas</p>
+  </div>
+
+  <!-- Tabs -->
+  <div class="flex gap-1 bg-gray-900 border border-gray-800 p-1 rounded-lg w-fit mb-6">
+    <button (click)="setTab('dashboard')"
+      [class]="activeTab() === 'dashboard' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'"
+      class="px-4 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center gap-1.5">
+      <span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse inline-block"></span>
+      Hoy
+    </button>
+    <button (click)="setTab('spaces')"
+      [class]="activeTab() === 'spaces' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'"
+      class="px-4 py-1.5 rounded-md text-sm font-medium transition-colors">
+      Espacios
+    </button>
+    <button (click)="setTab('bookings')"
+      [class]="activeTab() === 'bookings' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'"
+      class="px-4 py-1.5 rounded-md text-sm font-medium transition-colors">
+      Reservas
+    </button>
+    <button (click)="setTab('analytics')"
+      [class]="activeTab() === 'analytics' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'"
+      class="px-4 py-1.5 rounded-md text-sm font-medium transition-colors">
+      Analíticas
+    </button>
+  </div>
+
+  <!-- ===== DASHBOARD TAB (HOY) ===== -->
+  @if (activeTab() === 'dashboard') {
+    <div>
+      <div class="flex items-center justify-between mb-4">
+        <p class="text-gray-400 text-sm">
+          Reservas activas hoy —
+          <span class="text-white font-medium">{{ todayDate }}</span>
+        </p>
+        <button (click)="loadTodayBookings()" class="text-gray-400 hover:text-white text-xs flex items-center gap-1 transition-colors">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+          </svg>
+          Actualizar
+        </button>
+      </div>
+
+      @if (todayLoading()) {
+        <div class="flex justify-center py-12">
+          <svg class="w-7 h-7 animate-spin text-blue-500" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+          </svg>
+        </div>
+      } @else {
+
+        <!-- KPI rápido -->
+        <div class="grid grid-cols-3 gap-4 mb-6">
+          <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 text-center">
+            <p class="text-3xl font-bold text-white">{{ spaces().length }}</p>
+            <p class="text-gray-400 text-xs mt-1">Espacios totales</p>
+          </div>
+          <div class="bg-gray-900 border border-red-900/40 rounded-xl p-4 text-center">
+            <p class="text-3xl font-bold text-red-400">{{ todayBookings().length }}</p>
+            <p class="text-gray-400 text-xs mt-1">Reservados hoy</p>
+          </div>
+          <div class="bg-gray-900 border border-green-900/40 rounded-xl p-4 text-center">
+            <p class="text-3xl font-bold text-green-400">{{ spaces().length - todayBookings().length < 0 ? 0 : spaces().length - todayBookings().length }}</p>
+            <p class="text-gray-400 text-xs mt-1">Disponibles</p>
+          </div>
+        </div>
+
+        @if (todayBookings().length === 0) {
+          <div class="text-center py-10 text-gray-500">
+            <svg class="w-10 h-10 mx-auto mb-2 text-gray-700" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+              <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>
+            </svg>
+            No hay reservas activas hoy.
+          </div>
+        } @else {
+          <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="border-b border-gray-800 text-gray-400 text-left">
+                  <th class="px-4 py-3 font-medium">Espacio</th>
+                  <th class="px-4 py-3 font-medium">Horario</th>
+                  <th class="px-4 py-3 font-medium">Asistentes</th>
+                  <th class="px-4 py-3 font-medium">Notas</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (b of todayBookings(); track b.publicId) {
+                  <tr class="border-b border-gray-800/50 last:border-0 hover:bg-gray-800/40 transition-colors">
+                    <td class="px-4 py-3 text-white font-medium">{{ spaceName(b.spacePublicId) }}</td>
+                    <td class="px-4 py-3">
+                      <span class="bg-blue-900/50 text-blue-300 text-xs font-medium px-2 py-1 rounded-full">
+                        {{ formatTime(b.startTime) }} – {{ formatTime(b.endTime) }}
+                      </span>
+                    </td>
+                    <td class="px-4 py-3 text-gray-300">{{ b.attendees }} persona(s)</td>
+                    <td class="px-4 py-3 text-gray-400 text-xs">{{ b.notes || '—' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      }
+    </div>
+  }
+
+  <!-- ===== SPACES TAB ===== -->
+  @if (activeTab() === 'spaces') {
+    <div>
+      <div class="flex items-center justify-between mb-4">
+        <p class="text-gray-400 text-sm">{{ spaces().length }} espacio(s) registrados</p>
+        <div class="flex items-center gap-2">
+
+          <!-- Import Excel -->
+          <label class="relative cursor-pointer bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm font-medium px-3 py-2 rounded-lg transition-colors flex items-center gap-2">
+            @if (importLoading()) {
+              <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+              </svg>
+              Importando...
+            } @else {
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5-5 5 5M12 5v14"/>
+              </svg>
+              Importar Excel
+            }
+            <input type="file" accept=".xlsx,.xls" class="hidden" [disabled]="importLoading()"
+              (change)="importExcel($event)">
+          </label>
+
+          <!-- Nueva sala -->
+          <button (click)="openAddSpace()"
+            class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path d="M12 5v14M5 12h14"/>
+            </svg>
+            Nuevo espacio
+          </button>
+        </div>
+      </div>
+
+      @if (spacesLoading()) {
+        <div class="flex justify-center py-12">
+          <svg class="w-7 h-7 animate-spin text-blue-500" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+          </svg>
+        </div>
+      } @else if (spaces().length === 0) {
+        <div class="text-center py-12 text-gray-500">No hay espacios registrados.</div>
+      } @else {
+        <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-gray-800 text-gray-400 text-left">
+                <th class="px-4 py-3 font-medium">Nombre</th>
+                <th class="px-4 py-3 font-medium">Tipo</th>
+                <th class="px-4 py-3 font-medium">Capacidad</th>
+                <th class="px-4 py-3 font-medium">Ubicación</th>
+                <th class="px-4 py-3 font-medium">Estado</th>
+                <th class="px-4 py-3 font-medium"></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (space of spaces(); track space.publicId) {
+                <tr class="border-b border-gray-800/50 last:border-0 hover:bg-gray-800/40 transition-colors">
+                  <td class="px-4 py-3 text-white font-medium">{{ space.name }}</td>
+                  <td class="px-4 py-3">
+                    <span class="text-xs px-2 py-1 rounded-full"
+                      [class]="space.type === 'ROOM' ? 'bg-purple-900 text-purple-300' : 'bg-teal-900 text-teal-300'">
+                      {{ space.type === 'ROOM' ? 'Sala' : 'Escritorio' }}
+                    </span>
+                  </td>
+                  <td class="px-4 py-3 text-gray-300">{{ space.capacity }}</td>
+                  <td class="px-4 py-3 text-gray-300">{{ space.location }}</td>
+                  <td class="px-4 py-3">
+                    <span class="text-xs px-2 py-1 rounded-full"
+                      [class]="space.active ? 'bg-green-900 text-green-300' : 'bg-gray-700 text-gray-400'">
+                      {{ space.active ? 'Activo' : 'Inactivo' }}
+                    </span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <div class="flex items-center gap-2 justify-end">
+                      <button (click)="openEditSpace(space)"
+                        class="text-gray-400 hover:text-blue-400 transition-colors p-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        </svg>
+                      </button>
+                      <button (click)="deleteSpace(space)"
+                        class="text-gray-400 hover:text-red-400 transition-colors p-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                          <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ===== BOOKINGS TAB ===== -->
+  @if (activeTab() === 'bookings') {
+    <div>
+      <div class="flex items-center justify-between mb-4">
+        <p class="text-gray-400 text-sm">{{ bookings().length }} reserva(s) en total</p>
+        <div class="flex gap-2">
+          <button (click)="exportCsv()"
+            class="bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-medium px-3 py-2 rounded-lg transition-colors flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+            </svg>
+            Exportar CSV
+          </button>
+          <button (click)="exportExcel()"
+            class="bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-medium px-3 py-2 rounded-lg transition-colors flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+            </svg>
+            Exportar Excel
+          </button>
+        </div>
+      </div>
+
+      @if (bookingsLoading()) {
+        <div class="flex justify-center py-12">
+          <svg class="w-7 h-7 animate-spin text-blue-500" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+          </svg>
+        </div>
+      } @else if (bookings().length === 0) {
+        <div class="text-center py-12 text-gray-500">No hay reservas registradas.</div>
+      } @else {
+        <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-gray-800 text-gray-400 text-left">
+                <th class="px-4 py-3 font-medium">Fecha</th>
+                <th class="px-4 py-3 font-medium">Horario</th>
+                <th class="px-4 py-3 font-medium">Espacio</th>
+                <th class="px-4 py-3 font-medium">Reservado por</th>
+                <th class="px-4 py-3 font-medium">Asistentes</th>
+                <th class="px-4 py-3 font-medium">Estado</th>
+                <th class="px-4 py-3 font-medium"></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (b of bookings(); track b.publicId) {
+                <tr class="border-b border-gray-800/50 last:border-0 hover:bg-gray-800/40 transition-colors">
+                  <td class="px-4 py-3 text-gray-300">{{ formatDate(b.bookingDate) }}</td>
+                  <td class="px-4 py-3 text-gray-300">{{ formatTime(b.startTime) }} – {{ formatTime(b.endTime) }}</td>
+                  <td class="px-4 py-3 text-gray-300">{{ spaceName(b.spacePublicId) }}</td>
+                  <td class="px-4 py-3">
+                    @if (b.status === 'ACTIVE') {
+                      <div class="text-gray-200 text-xs font-medium">{{ b.userName || '—' }}</div>
+                      <div class="text-gray-500 text-xs">{{ b.userEmail || '' }}</div>
+                    } @else {
+                      <span class="text-gray-600 text-xs">—</span>
+                    }
+                  </td>
+                  <td class="px-4 py-3 text-gray-300">{{ b.attendees }}</td>
+                  <td class="px-4 py-3">
+                    <span class="text-xs px-2 py-1 rounded-full" [class]="statusClass(b.status)">
+                      {{ statusLabel(b.status) }}
+                    </span>
+                  </td>
+                  <td class="px-4 py-3 text-right">
+                    @if (b.status === 'ACTIVE') {
+                      <button (click)="adminCancelBooking(b)"
+                        [disabled]="cancellingBookingId() === b.publicId"
+                        class="text-xs bg-red-900/60 hover:bg-red-800 disabled:opacity-50 text-red-300 px-2.5 py-1 rounded-lg transition-colors">
+                        {{ cancellingBookingId() === b.publicId ? '...' : 'Cancelar' }}
+                      </button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ===== ANALYTICS TAB ===== -->
+  @if (activeTab() === 'analytics') {
+    @if (analyticsLoading()) {
+      <div class="flex justify-center py-12">
+        <svg class="w-7 h-7 animate-spin text-blue-500" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+        </svg>
+      </div>
+    } @else if (!analytics()) {
+      <div class="text-center py-12 text-gray-500">No hay datos disponibles.</div>
+    } @else {
+      <div class="space-y-6">
+
+        <!-- KPI Cards -->
+        <div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
+          <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 col-span-1">
+            <p class="text-gray-400 text-xs mb-1">Total reservas</p>
+            <p class="text-3xl font-bold text-white">{{ analytics()!.totalBookings }}</p>
+          </div>
+          <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+            <p class="text-gray-400 text-xs mb-1">Activas</p>
+            <p class="text-3xl font-bold text-green-400">{{ analytics()!.activeBookings }}</p>
+          </div>
+          <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+            <p class="text-gray-400 text-xs mb-1">Completadas</p>
+            <p class="text-3xl font-bold text-blue-400">{{ analytics()!.completedBookings }}</p>
+          </div>
+          <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+            <p class="text-gray-400 text-xs mb-1">Canceladas</p>
+            <p class="text-3xl font-bold text-red-400">{{ analytics()!.cancelledBookings }}</p>
+          </div>
+          <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+            <p class="text-gray-400 text-xs mb-1">Tasa cancelación</p>
+            <p class="text-3xl font-bold text-yellow-400">{{ (analytics()!.cancellationRate * 100).toFixed(1) }}%</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+          <!-- Space Usage -->
+          <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+            <h3 class="text-sm font-semibold text-white mb-4">Uso por espacio</h3>
+            @if (analytics()!.spaceUsage.length === 0) {
+              <p class="text-gray-500 text-sm">Sin datos.</p>
+            } @else {
+              <div class="space-y-3">
+                @for (su of analytics()!.spaceUsage; track su.spacePublicId) {
+                  <div>
+                    <div class="flex justify-between text-sm mb-1">
+                      <span class="text-gray-300">{{ spaceName(su.spacePublicId) }}</span>
+                      <span class="text-gray-400">{{ su.bookingCount }} reservas</span>
+                    </div>
+                    <div class="h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                      <div class="h-full bg-blue-500 rounded-full"
+                        [style.width.%]="analytics()!.totalBookings > 0 ? (su.bookingCount / analytics()!.totalBookings * 100) : 0">
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Peak Hours -->
+          <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+            <h3 class="text-sm font-semibold text-white mb-4">Horas pico</h3>
+            @if (analytics()!.peakHours.length === 0) {
+              <p class="text-gray-500 text-sm">Sin datos.</p>
+            } @else {
+              <div class="space-y-2">
+                @for (h of analytics()!.peakHours; track h.startTime) {
+                  <div class="flex items-center gap-3">
+                    <span class="text-gray-400 text-xs w-12 shrink-0">{{ h.startTime.substring(0, 5) }}</span>
+                    <div class="flex-1 h-5 bg-gray-800 rounded overflow-hidden">
+                      <div class="h-full bg-purple-500 rounded flex items-center justify-end pr-2"
+                        [style.width.%]="maxPeakCount() > 0 ? (h.bookingCount / maxPeakCount() * 100) : 0">
+                        <span class="text-xs text-white font-medium">{{ h.bookingCount }}</span>
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+
+        </div>
+
+        <!-- Bookings per day -->
+        @if (analytics()!.bookingsPerDay.length > 0) {
+          <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+            <h3 class="text-sm font-semibold text-white mb-4">Reservas por día</h3>
+            <div class="flex items-end gap-1.5 h-28">
+              @for (d of analytics()!.bookingsPerDay; track d.date) {
+                <div class="flex-1 flex flex-col items-center gap-1 min-w-0">
+                  <span class="text-xs text-gray-500 truncate" style="writing-mode: vertical-rl; transform: rotate(180deg); font-size: 10px">
+                    {{ d.date.substring(5) }}
+                  </span>
+                  <div class="w-full bg-blue-600 rounded-t"
+                    [style.height.px]="maxDailyCount() > 0 ? (d.bookingCount / maxDailyCount() * 72) : 0"
+                    [title]="d.bookingCount + ' reservas'">
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+      </div>
+    }
+  }
+
+</div>
+
+<!-- Space Form Modal -->
+@if (showSpaceForm()) {
+  <div class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+    (click)="closeSpaceForm()">
+    <div class="bg-gray-900 border border-gray-700 rounded-xl w-full max-w-lg shadow-2xl"
+      (click)="$event.stopPropagation()">
+
+      <div class="flex items-center justify-between px-6 py-4 border-b border-gray-800">
+        <h3 class="font-semibold text-white">
+          {{ editingSpace() ? 'Editar espacio' : 'Agregar espacio' }}
+        </h3>
+        <button (click)="closeSpaceForm()" class="text-gray-400 hover:text-white p-1">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M18 6 6 18M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="px-6 py-5 space-y-4">
+        <div class="grid grid-cols-2 gap-4">
+          <div class="col-span-2">
+            <label class="block text-xs font-medium text-gray-400 mb-1.5">Nombre</label>
+            <input type="text" name="spaceName" [(ngModel)]="spaceFormName" placeholder="Sala de juntas A"
+              class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-400 mb-1.5">Tipo</label>
+            <select name="spaceType" [(ngModel)]="spaceFormType"
+              class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500">
+              <option value="ROOM">Sala</option>
+              <option value="DESK">Escritorio</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-400 mb-1.5">Capacidad</label>
+            <input type="number" name="spaceCapacity" [(ngModel)]="spaceFormCapacity" min="1"
+              class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500">
+          </div>
+          <div class="col-span-2">
+            <label class="block text-xs font-medium text-gray-400 mb-1.5">Ubicación</label>
+            <input type="text" name="spaceLocation" [(ngModel)]="spaceFormLocation" placeholder="Piso 3, Ala norte"
+              class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500">
+          </div>
+        </div>
+
+        <!-- Features -->
+        <div>
+          <label class="block text-xs font-medium text-gray-400 mb-2">Características</label>
+          <div class="grid grid-cols-2 gap-2">
+            <label class="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
+              <input type="checkbox" name="hasProjector" [(ngModel)]="spaceHasProjector" class="accent-blue-500">
+              Proyector
+            </label>
+            <label class="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
+              <input type="checkbox" name="hasAC" [(ngModel)]="spaceHasAC" class="accent-blue-500">
+              Aire acondicionado
+            </label>
+            <label class="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
+              <input type="checkbox" name="hasWhiteboard" [(ngModel)]="spaceHasWhiteboard" class="accent-blue-500">
+              Pizarrón
+            </label>
+            <div class="flex items-center gap-2">
+              <label class="text-sm text-gray-300 shrink-0">Monitores:</label>
+              <input type="number" name="spaceMonitors" [(ngModel)]="spaceMonitors" min="0" max="10"
+                class="w-16 bg-gray-800 border border-gray-700 rounded px-2 py-1 text-white text-sm focus:outline-none focus:border-blue-500">
+            </div>
+          </div>
+        </div>
+
+        @if (spaceFormError()) {
+          <div class="flex items-center gap-2 p-3 bg-red-950 border border-red-800 rounded-lg text-red-400 text-sm">
+            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/>
+            </svg>
+            {{ spaceFormError() }}
+          </div>
+        }
+      </div>
+
+      <div class="px-6 pb-5 flex gap-3">
+        <button (click)="closeSpaceForm()"
+          class="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm font-medium py-2.5 rounded-lg transition-colors">
+          Cancelar
+        </button>
+        <button (click)="submitSpaceForm()" [disabled]="spaceFormLoading()"
+          class="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-medium py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2">
+          @if (spaceFormLoading()) {
+            <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+            </svg>
+          }
+          {{ editingSpace() ? 'Guardar cambios' : 'Crear espacio' }}
+        </button>
+      </div>
+
+    </div>
+  </div>
+}

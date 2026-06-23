@@ -1,0 +1,158 @@
+<div class="min-h-screen bg-gray-950 flex">
+
+  <!-- Left panel — marketing -->
+  <div class="hidden lg:flex flex-col justify-between w-1/2 px-16 py-12 bg-gray-950 border-r border-gray-800">
+    <!-- Logo -->
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center shrink-0">
+        <svg class="w-5 h-5 text-gray-950" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+          <polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+      </div>
+      <div>
+        <p class="text-white font-bold leading-tight">OfficeSpace</p>
+        <p class="text-gray-500 text-xs tracking-widest uppercase">IBM Hackathon</p>
+      </div>
+    </div>
+
+    <!-- Hero copy -->
+    <div>
+      <h1 class="text-4xl font-bold text-white leading-tight mb-4">
+        Gestión híbrida inteligente<br>de espacios
+      </h1>
+      <p class="text-gray-400 text-base mb-10 max-w-sm leading-relaxed">
+        Reserva salas de juntas y escritorios sin conflictos.
+        Visibilidad en tiempo real de la ocupación de Corporativo Alpha.
+      </p>
+      <ul class="space-y-4">
+        @for (feature of [
+          'Motor de reservas sin solapamientos',
+          'Control de acceso por roles',
+          'Dashboard de ocupación diaria'
+        ]; track feature) {
+          <li class="flex items-center gap-3 text-gray-300 text-sm">
+            <svg class="w-4 h-4 text-gray-500 shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+            {{ feature }}
+          </li>
+        }
+      </ul>
+    </div>
+
+    <!-- Footer -->
+    <p class="text-gray-600 text-xs">Corporativo Alpha · MVP de gestión de espacios</p>
+  </div>
+
+  <!-- Right panel — login form -->
+  <div class="flex-1 flex flex-col justify-center px-8 sm:px-16 lg:px-20 py-12 bg-gray-950">
+    <div class="w-full max-w-md mx-auto">
+
+      <!-- Mobile logo -->
+      <div class="flex items-center gap-3 mb-10 lg:hidden">
+        <div class="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
+          <svg class="w-4 h-4 text-gray-950" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+        </div>
+        <p class="text-white font-bold">OfficeSpace</p>
+      </div>
+
+      <h2 class="text-3xl font-bold text-white mb-2">Iniciar sesión</h2>
+      <p class="text-gray-400 text-sm mb-8">Ingresa tus credenciales corporativas para continuar.</p>
+
+      <form (ngSubmit)="onLogin()" class="space-y-5">
+        <!-- Email -->
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-1.5">Usuario (email)</label>
+          <input
+            type="email"
+            name="email"
+            [(ngModel)]="email"
+            required
+            autocomplete="email"
+            placeholder="nombre&#64;corporativoalpha.com"
+            class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500 transition-colors">
+        </div>
+
+        <!-- Password -->
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-1.5">Contraseña</label>
+          <div class="relative">
+            <input
+              [type]="showPassword() ? 'text' : 'password'"
+              name="password"
+              [(ngModel)]="password"
+              required
+              autocomplete="current-password"
+              placeholder="••••••••"
+              class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 pr-12 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500 transition-colors">
+            <button type="button" (click)="showPassword.update(v => !v)"
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors p-1">
+              @if (showPassword()) {
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                  <line x1="1" y1="1" x2="23" y2="23"/>
+                </svg>
+              } @else {
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                </svg>
+              }
+            </button>
+          </div>
+        </div>
+
+        @if (error()) {
+          <div class="flex items-center gap-2 p-3 bg-red-950/60 border border-red-800 rounded-lg text-red-400 text-sm">
+            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/>
+            </svg>
+            {{ error() }}
+          </div>
+        }
+
+        <button
+          type="submit"
+          [disabled]="loading()"
+          class="w-full bg-white hover:bg-gray-100 disabled:bg-gray-300 disabled:opacity-60 text-gray-950 font-semibold py-3 px-4 rounded-lg transition-colors text-sm flex items-center justify-center gap-2 mt-2">
+          @if (loading()) {
+            <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+            </svg>
+            Iniciando sesión...
+          } @else {
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/>
+            </svg>
+            Iniciar sesión
+          }
+        </button>
+      </form>
+
+      <!-- Demo users panel -->
+      @if (showDemoUsers) {
+        <div class="mt-6 border border-gray-800 rounded-xl overflow-hidden">
+          <div class="px-4 py-2.5 bg-gray-900/60 border-b border-gray-800">
+            <p class="text-xs text-gray-500">Usuarios de prueba (clic para autocompletar)</p>
+          </div>
+          @for (user of demoUsers; track user.email) {
+            <button type="button" (click)="fillDemo(user)"
+              class="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-800/60 transition-colors border-b border-gray-800/50 last:border-0">
+              <span class="text-sm text-gray-200">{{ user.email }}</span>
+              <span class="text-xs font-medium shrink-0 ml-3"
+                [class]="user.role === 'Administrador' ? 'text-blue-400' : 'text-gray-400'">
+                {{ user.role }}
+              </span>
+            </button>
+          }
+        </div>
+      }
+
+    </div>
+  </div>
+
+</div>
