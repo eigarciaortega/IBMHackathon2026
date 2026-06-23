@@ -1,0 +1,102 @@
+<div class="page">
+  <div class="page-header" style="display:flex; justify-content:space-between; align-items:flex-start;">
+    <div>
+      <h2>Gestión de espacios</h2>
+      <p>Administra las salas y escritorios del corporativo</p>
+    </div>
+    <button class="btn btn--primary" (click)="openCreate()">+ Nuevo espacio</button>
+  </div>
+
+  <div class="card">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Tipo</th>
+          <th>Capacidad</th>
+          <th>Piso</th>
+          <th>Proyector</th>
+          <th>Clima</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let s of spaces">
+          <td><strong>{{ s.name }}</strong></td>
+          <td>
+            <span class="badge" [class.badge--blue]="s.type==='SALA'" [class.badge--gray]="s.type==='DESK'">
+              {{ s.type === 'SALA' ? 'Sala' : 'Escritorio' }}
+            </span>
+          </td>
+          <td>{{ s.capacity }}</td>
+          <td>{{ s.floor }}</td>
+          <td>
+            <span class="badge badge--green" *ngIf="s.hasProjector">Sí</span>
+            <span class="badge badge--gray"  *ngIf="!s.hasProjector">No</span>
+          </td>
+          <td>
+            <span class="badge badge--green" *ngIf="s.hasAC">Sí</span>
+            <span class="badge badge--gray"  *ngIf="!s.hasAC">No</span>
+          </td>
+          <td class="td-actions">
+            <button class="btn btn--ghost btn--sm" (click)="openEdit(s)">Editar</button>
+            <button class="btn btn--danger btn--sm" (click)="onDelete(s.id)">Eliminar</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-backdrop" *ngIf="showModal" (click)="closeModal()"></div>
+<div class="modal" *ngIf="showModal">
+  <div class="modal-header">
+    <h3>{{ editingId ? 'Editar espacio' : 'Nuevo espacio' }}</h3>
+    <button class="modal-close" (click)="closeModal()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+
+  <form [formGroup]="form" (ngSubmit)="onSave()" class="modal-body">
+    <div class="modal-grid">
+      <div class="field-group">
+        <label class="field-label">Nombre</label>
+        <input class="field-input" formControlName="name" placeholder="Ej. Sala Creativa" />
+      </div>
+      <div class="field-group">
+        <label class="field-label">Tipo</label>
+        <select class="field-select" formControlName="type">
+          <option value="SALA">Sala de juntas</option>
+          <option value="DESK">Escritorio</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Capacidad</label>
+        <input class="field-input" type="number" formControlName="capacity" min="1" />
+      </div>
+      <div class="field-group">
+        <label class="field-label">Piso</label>
+        <input class="field-input" formControlName="floor" placeholder="Ej. 2" />
+      </div>
+    </div>
+
+    <div class="checkboxes-row">
+      <label class="checkbox-label">
+        <input type="checkbox" formControlName="hasProjector" />
+        <span>Proyector</span>
+      </label>
+      <label class="checkbox-label">
+        <input type="checkbox" formControlName="hasAC" />
+        <span>Aire acondicionado</span>
+      </label>
+    </div>
+
+    <div class="modal-footer">
+      <button type="button" class="btn btn--ghost" (click)="closeModal()">Cancelar</button>
+      <button type="submit" class="btn btn--primary" [disabled]="form.invalid">
+        {{ editingId ? 'Guardar cambios' : 'Crear espacio' }}
+      </button>
+    </div>
+  </form>
+</div>

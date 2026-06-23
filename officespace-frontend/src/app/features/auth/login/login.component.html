@@ -1,0 +1,66 @@
+<div class="login-wrapper">
+  <div class="login-card">
+
+    <div class="login-header">
+      <div class="logo-mark">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" fill="none">
+          <rect width="40" height="40" rx="8" fill="#0F62FE"/>
+          <path d="M10 28V18l10-7 10 7v10H24v-6h-8v6H10Z" fill="white"/>
+        </svg>
+      </div>
+      <h1 class="brand-name">OfficeSpace</h1>
+      <p class="brand-sub">Corporativo Alpha</p>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="login-form" novalidate>
+
+      <div class="field-group">
+        <label class="field-label" for="email">Correo electrónico</label>
+        <input
+          id="email"
+          class="field-input"
+          [class.field-input--error]="form.get('email')?.invalid && form.get('email')?.touched"
+          type="email"
+          formControlName="email"
+          placeholder="usuario&#64;corporativoalpha.com"
+          autocomplete="username"
+        />
+        <span class="field-error" *ngIf="form.get('email')?.invalid && form.get('email')?.touched">
+          Ingresa un correo electrónico válido
+        </span>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label" for="password">Contraseña</label>
+        <input
+          id="password"
+          class="field-input"
+          [class.field-input--error]="form.get('password')?.invalid && form.get('password')?.touched"
+          type="password"
+          formControlName="password"
+          placeholder="••••••••"
+          autocomplete="current-password"
+        />
+        <span class="field-error" *ngIf="form.get('password')?.invalid && form.get('password')?.touched">
+          La contraseña es requerida
+        </span>
+      </div>
+
+      <div class="alert-error" *ngIf="errorMsg" role="alert">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        {{ errorMsg }}
+      </div>
+
+      <button type="submit" class="btn-submit" [disabled]="loading">
+        <span *ngIf="!loading">Iniciar sesión</span>
+        <span *ngIf="loading" class="btn-loading">
+          <span class="spinner"></span>
+          Verificando...
+        </span>
+      </button>
+
+    </form>
+  </div>
+</div>

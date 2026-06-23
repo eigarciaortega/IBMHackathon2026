@@ -1,0 +1,94 @@
+<div class="page">
+  <div class="page-header">
+    <button class="btn-back" (click)="goToSearch()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+      Volver a resultados
+    </button>
+    <h2>Confirmar reserva</h2>
+    <p>Revisa los detalles antes de confirmar</p>
+  </div>
+
+  <!-- Success -->
+  <div class="success-card card" *ngIf="success">
+    <div class="success-icon">
+      <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#24a148" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+    </div>
+    <h3>¡Reserva confirmada!</h3>
+    <p>Tu espacio ha sido reservado exitosamente.</p>
+    <div class="success-actions">
+      <button class="btn btn--primary" (click)="goToMyBookings()">Ver mis reservas</button>
+      <button class="btn btn--ghost" (click)="goToSearch()">Nueva búsqueda</button>
+    </div>
+  </div>
+
+  <!-- Form -->
+  <div class="confirm-layout" *ngIf="!success">
+    <!-- Summary -->
+    <div class="summary-card card">
+      <h3 class="summary-title">Resumen de la reserva</h3>
+
+      <div class="summary-row">
+        <span class="summary-label">Espacio</span>
+        <span class="summary-value">{{ space.name }}</span>
+      </div>
+      <div class="summary-row">
+        <span class="summary-label">Tipo</span>
+        <span class="badge" [class.badge--blue]="space.type==='SALA'" [class.badge--gray]="space.type==='DESK'">
+          {{ space.type === 'SALA' ? 'Sala de juntas' : 'Escritorio' }}
+        </span>
+      </div>
+      <div class="summary-row">
+        <span class="summary-label">Capacidad</span>
+        <span class="summary-value">{{ space.capacity }} personas</span>
+      </div>
+      <div class="summary-row">
+        <span class="summary-label">Piso</span>
+        <span class="summary-value">{{ space.floor }}</span>
+      </div>
+      <div class="summary-row">
+        <span class="summary-label">Fecha</span>
+        <span class="summary-value">{{ filters.date }}</span>
+      </div>
+      <div class="summary-row">
+        <span class="summary-label">Horario</span>
+        <span class="summary-value">{{ filters.startTime }} – {{ filters.endTime }}</span>
+      </div>
+
+      <div class="amenities-row">
+        <span class="amenity" [class.amenity--on]="space.hasProjector">Proyector</span>
+        <span class="amenity" [class.amenity--on]="space.hasAC">Clima</span>
+      </div>
+    </div>
+
+    <!-- Confirm form -->
+    <div class="confirm-form-card card">
+      <h3 class="summary-title">Detalles adicionales</h3>
+
+      <form [formGroup]="form" (ngSubmit)="onConfirm()">
+        <div class="field-group" style="margin-bottom:24px;">
+          <label class="field-label">Número de asistentes</label>
+          <input
+            class="field-input"
+            [class.field-input--error]="form.get('attendees')?.invalid && form.get('attendees')?.touched"
+            type="number"
+            formControlName="attendees"
+            [min]="1"
+            [max]="space.capacity"
+          />
+          <span class="field-error" *ngIf="form.get('attendees')?.errors?.['max'] && form.get('attendees')?.touched">
+            Máximo {{ space.capacity }} asistentes para este espacio
+          </span>
+          <span class="field-error" *ngIf="form.get('attendees')?.errors?.['min'] && form.get('attendees')?.touched">
+            Debe ser al menos 1 asistente
+          </span>
+        </div>
+
+        <div class="alert alert--error" *ngIf="errorMsg">{{ errorMsg }}</div>
+
+        <button type="submit" class="btn btn--primary" style="width:100%; justify-content:center;" [disabled]="loading || form.invalid">
+          {{ loading ? 'Confirmando...' : 'Confirmar reserva' }}
+        </button>
+      </form>
+    </div>
+  </div>
+</div>

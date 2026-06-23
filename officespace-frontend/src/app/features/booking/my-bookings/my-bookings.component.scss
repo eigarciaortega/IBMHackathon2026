@@ -1,0 +1,12 @@
+.td-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.empty-state a {
+  color: #0f62fe;
+  text-decoration: none;
+
+  &:hover { text-decoration: underline; }
+}

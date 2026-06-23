@@ -1,0 +1,16 @@
+<nav class="navbar" *ngIf="auth.isAuthenticated()">
+  <div class="navbar-brand">
+    <a routerLink="/search">OfficeSpace</a>
+  </div>
+  <ul class="navbar-links">
+    <li><a routerLink="/search" routerLinkActive="active">Buscar espacios</a></li>
+    <li><a routerLink="/booking/my-bookings" routerLinkActive="active">Mis reservas</a></li>
+    <li *ngIf="auth.isAdmin()">
+      <a routerLink="/admin" routerLinkActive="active">Administración</a>
+    </li>
+  </ul>
+  <div class="navbar-user">
+    <span>{{ (auth.currentUser$ | async)?.name }}</span>
+    <button (click)="logout()" class="btn-logout">Cerrar sesión</button>
+  </div>
+</nav>

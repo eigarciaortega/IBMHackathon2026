@@ -1,0 +1,54 @@
+<div class="page">
+  <div class="page-header">
+    <h2>Mis reservas</h2>
+    <p>Historial y gestión de tus reservaciones</p>
+  </div>
+
+  <app-loading-spinner *ngIf="loading"></app-loading-spinner>
+
+  <div class="card" *ngIf="!loading">
+    <table class="data-table" *ngIf="bookings.length > 0; else emptyBookings">
+      <thead>
+        <tr>
+          <th>Espacio</th>
+          <th>Fecha</th>
+          <th>Horario</th>
+          <th>Asistentes</th>
+          <th>Estado</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let b of bookings">
+          <td>
+            <strong>{{ b.spaceName }}</strong>
+          </td>
+          <td>{{ b.date }}</td>
+          <td>{{ b.startTime }} – {{ b.endTime }}</td>
+          <td>{{ b.attendees }}</td>
+          <td>
+            <span class="badge" [class.badge--green]="b.status==='CONFIRMED'" [class.badge--gray]="b.status==='CANCELLED'">
+              {{ b.status === 'CONFIRMED' ? 'Confirmada' : 'Cancelada' }}
+            </span>
+          </td>
+          <td class="td-actions">
+            <button
+              class="btn btn--danger btn--sm"
+              *ngIf="b.status === 'CONFIRMED' && isFuture(b.date)"
+              [disabled]="cancellingId === b.id"
+              (click)="onCancel(b.id)">
+              {{ cancellingId === b.id ? 'Cancelando...' : 'Cancelar' }}
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <ng-template #emptyBookings>
+      <div class="empty-state">
+        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <p>Aún no tienes reservas. <a routerLink="/search">Busca un espacio</a>.</p>
+      </div>
+    </ng-template>
+  </div>
+</div>
