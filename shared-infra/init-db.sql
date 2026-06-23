@@ -34,11 +34,29 @@ CREATE TABLE IF NOT EXISTS espacios (
     nombre          TEXT NOT NULL,
     tipo            TEXT NOT NULL CHECK (tipo IN ('SALA', 'DESK')),
     capacidad       INT  NOT NULL CHECK (capacidad > 0),
-    tiene_proyector BOOLEAN NOT NULL DEFAULT FALSE,
-    tiene_aire      BOOLEAN NOT NULL DEFAULT FALSE,
     piso            TEXT NOT NULL DEFAULT '',
     creado_en       TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- ---------------------------------------------------------------------
+-- Tablas: recursos y espacio_recursos (catálogo de recursos gestionable)
+-- ---------------------------------------------------------------------
+-- Los recursos (proyector, aire, pizarrón, videoconferencia...) son un catálogo
+-- que el ADMINISTRADOR administra (CRUD), en vez de banderas fijas en espacios.
+-- La relación espacio↔recurso es N:M.
+CREATE TABLE IF NOT EXISTS recursos (
+    id        SERIAL PRIMARY KEY,
+    nombre    TEXT NOT NULL UNIQUE,
+    creado_en TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS espacio_recursos (
+    espacio_id INT NOT NULL REFERENCES espacios(id) ON DELETE CASCADE,
+    recurso_id INT NOT NULL REFERENCES recursos(id) ON DELETE CASCADE,
+    PRIMARY KEY (espacio_id, recurso_id)
+);
+-- Acelera la búsqueda inversa "qué espacios tienen este recurso".
+CREATE INDEX IF NOT EXISTS idx_espacio_recursos_recurso ON espacio_recursos (recurso_id);
 
 -- ---------------------------------------------------------------------
 -- Tabla: reservas
@@ -144,13 +162,27 @@ INSERT INTO usuarios (email, password_hash, rol, nombre) VALUES
 ON CONFLICT (email) DO NOTHING;
 
 -- --- Espacios ---
-INSERT INTO espacios (nombre, tipo, capacidad, tiene_proyector, tiene_aire, piso) VALUES
-    ('Sala Monterrey', 'SALA', 8, TRUE,  TRUE,  'Piso 1'),
-    ('Sala Cancún',    'SALA', 4, FALSE, TRUE,  'Piso 2'),
-    ('Sala Oaxaca',    'SALA', 12, TRUE, TRUE,  'Piso 3'),
-    ('Desk A1',        'DESK', 1, FALSE, FALSE, 'Piso 1'),
-    ('Desk A2',        'DESK', 1, FALSE, TRUE,  'Piso 1'),
-    ('Desk B1',        'DESK', 1, FALSE, FALSE, 'Piso 2')
+INSERT INTO espacios (nombre, tipo, capacidad, piso) VALUES
+    ('Sala Monterrey', 'SALA', 8,  'Piso 1'),
+    ('Sala Cancún',    'SALA', 4,  'Piso 2'),
+    ('Sala Oaxaca',    'SALA', 12, 'Piso 3'),
+    ('Desk A1',        'DESK', 1,  'Piso 1'),
+    ('Desk A2',        'DESK', 1,  'Piso 1'),
+    ('Desk B1',        'DESK', 1,  'Piso 2')
+ON CONFLICT DO NOTHING;
+
+-- --- Recursos (catálogo gestionable por el administrador) ---
+INSERT INTO recursos (nombre) VALUES
+    ('Proyector'), ('Aire acondicionado'), ('Pizarrón'), ('Videoconferencia'), ('TV')
+ON CONFLICT (nombre) DO NOTHING;
+
+-- --- Asignación de recursos a los espacios de ejemplo (por nombre) ---
+INSERT INTO espacio_recursos (espacio_id, recurso_id)
+SELECT e.id, r.id FROM espacios e, recursos r
+WHERE (e.nombre = 'Sala Monterrey' AND r.nombre IN ('Proyector', 'Aire acondicionado', 'Videoconferencia'))
+   OR (e.nombre = 'Sala Cancún'    AND r.nombre IN ('Aire acondicionado', 'TV'))
+   OR (e.nombre = 'Sala Oaxaca'    AND r.nombre IN ('Proyector', 'Aire acondicionado', 'Pizarrón', 'Videoconferencia'))
+   OR (e.nombre = 'Desk A2'        AND r.nombre IN ('Aire acondicionado'))
 ON CONFLICT DO NOTHING;
 
 -- --- Reservas de ejemplo (fechas RELATIVAS a CURRENT_DATE) ---
