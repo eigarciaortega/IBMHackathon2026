@@ -60,16 +60,33 @@ se aplican en la consulta SQL.
 - `404 ESPACIO_NO_ENCONTRADO`
 
 ### `POST /spaces` (ADMIN)
-Body: `{ nombre, tipo, capacidad, tiene_proyector, tiene_aire, piso }`.
+Body: `{ nombre, tipo, capacidad, piso, recurso_ids }`. `recurso_ids` son los ids de
+los recursos asignados.
 - `201 Espacio`
-- `400 NOMBRE_REQUERIDO | TIPO_INVALIDO | CAPACIDAD_INVALIDA`
+- `400 NOMBRE_REQUERIDO | TIPO_INVALIDO | CAPACIDAD_INVALIDA | RECURSO_INVALIDO`
 - `401` · `403 ACCESO_DENEGADO` (rol COLABORADOR)
 
 ### `PUT /spaces/{id}` (ADMIN)
+Reemplaza también el conjunto de recursos asignados con `recurso_ids`.
 - `200 Espacio` · `400` · `403` · `404`
 
 ### `DELETE /spaces/{id}` (ADMIN)
 - `204` (sin contenido) · `403` · `404`
+
+### `GET /resources` (protegido)
+Catálogo de recursos.
+- `200 [ Recurso ]` · `401`
+
+### `POST /resources` (ADMIN)
+Body: `{ nombre }`.
+- `201 Recurso` · `400 NOMBRE_REQUERIDO` · `403` · `409 RECURSO_DUPLICADO`
+
+### `PUT /resources/{id}` (ADMIN)
+- `200 Recurso` · `404 RECURSO_NO_ENCONTRADO` · `409 RECURSO_DUPLICADO`
+
+### `DELETE /resources/{id}` (ADMIN)
+Borra el recurso; sus asignaciones a espacios se eliminan en cascada.
+- `204` · `404 RECURSO_NO_ENCONTRADO`
 
 ### `GET /api-docs`
 Swagger UI.
@@ -78,9 +95,15 @@ Swagger UI.
 ```json
 {
   "id": 1, "nombre": "Sala Monterrey", "tipo": "SALA", "capacidad": 8,
-  "tiene_proyector": true, "tiene_aire": true, "piso": "Piso 1",
+  "piso": "Piso 1",
+  "recursos": [ { "id": 1, "nombre": "Proyector" }, { "id": 2, "nombre": "Aire acondicionado" } ],
   "creado_en": "2026-06-23T00:00:00Z"
 }
+```
+
+**Recurso:**
+```json
+{ "id": 1, "nombre": "Proyector", "creado_en": "2026-06-23T00:00:00Z" }
 ```
 
 ---
