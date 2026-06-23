@@ -33,14 +33,15 @@ services:
       # Igual que en application.properties      
       SERVER_PORT: 8081
   
-  auth-service: # Nuevo servicio
+  auth-service:
     build: ./auth-service
     container_name: auth_service
+    # Puerto distintivo para auth-service
     ports:
-      - "8080:8080" # Puerto distintivo para auth-service
+      - "8080:8080"
     environment:
       SERVER_PORT: 8080
-      JWT_SECRET_KEY: changeit_this_should_be_a_long_and_secure_random_key_in_production
+      JWT_SECRET_KEY: pT1dKz0jY8vG6VbZYvR8WeO/AwD+Jm1Hk8M0xUeVh4U=
       JWT_EXPIRATION_MS: 3600000
       JWT_ISSUER: corporativoalpha.com
 
