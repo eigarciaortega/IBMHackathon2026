@@ -1,0 +1,288 @@
+{
+  "info": {
+    "name": "OfficeSpace - Gestión Híbrida",
+    "description": "Colección de pruebas de API para auth-service (3001), catalog-service (3002) y booking-service (3003). Ejecuta primero los logins para capturar los tokens en las variables de colección.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "authUrl", "value": "http://localhost:3001" },
+    { "key": "catalogUrl", "value": "http://localhost:3002" },
+    { "key": "bookingUrl", "value": "http://localhost:3003" },
+    { "key": "token", "value": "" },
+    { "key": "adminToken", "value": "" },
+    { "key": "idEspacio", "value": "2" },
+    { "key": "idReserva", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login colaborador (captura {{token}})",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const data = pm.response.json();",
+                  "pm.collectionVariables.set('token', data.token);",
+                  "pm.test('rol COLABORADOR', () => pm.expect(data.role).to.eql('COLABORADOR'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{authUrl}}/auth/login", "host": ["{{authUrl}}"], "path": ["auth", "login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuario\": \"carlos.mendez@corporativoalpha.com\",\n  \"password\": \"User123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login admin (captura {{adminToken}})",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "const data = pm.response.json();",
+                  "pm.collectionVariables.set('adminToken', data.token);",
+                  "pm.test('rol ADMINISTRADOR', () => pm.expect(data.role).to.eql('ADMINISTRADOR'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{authUrl}}/auth/login", "host": ["{{authUrl}}"], "path": ["auth", "login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuario\": \"admin@corporativoalpha.com\",\n  \"password\": \"Admin123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login credenciales inválidas (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('status 401', () => pm.response.to.have.status(401));"]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{authUrl}}/auth/login", "host": ["{{authUrl}}"], "path": ["auth", "login"] },
+            "body": { "mode": "raw", "raw": "{\n  \"usuario\": \"admin@corporativoalpha.com\",\n  \"password\": \"mala\"\n}" }
+          }
+        },
+        {
+          "name": "Verify token",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{authUrl}}/auth/verify", "host": ["{{authUrl}}"], "path": ["auth", "verify"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Catalog",
+      "item": [
+        {
+          "name": "GET /recursos",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{catalogUrl}}/recursos", "host": ["{{catalogUrl}}"], "path": ["recursos"] }
+          }
+        },
+        {
+          "name": "GET /espacios",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{catalogUrl}}/espacios", "host": ["{{catalogUrl}}"], "path": ["espacios"] }
+          }
+        },
+        {
+          "name": "POST /espacios (admin, captura {{idEspacio}})",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "const e = pm.response.json().espacio;",
+                  "if (e && e.id_espacio) pm.collectionVariables.set('idEspacio', String(e.id_espacio));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{catalogUrl}}/espacios", "host": ["{{catalogUrl}}"], "path": ["espacios"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Sala Gamma\",\n  \"tipo\": \"Sala de juntas\",\n  \"capacidad\": 12,\n  \"piso\": 3,\n  \"ubicacion\": \"Ala oeste\",\n  \"recursos\": [1, 2, 6]\n}"
+            }
+          }
+        },
+        {
+          "name": "POST /espacios como COLABORADOR (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('status 403', () => pm.response.to.have.status(403));"] }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{catalogUrl}}/espacios", "host": ["{{catalogUrl}}"], "path": ["espacios"] },
+            "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"X\",\n  \"tipo\": \"Sala de juntas\",\n  \"capacidad\": 5,\n  \"piso\": 1,\n  \"ubicacion\": \"Y\"\n}" }
+          }
+        },
+        {
+          "name": "GET /ocupacion (admin)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": { "raw": "{{catalogUrl}}/ocupacion", "host": ["{{catalogUrl}}"], "path": ["ocupacion"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Booking",
+      "item": [
+        {
+          "name": "GET /disponibilidad (con filtros)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{bookingUrl}}/disponibilidad?fecha=2026-12-01&horaInicio=09:00&horaFin=10:00&capacidadMin=4&recursos=1,6",
+              "host": ["{{bookingUrl}}"],
+              "path": ["disponibilidad"],
+              "query": [
+                { "key": "fecha", "value": "2026-12-01" },
+                { "key": "horaInicio", "value": "09:00" },
+                { "key": "horaFin", "value": "10:00" },
+                { "key": "capacidadMin", "value": "4" },
+                { "key": "recursos", "value": "1,6" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST /reservas (captura {{idReserva}})",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "const r = pm.response.json().reserva;",
+                  "if (r && r.id_reserva) pm.collectionVariables.set('idReserva', String(r.id_reserva));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{bookingUrl}}/reservas", "host": ["{{bookingUrl}}"], "path": ["reservas"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idEspacio\": {{idEspacio}},\n  \"fechaInicio\": \"2026-12-01T09:00:00Z\",\n  \"fechaFin\": \"2026-12-01T10:00:00Z\",\n  \"asistentes\": 4\n}"
+            }
+          }
+        },
+        {
+          "name": "POST /reservas solapada (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('status 409', () => pm.response.to.have.status(409));"] }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{bookingUrl}}/reservas", "host": ["{{bookingUrl}}"], "path": ["reservas"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idEspacio\": {{idEspacio}},\n  \"fechaInicio\": \"2026-12-01T09:30:00Z\",\n  \"fechaFin\": \"2026-12-01T10:30:00Z\",\n  \"asistentes\": 2\n}"
+            }
+          }
+        },
+        {
+          "name": "GET /reservas/mias",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{bookingUrl}}/reservas/mias", "host": ["{{bookingUrl}}"], "path": ["reservas", "mias"] }
+          }
+        },
+        {
+          "name": "PUT /reservas/{{idReserva}} (editar)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{bookingUrl}}/reservas/{{idReserva}}", "host": ["{{bookingUrl}}"], "path": ["reservas", "{{idReserva}}"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idEspacio\": {{idEspacio}},\n  \"fechaInicio\": \"2026-12-01T11:00:00Z\",\n  \"fechaFin\": \"2026-12-01T12:00:00Z\",\n  \"asistentes\": 3\n}"
+            }
+          }
+        },
+        {
+          "name": "GET /reservas (admin, todas)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": { "raw": "{{bookingUrl}}/reservas", "host": ["{{bookingUrl}}"], "path": ["reservas"] }
+          }
+        },
+        {
+          "name": "DELETE /reservas/{{idReserva}}",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{bookingUrl}}/reservas/{{idReserva}}", "host": ["{{bookingUrl}}"], "path": ["reservas", "{{idReserva}}"] }
+          }
+        }
+      ]
+    }
+  ]
+}
