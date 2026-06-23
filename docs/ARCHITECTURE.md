@@ -4,75 +4,48 @@ NeoWallet usa una arquitectura de microservicios ligera con dos servicios Node.j
 
 ```mermaid
 flowchart LR
-    Client["Client / Postman"] --> AccountsApi["accounts-service<br/>Port 3000"]
+    Client["Client / Postman / Swagger"] --> AccountsApi["accounts-service<br/>Port 3000"]
     Client --> ProcessorApi["processor-service<br/>Port 3001"]
     ProcessorApi -->|HTTP REST| AccountsApi
     AccountsApi --> AccountsDb[("accounts_db<br/>users")]
     ProcessorApi --> ProcessorDb[("processor_db<br/>transactions")]
 ```
 
-## accounts-service
+## Componentes
+
+### accounts-service
 
 Responsabilidades:
 
-- Gestionar usuarios.
-- Consultar saldos.
-- Preparar recarga simulada.
-- Preparar actualizaciones internas de balance mediante debito o credito.
+- Consultar usuarios y saldos.
+- Recargar saldo de forma simulada.
+- Ejecutar debitos y creditos internos con transacciones SQL.
+- Proteger contra saldos negativos con validaciones y constraints.
 
-Endpoints:
-
-- `GET /health`
-- `GET /api-docs`
-- `GET /accounts/:id`
-- `POST /api/recharge`
-- `POST /accounts/update-balance`
-
-En fase 1.1, `GET /accounts/:id` ya consulta PostgreSQL. Los endpoints de recarga y actualizacion de balance quedan documentados como placeholders para la siguiente fase.
-
-## processor-service
+### processor-service
 
 Responsabilidades:
 
 - Orquestar transferencias P2P.
-- Registrar transacciones.
-- Manejar estados de transaccion.
-- Preparar historial de transacciones.
-
-Endpoints:
-
-- `GET /health`
-- `GET /api-docs`
-- `POST /api/transfer`
-- `GET /api/transactions/:user_id`
-
-En fase 1.1, `GET /api/transactions/:user_id` ya consulta PostgreSQL. `POST /api/transfer` queda como placeholder documentado para implementar transferencia, idempotencia y Saga.
+- Registrar transacciones y estados.
+- Aplicar idempotencia.
+- Ejecutar compensacion tipo Saga.
+- Exponer historial, auditoria y reconciliacion.
 
 ## Bases de datos
 
-### accounts_db
+`accounts_db` contiene `users`, con `balance DECIMAL(10,2)` y `CHECK (balance >= 0)`.
 
-Tabla principal: `users`.
+`processor_db` contiene `transactions`, con:
 
-Guarda usuarios y balances. La restriccion `CHECK (balance >= 0)` evita que un saldo quede negativo a nivel de base de datos.
+- `transaction_id` unico.
+- `sender_id` y `receiver_id`.
+- `amount DECIMAL(10,2)` con `CHECK (amount > 0)`.
+- `status` restringido a `PENDING`, `DEBITED`, `COMPLETED`, `FAILED`, `ROLLED_BACK`.
+- `idempotency_key` con indice unico parcial cuando no es `NULL`.
+- Indices para `sender_id`, `receiver_id` y `created_at`.
 
-### processor_db
-
-Tabla principal: `transactions`.
-
-Guarda el rastro de cada transferencia con:
-
-- `transaction_id`
-- `sender_id`
-- `receiver_id`
-- `amount`
-- `status`
-- `idempotency_key`
-- `error_message`
-
-La tabla tiene una restriccion para permitir solo estados validos.
-
-## Flujo esperado de transferencia P2P
+## Flujo de transferencia
 
 ```mermaid
 sequenceDiagram
@@ -83,20 +56,42 @@ sequenceDiagram
     participant DBA as accounts_db
 
     C->>P: POST /api/transfer
-    P->>P: Validate sender, receiver, amount, idempotency key
-    P->>DBP: Create transaction PENDING
+    P->>P: Validate input
+    P->>A: GET sender
+    P->>A: GET receiver
+    P->>P: Validate funds
+    P->>DBP: Insert PENDING
     P->>A: Debit sender
-    A->>DBA: Check funds and update balance
+    A->>DBA: SELECT FOR UPDATE + UPDATE
     A-->>P: Debit ok
     P->>DBP: Mark DEBITED
     P->>A: Credit receiver
-    A->>DBA: Update receiver balance
+    A->>DBA: SELECT FOR UPDATE + UPDATE
     A-->>P: Credit ok
     P->>DBP: Mark COMPLETED
-    P-->>C: Return transaction_id
+    P-->>C: transaction_id
 ```
 
-Si el credito falla despues del debito, la fase final debe ejecutar una compensacion:
+## Flujo de idempotencia
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant P as processor-service
+    participant DBP as processor_db
+
+    C->>P: POST /api/transfer + X-Idempotency-Key
+    P->>DBP: Search by idempotency_key
+    alt transaction exists
+        DBP-->>P: Existing transaction
+        P-->>C: 200 idempotent_replay true
+    else new key
+        P->>DBP: Insert transaction with key
+        P-->>C: Process normal transfer
+    end
+```
+
+## Flujo de compensacion Saga
 
 ```mermaid
 sequenceDiagram
@@ -109,40 +104,41 @@ sequenceDiagram
     P->>DBP: Mark DEBITED
     P->>A: Credit receiver
     A-->>P: Credit failed
-    P->>A: Compensate sender credit
+    P->>A: Compensate sender with credit
+    A-->>P: Compensation ok
     P->>DBP: Mark ROLLED_BACK
 ```
 
-## Comunicacion HTTP
+## Flujo de auditoria y reconciliacion
 
-Los servicios no comparten memoria ni tablas. `processor-service` se comunica con `accounts-service` por HTTP usando `ACCOUNTS_SERVICE_URL`.
+```mermaid
+flowchart TD
+    Audit["GET /api/audit/money-conservation"] --> Users["Read seed users 1, 2, 3 via accounts-service"]
+    Users --> Sum["Sum balances"]
+    Sum --> Compare["Compare against 1050.00"]
+    Compare --> Result["CONSISTENT or INCONSISTENT"]
 
-Esta separacion permite que cada servicio pueda crecer de forma independiente, aunque obliga a tratar cuidadosamente fallos parciales y reintentos.
+    Reco["GET /api/audit/reconciliation"] --> Counts["Count transactions by status"]
+    Counts --> Warn["Warn when PENDING or DEBITED exist"]
+    Warn --> RecoResult["OK or WARNING"]
+```
+
+## Riesgos y mitigaciones
+
+| Riesgo | Mitigacion |
+| --- | --- |
+| Perdida de dinero | Saga con compensacion y auditoria de total |
+| Duplicidad por reintentos | `X-Idempotency-Key` e indice unico parcial |
+| Race conditions | `SELECT ... FOR UPDATE` en updates de balance |
+| Fallos de comunicacion | Estados `FAILED`/`ROLLED_BACK`, health checks y logs |
+| Inputs invalidos | Validadores estrictos y SQL parametrizado |
+| Baja observabilidad | Logs JSON, Swagger, Postman y reconciliacion |
 
 ## Decisiones tecnicas
 
-- Node.js y Express para mantener el codigo simple.
-- PostgreSQL por consistencia transaccional y restricciones SQL.
-- Docker Compose para levantar todo el entorno local.
-- Swagger UI en ambos servicios para exploracion rapida.
-- Dos bases de datos para mantener ownership por servicio.
-- SQL explicito para que el modelo sea facil de auditar.
-
-## Riesgos principales
-
-- Perdida de dinero durante fallos parciales.
-- Race conditions en debitos simultaneos.
-- Fallos de comunicacion entre servicios.
-- Duplicidad por reintentos del cliente.
-- Saldos negativos por errores de validacion.
-
-## Mitigaciones planeadas
-
-- Validaciones de monto, usuarios y auto-transferencia.
-- Restricciones SQL como `CHECK (balance >= 0)`.
-- Idempotencia con `X-Idempotency-Key`.
-- Estados de transaccion auditables.
-- Saga con compensacion.
-- Logs estructurados.
-- Pruebas automatizadas de casos criticos.
+- Node.js y Express mantienen el codigo simple para hackathon.
+- PostgreSQL aporta transacciones, constraints e indices.
+- Docker Compose levanta todo localmente.
+- Swagger y Postman facilitan demo y QA.
+- GitHub Actions ejecuta checks ligeros sin levantar toda la app.
 

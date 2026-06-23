@@ -1,175 +1,145 @@
 # NeoWallet P2P Payments
 
-NeoWallet P2P Payments es un MVP API-first para FastPay, una startup fintech que necesita una billetera digital simple para pagos peer-to-peer.
+API-first fintech MVP for secure peer-to-peer payments
 
-El objetivo del proyecto es permitir consultar saldos, preparar recargas simuladas, preparar transferencias P2P y consultar historial de transacciones, priorizando consistencia financiera y trazabilidad sobre una interfaz visual.
+**Cliente:** FastPay
 
-## Regla critica del negocio
+**Frase de producto:** Enviar dinero rapido es importante. No perder dinero es obligatorio.
 
-Durante una transferencia P2P no se puede perder, crear, duplicar ni destruir dinero. La suma total de dinero del sistema debe conservarse.
+## Problema de negocio
+
+FastPay necesita un MVP de wallet P2P donde usuarios registrados puedan consultar saldo, recargar saldo de forma simulada, enviar dinero a otros usuarios y consultar historial de transacciones. En un producto fintech, la experiencia rapida importa, pero la confianza financiera importa mas: una transferencia nunca debe perder, crear, duplicar ni destruir dinero.
 
 ## Propuesta de valor
 
-NeoWallet ofrece una base de API REST clara, trazable y defendible para construir pagos P2P simples. Cada transferencia futura tendra `transaction_id`, estados de transaccion, validaciones de negocio, idempotencia y compensacion ante fallos parciales.
+NeoWallet centraliza operaciones de saldo y transferencias P2P con trazabilidad, idempotencia, compensacion tipo Saga y auditoria. El MVP esta disenado para demostrar consistencia financiera, resiliencia ante reintentos y visibilidad operativa sin depender de frontend, KYC o procesadores externos.
+
+## Regla critica
+
+No se puede perder, crear, duplicar ni destruir dinero durante una transferencia P2P.
 
 ## Arquitectura
 
-El proyecto usa una arquitectura de microservicios ligera:
+NeoWallet usa microservicios ligeros con persistencia separada por dominio:
 
-- `accounts-service`: gestiona usuarios, saldos, recargas simuladas y el endpoint interno de actualizacion de balance.
-- `processor-service`: orquesta transferencias P2P, registra transacciones y expone historial.
-- `accounts-db`: PostgreSQL separado para usuarios y balances.
-- `processor-db`: PostgreSQL separado para transacciones.
+- `accounts-service`: usuarios, balances, recargas simuladas y operaciones internas de debito/credito.
+- `processor-service`: transferencias P2P, historial, idempotencia, compensacion, auditoria y reconciliacion.
+- `accounts-db`: PostgreSQL para la tabla `users`.
+- `processor-db`: PostgreSQL para la tabla `transactions`.
+- Comunicacion HTTP/REST entre servicios.
+- Docker Compose para levantar todo localmente.
+- Swagger/OpenAPI y Postman para exploracion y pruebas API.
 
-Se usan dos bases de datos para respetar el principio de "database per service". Esto permite que cada servicio tenga su propio modelo, responsabilidad y ciclo de vida sin compartir tablas directamente.
-
-## Estructura
-
-```text
-neowallet-p2p-payments/
-├── accounts-service/
-│   ├── src/
-│   │   ├── controllers/
-│   │   ├── routes/
-│   │   ├── utils/
-│   │   ├── db.js
-│   │   ├── index.js
-│   │   └── swagger.js
-│   ├── Dockerfile
-│   └── package.json
-├── processor-service/
-│   ├── src/
-│   │   ├── controllers/
-│   │   ├── routes/
-│   │   ├── services/
-│   │   ├── utils/
-│   │   ├── db.js
-│   │   ├── index.js
-│   │   └── swagger.js
-│   ├── Dockerfile
-│   └── package.json
-├── shared-infra/
-│   ├── accounts-init.sql
-│   └── processor-init.sql
-├── docs/
-│   ├── ARCHITECTURE.md
-│   └── MARKET_REFERENCE.md
-├── postman/
-├── docker-compose.yml
-├── .gitignore
-└── README.md
+```mermaid
+flowchart LR
+    Client["Client / Postman / Swagger"] --> Accounts["accounts-service :3000"]
+    Client --> Processor["processor-service :3001"]
+    Processor -->|HTTP REST| Accounts
+    Accounts --> AccountsDb[("accounts_db<br/>users")]
+    Processor --> ProcessorDb[("processor_db<br/>transactions")]
 ```
 
-## Levantar el proyecto
+## Por que dos bases de datos
+
+`accounts_db` y `processor_db` separan el dominio de cuentas del dominio de transacciones. Esto simula un patron real de microservicios: cada servicio posee sus datos, evita acoplamiento directo entre tablas y obliga a que las operaciones distribuidas se manejen con HTTP, estados, idempotencia y compensacion.
+
+## Stack tecnologico
+
+- Node.js
+- Express
+- PostgreSQL
+- Docker Compose
+- Swagger/OpenAPI
+- Postman
+- GitHub Actions
+- `node:test`
+
+## Como ejecutar
 
 ```bash
 docker compose up --build
 ```
 
-Para validar la configuracion sin levantar contenedores:
+Ejecucion limpia desde cero:
 
 ```bash
-docker compose config
+docker compose down -v
+docker compose up --build
 ```
 
-## URLs locales
+## URLs
 
-- Accounts Service: `http://localhost:3000`
-- Processor Service: `http://localhost:3001`
-- Swagger Accounts: `http://localhost:3000/api-docs`
-- Swagger Processor: `http://localhost:3001/api-docs`
-- Health Accounts: `http://localhost:3000/health`
-- Health Processor: `http://localhost:3001/health`
+- Accounts health: `http://localhost:3000/health`
+- Processor health: `http://localhost:3001/health`
+- Accounts Swagger: `http://localhost:3000/api-docs`
+- Processor Swagger: `http://localhost:3001/api-docs`
 
-## Usuarios semilla
+## Datos semilla
 
-| id | name | email | balance |
+| Usuario | id | email | balance |
 | --- | --- | --- | --- |
-| 1 | Usuario A (Rico) | usuario.a@neowallet.com | 1000.00 |
-| 2 | Usuario B (Pobre) | usuario.b@neowallet.com | 50.00 |
-| 3 | Usuario C (Nuevo) | usuario.c@neowallet.com | 0.00 |
+| Usuario A (Rico) | 1 | usuario.a@neowallet.com | 1000.00 |
+| Usuario B (Pobre) | 2 | usuario.b@neowallet.com | 50.00 |
+| Usuario C (Nuevo) | 3 | usuario.c@neowallet.com | 0.00 |
+
+Total esperado del sistema: `1050.00`.
 
 ## Endpoints principales
 
-### Accounts Service
+### accounts-service
 
-- `GET /health`
-- `GET /api-docs`
 - `GET /accounts/:id`
 - `POST /api/recharge`
 - `POST /accounts/update-balance`
 
-### Processor Service
+### processor-service
 
-- `GET /health`
-- `GET /api-docs`
 - `POST /api/transfer`
 - `GET /api/transactions/:user_id`
+- `GET /api/audit/money-conservation`
+- `GET /api/audit/reconciliation`
 
-## Alcance actual: fase 1.3
+## Ejemplos con curl
 
-Esta fase incluye:
+Consultar saldo:
 
-- Estructura base del repositorio.
-- Dos servicios Express.
-- Dos Dockerfiles.
-- Docker Compose con dos instancias PostgreSQL.
-- Scripts SQL de inicializacion.
-- Datos semilla para usuarios.
-- Health checks con conexion real a base de datos.
-- Swagger basico en ambos servicios.
-- Endpoint `GET /accounts/:id` funcional para consulta de saldos.
-- Endpoint `POST /api/recharge` funcional para recargas simuladas atomicas.
-- Endpoint `POST /accounts/update-balance` funcional para debitos y creditos internos atomicos.
-- Validacion de montos positivos con maximo 2 decimales.
-- Prevencion de saldo negativo en debitos.
-- Bloqueo `SELECT ... FOR UPDATE` para reducir race conditions simples en operaciones de balance.
-- Endpoint `POST /api/transfer` funcional para transferencias P2P.
-- Validacion de usuarios existentes consultando `accounts-service`.
-- Validacion de fondos suficientes antes de debitar.
-- Bloqueo de auto-transferencias.
-- Estados de transaccion `PENDING`, `DEBITED`, `COMPLETED`, `FAILED` y `ROLLED_BACK`.
-- Idempotencia real con `X-Idempotency-Key`: si se repite la misma key, se devuelve la transaccion existente con `idempotent_replay: true` y no se mueve dinero otra vez.
-- Compensacion tipo Saga: si falla el credito despues del debito, el sender recibe una compensacion y la transaccion queda `ROLLED_BACK`.
-- Simulacion demo de fallo de credito con `X-Simulate-Credit-Failure: true`.
-- Endpoint `GET /api/audit/money-conservation` para verificar que el total de dinero en usuarios seed sigue siendo `1050.00`.
-- Endpoint `GET /api/audit/reconciliation` para conteos por estado y alertas de transacciones abiertas.
-- Manejo uniforme de errores con `error`, `message`, `statusCode`, `timestamp` y `service`.
-- Logs estructurados JSON para auditoria de operaciones monetarias y errores.
-- Health checks mejorados: `processor-service` valida base de datos y conectividad hacia `accounts-service`.
-- Validaciones reforzadas contra ids invalidos, montos no numericos, arrays, objetos, `NaN`, montos con mas de 2 decimales y operaciones internas invalidas.
-- Prevencion de SQL Injection mediante consultas parametrizadas.
-- Indices en `transactions` para `sender_id`, `receiver_id`, `created_at` e `idempotency_key`.
-- Comunicacion HTTP de `processor-service` hacia `accounts-service`.
-- Endpoint `GET /api/transactions/:user_id` funcional para historial enviado/recibido.
+```bash
+curl http://localhost:3000/accounts/1
+```
 
-## Fuera de alcance en fase 1.3
+Recargar saldo:
 
-- Frontend.
-- JWT u OAuth.
-- KYC real.
-- Pagos reales.
-- Integracion con Stripe, PayPal, SPEI, Pix, PSE, tarjetas u otros procesadores.
-- Multiples monedas.
-- Retiros bancarios.
-- Job de reconciliacion.
-- Tests completos.
-- Coleccion final de Postman.
+```bash
+curl -X POST http://localhost:3000/api/recharge \
+  -H "Content-Type: application/json" \
+  -d "{\"user_id\":1,\"amount\":150.50,\"payment_method\":\"SIMULATED_CARD\"}"
+```
 
-## Pruebas de resiliencia fintech
+Transferencia exitosa:
 
-Idempotencia:
+```bash
+curl -X POST http://localhost:3001/api/transfer \
+  -H "Content-Type: application/json" \
+  -d "{\"sender_id\":1,\"receiver_id\":2,\"amount\":100.00}"
+```
+
+Replay idempotente:
 
 ```bash
 curl -X POST http://localhost:3001/api/transfer \
   -H "Content-Type: application/json" \
   -H "X-Idempotency-Key: idem-001" \
-  -d "{\"sender_id\":1,\"receiver_id\":2,\"amount\":100.00}"
+  -d "{\"sender_id\":1,\"receiver_id\":2,\"amount\":25.00}"
+
+curl -X POST http://localhost:3001/api/transfer \
+  -H "Content-Type: application/json" \
+  -H "X-Idempotency-Key: idem-001" \
+  -d "{\"sender_id\":1,\"receiver_id\":2,\"amount\":25.00}"
 ```
 
-Repetir la misma peticion debe devolver `idempotent_replay: true` y no debe mover dinero dos veces.
+El segundo intento debe devolver `idempotent_replay: true`.
 
-Compensacion Saga:
+Fallo simulado con rollback:
 
 ```bash
 curl -X POST http://localhost:3001/api/transfer \
@@ -178,7 +148,11 @@ curl -X POST http://localhost:3001/api/transfer \
   -d "{\"sender_id\":1,\"receiver_id\":2,\"amount\":10.00}"
 ```
 
-El sistema debita, simula fallo de credito, compensa al sender y marca la transaccion como `ROLLED_BACK`.
+Historial:
+
+```bash
+curl http://localhost:3001/api/transactions/1
+```
 
 Auditoria:
 
@@ -186,80 +160,94 @@ Auditoria:
 curl http://localhost:3001/api/audit/money-conservation
 ```
 
-Debe devolver `CONSISTENT` cuando el total de balances de usuarios seed sea `1050.00`.
+Reconciliacion:
 
-## Bonus planeados
+```bash
+curl http://localhost:3001/api/audit/reconciliation
+```
 
-- Historial de transacciones completo.
-- Saga con compensacion.
+## Caracteristicas principales
+
+- Consulta de saldo.
+- Recarga simulada.
+- Transferencia P2P.
+- Historial de transacciones.
 - Idempotencia con `X-Idempotency-Key`.
+- Compensacion tipo Saga con estado `ROLLED_BACK`.
+- Auditoria de conservacion de dinero.
+- Reconciliacion por estados.
 - Logs estructurados JSON.
-- Health checks.
 - Swagger/OpenAPI.
 - Coleccion Postman.
+- CI/CD con GitHub Actions.
 
-## QA y pruebas
+## Bonus implementados
 
-La fase 1.6 agrega una estrategia de QA para cubrir los riesgos principales del sistema: perdida de dinero, duplicidad por reintentos, fallos parciales, race conditions y validaciones insuficientes.
+- Historial de transacciones.
+- Saga con compensacion.
+- Health checks.
+- Swagger/OpenAPI.
+- Logs estructurados JSON.
+- Reconciliacion/auditoria simple.
+- Idempotencia como mejora fintech adicional.
 
-Documentacion agregada:
+## QA
 
-- `docs/QA_STRATEGY.md`
-- `docs/TEST_CASES.md`
-- `docs/GHERKIN.md`
-- `docs/BUG_REPORT.md`
+Documentacion QA:
 
-La coleccion Postman esta en:
+- [QA Strategy](docs/QA_STRATEGY.md)
+- [Test Cases](docs/TEST_CASES.md)
+- [Gherkin / BDD](docs/GHERKIN.md)
+- [Bug Report](docs/BUG_REPORT.md)
 
-- `postman/NeoWallet.postman_collection.json`
+Herramientas QA:
 
-Incluye requests para health checks, cuentas, recargas, update balance, transferencias, idempotencia, rollback, historial, auditoria y reconciliacion.
+- [Postman Collection](postman/NeoWallet.postman_collection.json)
+- Pruebas automatizadas con `node:test`
+- CI/CD con [GitHub Actions](.github/workflows/ci.yml)
 
-## Pruebas automatizadas
-
-Cada servicio tiene pruebas ligeras con `node:test` y `assert`, enfocadas en validaciones de input y reglas simples.
+## Comandos de pruebas
 
 ```bash
-cd accounts-service
-npm test
+cd accounts-service && npm test
 ```
 
 ```bash
-cd processor-service
-npm test
+cd processor-service && npm test
 ```
-
-Checks de sintaxis:
-
-```bash
-cd accounts-service
-npm run check
-```
-
-```bash
-cd processor-service
-npm run check
-```
-
-Validar Docker Compose:
 
 ```bash
 docker compose config
 ```
 
-## CI/CD
+## Guia de demo rapida
 
-Se agrego GitHub Actions en `.github/workflows/ci.yml`.
+Secuencia sugerida para 3 minutos:
 
-El pipeline corre en `push` y `pull_request`:
+1. Levantar Docker con `docker compose up --build`.
+2. Abrir Swagger en `http://localhost:3000/api-docs` y `http://localhost:3001/api-docs`.
+3. Consultar saldo de Usuario A y Usuario B.
+4. Transferir `100.00` de Usuario A a Usuario B.
+5. Verificar saldos: A `900.00`, B `150.00`.
+6. Repetir una transferencia con `X-Idempotency-Key` y mostrar `idempotent_replay: true`.
+7. Simular fallo de credito con `X-Simulate-Credit-Failure: true`.
+8. Mostrar transaccion `ROLLED_BACK`.
+9. Mostrar auditoria `CONSISTENT`.
+10. Mostrar historial de transacciones.
 
-- instala dependencias de ambos servicios,
-- ejecuta `npm run check`,
-- ejecuta `npm test`,
-- valida `docker compose config`.
+Guia completa: [Demo Guide](docs/DEMO_GUIDE.md)
 
-No levanta toda la app para mantener el pipeline rapido y confiable.
+## Fuera de alcance
 
-## Bugs prevenidos
+- Frontend.
+- JWT/OAuth.
+- KYC real.
+- Procesadores externos.
+- SPEI/Pix/PSE/tarjetas.
+- Retiro bancario.
+- Multiples monedas.
 
-`docs/BUG_REPORT.md` documenta defectos criticos prevenidos, incluyendo saldo negativo, recargas negativas, auto-transferencias, fondos insuficientes, duplicidad por idempotencia, perdida de dinero ante fallo de credito, SQL injection y health checks falsos positivos.
+## Estado del proyecto
+
+NeoWallet es un MVP funcional API-first para hackathon. Demuestra pagos P2P con consistencia financiera, trazabilidad, idempotencia, compensacion y auditoria usando una arquitectura simple y defendible.
+
