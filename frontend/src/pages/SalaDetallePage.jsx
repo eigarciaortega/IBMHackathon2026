@@ -8,7 +8,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams, useLocation, Link } from 'react-router-dom';
 import { listEspacios } from '../api/catalogApi';
 import { agenda, crearReserva } from '../api/bookingApi';
-import { presentarAsistencia } from '../lib/asistencia';
+import { presentarAsistencia, ahoraWallClockMs } from '../lib/asistencia';
 import './SalaDetallePage.css';
 
 /** Formato de un datetime mostrando la hora-pared registrada (UTC). */
@@ -77,7 +77,7 @@ export default function SalaDetallePage() {
   // Reuniones futuras/vigentes ordenadas por fecha próxima.
   const reunionesProximas = useMemo(() => {
     const lista = Array.isArray(reuniones) ? reuniones : [];
-    const ahora = Date.now();
+    const ahora = ahoraWallClockMs();
     return lista
       .filter((r) => {
         const fin = new Date(r.fecha_fin).getTime();

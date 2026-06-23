@@ -10,6 +10,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { listEspacios } from '../api/catalogApi';
 import { agenda } from '../api/bookingApi';
+import { ahoraWallClockMs } from '../lib/asistencia';
 import './SalasPage.css';
 
 export default function SalasPage() {
@@ -39,7 +40,7 @@ export default function SalasPage() {
 
   // Reuniones futuras agrupadas por id de espacio.
   const reunionesPorEspacio = useMemo(() => {
-    const ahora = Date.now();
+    const ahora = ahoraWallClockMs();
     const mapa = new Map();
     for (const r of reuniones) {
       const fin = new Date(r.fecha_fin).getTime();

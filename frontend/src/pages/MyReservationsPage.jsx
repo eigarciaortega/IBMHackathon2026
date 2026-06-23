@@ -6,7 +6,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { misReservas, actualizarReserva, cancelarReserva, actualizarAsistencia } from '../api/bookingApi';
-import { presentarAsistencia, dentroDeVentanaAsistencia } from '../lib/asistencia';
+import { presentarAsistencia, dentroDeVentanaAsistencia, ahoraWallClockMs } from '../lib/asistencia';
 import './MyReservationsPage.css';
 
 /** Extrae la fecha (YYYY-MM-DD) en UTC de un datetime. */
@@ -30,10 +30,10 @@ function formatFecha(valor) {
   return `${f} ${horaUTC(valor)}`;
 }
 
-/** Indica si una Reserva es futura (su inicio es posterior a ahora). */
+/** Indica si una Reserva es futura (su inicio es posterior a ahora, hora-pared). */
 function esFutura(reserva) {
   const inicio = new Date(reserva.fecha_inicio);
-  return !Number.isNaN(inicio.getTime()) && inicio.getTime() > Date.now();
+  return !Number.isNaN(inicio.getTime()) && inicio.getTime() > ahoraWallClockMs();
 }
 
 export default function MyReservationsPage() {
