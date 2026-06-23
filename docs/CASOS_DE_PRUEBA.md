@@ -263,6 +263,21 @@ Documento de pruebas manuales del MVP. Cada caso indica **precondiciones**, **pa
   1. En **Salas**, abrir el detalle de la sala "01".
 - **Resultado esperado:** La URL es `/salas/01` (el nombre asignado por el administrador), coincidiendo con el espacio mostrado en pantalla.
 
+## CP-32 — Reservar hoy a una hora aún futura (zona horaria)
+
+- **Precondiciones:** Sesión de colaborador. La hora actual de oficina es, por ejemplo, las 14:00.
+- **Pasos:**
+  1. Reservar un espacio para **hoy** de 16:00 a 17:00 (hora de oficina, aún futura).
+- **Resultado esperado:** HTTP **201** (la reserva se crea). El sistema NO la marca como "fecha en el pasado", porque el "ahora" se evalúa en la zona horaria de la oficina (`OFFICE_TZ`). Reservar hoy a una hora ya pasada (p. ej. 09:00 cuando son las 14:00) sí responde **400**.
+
+## CP-33 — Liberación del espacio por no-show pasados 15 minutos
+
+- **Precondiciones:** Existe una reserva del espacio E cuyo inicio fue hace **más de 15 minutos** y **no** tiene asistencia registrada (`show`).
+- **Pasos:**
+  1. Buscar disponibilidad para un rango que solape el horario de esa reserva.
+  2. (Comparación) Marcar la reserva como `show` y repetir la búsqueda.
+- **Resultado esperado:** Con la reserva **sin asistencia** (liberada), el espacio E **aparece disponible** y puede reservarse en ese horario. Si la reserva está marcada como `show`, el espacio **no** aparece (sigue ocupado).
+
 ---
 
 ### Matriz de cobertura (caso → requisito / código HTTP)
@@ -299,3 +314,5 @@ Documento de pruebas manuales del MVP. Cada caso indica **precondiciones**, **pa
 | CP-29 | Nombre de usuario en la barra | (UI)             |
 | CP-30 | Protección de /admin por rol  | (redirección) / 403 |
 | CP-31 | URL de sala por nombre        | (UI)             |
+| CP-32 | Reservar hoy a hora futura (TZ) | 201 / 400      |
+| CP-33 | Liberación por no-show (15 min) | (disponibilidad) |

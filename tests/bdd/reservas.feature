@@ -34,6 +34,12 @@ Característica: Motor de reservas
     Cuando reservo "Sala Alfa" el "2020-01-01" de "09:00" a "10:00" para 2 asistentes
     Entonces recibo un código HTTP 400
 
+  Escenario: Reservar hoy a una hora aún futura (zona horaria de la oficina)
+    Dado que la hora actual de la oficina es "14:00"
+    Cuando reservo "Sala Alfa" para hoy de "16:00" a "17:00" para 2 asistentes
+    Entonces recibo un código HTTP 201
+    Y la reserva no se marca como fecha en el pasado
+
   Escenario: Reservar un espacio inexistente
     Cuando reservo el espacio con id 99999 el "2026-12-01" de "09:00" a "10:00" para 2 asistentes
     Entonces recibo un código HTTP 404

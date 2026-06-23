@@ -127,17 +127,18 @@ function normalizarAsistencia(valor) {
 /**
  * Indica si el instante `ahora` está dentro de la ventana en la que se permite
  * registrar la asistencia: desde `VENTANA_ASISTENCIA_MIN` minutos antes del
- * inicio y hasta el fin de la Reserva.
+ * inicio y hasta `VENTANA_ASISTENCIA_MIN` minutos después del inicio. Pasado
+ * ese plazo sin registrar asistencia, el espacio se libera.
  * @param {object} reserva
  * @param {Date} ahora
  * @returns {boolean}
  */
 function dentroDeVentanaAsistencia(reserva, ahora) {
   const inicio = new Date(reserva.fecha_inicio).getTime();
-  const fin = new Date(reserva.fecha_fin).getTime();
   const t = (ahora instanceof Date ? ahora : new Date()).getTime();
-  if (Number.isNaN(inicio) || Number.isNaN(fin)) return false;
-  return t >= inicio - VENTANA_ASISTENCIA_MIN * 60000 && t <= fin;
+  if (Number.isNaN(inicio)) return false;
+  const ventana = VENTANA_ASISTENCIA_MIN * 60000;
+  return t >= inicio - ventana && t <= inicio + ventana;
 }
 
 /**
@@ -213,6 +214,7 @@ function crearApp(options = {}) {
           fecha_inicio: solicitud.fecha_inicio,
           fecha_fin: solicitud.fecha_fin,
           cantidad_asistentes: solicitud.cantidad_asistentes,
+          ahora: resolverAhora(),
         });
 
         if (resultado && resultado.conflicto) {
@@ -328,6 +330,7 @@ function crearApp(options = {}) {
           fecha_inicio: solicitud.fecha_inicio,
           fecha_fin: solicitud.fecha_fin,
           cantidad_asistentes: solicitud.cantidad_asistentes,
+          ahora: resolverAhora(),
         });
         if (resultado && resultado.conflicto) {
           throw overlapError('La Reserva solapa con otra existente');
@@ -476,6 +479,7 @@ function crearApp(options = {}) {
           tipo,
           capacidadMin,
           recursos,
+          ahora: resolverAhora(),
         };
 
         // 3. Recuperar Espacios candidatos y Reservas activas del período.

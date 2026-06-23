@@ -23,6 +23,18 @@
 const ESPACIO_COLUMNS = 'id_espacio, nombre, tipo, capacidad, piso, ubicacion, activo';
 
 /**
+ * Convierte un instante (Date/string/number) a un literal DATETIME de MySQL en
+ * UTC (`YYYY-MM-DD HH:MM:SS`). Si no se provee, usa el instante actual.
+ * @param {Date|string|number} [valor]
+ * @returns {string}
+ */
+function toMysqlDatetime(valor) {
+  const d = valor instanceof Date ? valor : valor != null ? new Date(valor) : new Date();
+  const base = Number.isNaN(d.getTime()) ? new Date() : d;
+  return base.toISOString().slice(0, 19).replace('T', ' ');
+}
+
+/**
  * Crea el repositorio de disponibilidad sobre un pool mysql2 (API de promesas).
  *
  * @param {import('mysql2/promise').Pool} pool
@@ -43,7 +55,7 @@ function createAvailabilityRepository(pool) {
    * @returns {Promise<{ espacios: object[], reservas: object[] }>}
    */
   async function obtenerEspaciosYReservasParaRango(criterios = {}) {
-    const { fecha_inicio: fechaInicio, fecha_fin: fechaFin, tipo, capacidadMin } = criterios;
+    const { fecha_inicio: fechaInicio, fecha_fin: fechaFin, tipo, capacidadMin, ahora } = criterios;
 
     // 1. Espacios activos candidatos, con prefiltros opcionales en SQL.
     let sqlEspacios = `SELECT ${ESPACIO_COLUMNS} FROM espacio WHERE activo = 1`;
@@ -79,13 +91,18 @@ function createAvailabilityRepository(pool) {
     }
 
     // 2. Reservas activas que puedan intersecar el período (límites exclusivos).
+    //    Se EXCLUYEN las reservas "liberadas" por no-show: si pasaron más de 15
+    //    minutos del inicio sin registrar asistencia ('show'), el espacio queda
+    //    libre y esa reserva ya no bloquea la disponibilidad.
+    const ahoraLiteral = toMysqlDatetime(ahora);
     const [reservas] = await pool.query(
       `SELECT id_reserva, id_espacio, fecha_inicio, fecha_fin, estado_reserva
          FROM reserva
         WHERE estado_reserva <> 'Cancelado'
           AND fecha_inicio < ?
-          AND fecha_fin > ?`,
-      [fechaFin, fechaInicio],
+          AND fecha_fin > ?
+          AND (estado_asistencia = 'show' OR fecha_inicio >= DATE_SUB(?, INTERVAL 15 MINUTE))`,
+      [fechaFin, fechaInicio, ahoraLiteral],
     );
 
     return { espacios, reservas };

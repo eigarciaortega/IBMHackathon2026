@@ -26,14 +26,16 @@ export function presentarAsistencia(estado) {
 
 /**
  * Indica si "ahora" está dentro de la ventana en la que se permite registrar la
- * asistencia: desde VENTANA_ASISTENCIA_MIN minutos antes del inicio y hasta el fin.
+ * asistencia: desde VENTANA_ASISTENCIA_MIN minutos antes del inicio y hasta
+ * VENTANA_ASISTENCIA_MIN minutos después del inicio. Pasado ese plazo sin
+ * registrar asistencia, el espacio se libera automáticamente.
  * @param {{ fecha_inicio: string, fecha_fin: string }} reserva
  * @param {number} [ahoraMs] - instante actual en ms (inyectable para pruebas).
  * @returns {boolean}
  */
 export function dentroDeVentanaAsistencia(reserva, ahoraMs = Date.now()) {
   const inicio = new Date(reserva.fecha_inicio).getTime();
-  const fin = new Date(reserva.fecha_fin).getTime();
-  if (Number.isNaN(inicio) || Number.isNaN(fin)) return false;
-  return ahoraMs >= inicio - VENTANA_ASISTENCIA_MIN * 60000 && ahoraMs <= fin;
+  if (Number.isNaN(inicio)) return false;
+  const ventana = VENTANA_ASISTENCIA_MIN * 60000;
+  return ahoraMs >= inicio - ventana && ahoraMs <= inicio + ventana;
 }

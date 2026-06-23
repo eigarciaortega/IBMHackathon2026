@@ -50,6 +50,17 @@ Característica: Salas y registro de asistencia
     Cuando intento registrar la asistencia de esa reserva
     Entonces recibo un código HTTP 403
 
+  Escenario: Liberación del espacio por no-show pasados 15 minutos
+    Dado que existe una reserva cuyo inicio fue hace más de 15 minutos sin asistencia registrada
+    Cuando busco disponibilidad para un rango que solapa esa reserva
+    Entonces el espacio aparece disponible
+    Y otra persona puede reservarlo en ese horario
+
+  Escenario: El espacio permanece ocupado cuando se registró asistencia
+    Dado que existe una reserva en curso con asistencia "show"
+    Cuando busco disponibilidad para un rango que solapa esa reserva
+    Entonces el espacio no aparece disponible
+
   Escenario: Agregar reservación desde el detalle de una sala
     Dado que abro el detalle de la sala "Sala Alfa"
     Cuando agrego una reservación en un rango libre

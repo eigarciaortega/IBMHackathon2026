@@ -175,6 +175,7 @@ Copia `.env.example` a `.env`. Claves principales:
 
 - `JWT_SECRET`: clave simétrica (HS256) compartida para firmar y verificar el Token_JWT.
 - `JWT_EXPIRES_IN`: validez del token en segundos (3600 = 1 hora).
+- `OFFICE_TZ`: zona horaria de la oficina para interpretar las horas (por defecto `America/Mexico_City`).
 - `MYSQL_*` / `DB_*`: credenciales y conexión a la base de datos MySQL compartida.
 
 ---
@@ -298,7 +299,7 @@ Cada reserva tiene un **estado de asistencia** visible para colaboradores y admi
 - **NO_SHOW** (no asistió) se muestra en **gris**.
 - "Sin registro" cuando aún no se ha marcado.
 
-**Registro de asistencia (COLABORADOR):** en *Mis reservas*, los botones **Marcar SHOW** / **Marcar NO_SHOW** se habilitan **únicamente** dentro de la ventana horaria de la reserva: desde **15 minutos antes** del inicio y hasta el **fin** de la misma. Fuera de esa ventana el registro se rechaza (`400`), para evitar marcas erróneas a destiempo. El administrador puede visualizar el estado de asistencia de todas las reservas.
+**Registro de asistencia (COLABORADOR):** en *Mis reservas*, los botones **Marcar SHOW** / **Marcar NO_SHOW** se habilitan **únicamente** dentro de la ventana de la reserva: desde **15 minutos antes** del inicio y hasta **15 minutos después** del inicio. Si **no** se registra la asistencia dentro de ese plazo, el espacio se **libera automáticamente** y queda disponible para que otra persona lo reserve en ese horario. Si se marca **SHOW**, el espacio permanece ocupado durante toda la reserva. El administrador puede visualizar el estado de asistencia de todas las reservas.
 
 ### Cómo administrar espacios (ADMINISTRADOR)
 
@@ -320,7 +321,9 @@ Cada reserva tiene un **estado de asistencia** visible para colaboradores y admi
 - **Propiedad de la reserva:** un colaborador solo puede editar/cancelar sus propias reservas (`403` en caso contrario). El administrador puede **editar y eliminar cualquier reserva**.
 - **Alta desde el detalle de sala:** cualquier usuario autenticado puede crear una reservación desde el detalle de una sala; se aplica la misma verificación de solapamiento (`409` si choca).
 - **Estado de asistencia:** cada reserva tiene un estado de asistencia (`show`/`no-show`). Se muestra **SHOW en rojo** y **NO_SHOW en gris** en ambos roles.
-- **Ventana de registro de asistencia:** el colaborador solo puede registrar la asistencia de su reserva desde **15 minutos antes** del inicio hasta el **fin** de la misma; fuera de esa ventana se rechaza (`400`).
+- **Ventana de registro de asistencia:** el colaborador solo puede registrar la asistencia de su reserva desde **15 minutos antes** del inicio hasta **15 minutos después** del inicio; fuera de esa ventana se rechaza (`400`).
+- **Liberación por no-show:** si pasados **15 minutos** del inicio no se registró la asistencia (`show`), el espacio se **libera** y deja de bloquear la disponibilidad y el solapamiento, por lo que otra persona puede reservar ese horario.
+- **Zona horaria de la oficina:** las horas se manejan como la **hora-pared de la oficina** (`OFFICE_TZ`, por defecto `America/Mexico_City`). El servidor calcula el "ahora" en esa zona, de modo que al reservar para hoy a una hora aún futura el sistema no la marca erróneamente como pasada.
 - **Salas y agenda:** cualquier usuario autenticado puede ver las salas y sus reuniones programadas (próximas), ordenadas por fecha. La URL del detalle usa el **nombre** de la sala.
 - **Identificadores visibles:** en toda la interfaz el espacio se muestra por su **nombre/identificador asignado por el administrador** (no por el id interno de base de datos).
 - **Seguridad por rol:** las rutas del frontend están protegidas (un COLABORADOR es redirigido fuera de `/admin`) y el backend valida el rol del JWT en cada operación (`401` sin token válido, `403` sin permisos). La barra superior muestra el **nombre del usuario** autenticado.

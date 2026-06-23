@@ -125,6 +125,7 @@ function createReservaRepository(pool) {
       fecha_inicio: fechaInicioRaw,
       fecha_fin: fechaFinRaw,
       cantidad_asistentes: cantidadAsistentes,
+      ahora: ahoraRaw,
     } = solicitud;
 
     // Normalizar a UTC: literal MySQL para SQL/persistencia y `Date` (instante
@@ -134,6 +135,8 @@ function createReservaRepository(pool) {
     const fechaFin = toMysqlUtcDatetime(fechaFinRaw);
     const inicioUtcDate = parseToUtcDate(fechaInicioRaw);
     const finUtcDate = parseToUtcDate(fechaFinRaw);
+    // "Ahora" para la regla de liberación por no-show (hora-pared de oficina).
+    const ahoraLiteral = toMysqlUtcDatetime(ahoraRaw || new Date());
 
     const conn = await pool.getConnection();
     try {
@@ -163,8 +166,9 @@ function createReservaRepository(pool) {
             AND estado_reserva <> 'Cancelado'
             AND fecha_inicio < ?
             AND fecha_fin > ?
+            AND (estado_asistencia = 'show' OR fecha_inicio >= DATE_SUB(?, INTERVAL 15 MINUTE))
           FOR UPDATE`,
-        [idEspacio, fechaFin, fechaInicio],
+        [idEspacio, fechaFin, fechaInicio, ahoraLiteral],
       );
 
       // Re-verificar el solapamiento con la lógica pura dentro de la transacción.
@@ -320,12 +324,14 @@ function createReservaRepository(pool) {
       fecha_inicio: fechaInicioRaw,
       fecha_fin: fechaFinRaw,
       cantidad_asistentes: cantidadAsistentes,
+      ahora: ahoraRaw,
     } = datos;
 
     const fechaInicio = toMysqlUtcDatetime(fechaInicioRaw);
     const fechaFin = toMysqlUtcDatetime(fechaFinRaw);
     const inicioUtcDate = parseToUtcDate(fechaInicioRaw);
     const finUtcDate = parseToUtcDate(fechaFinRaw);
+    const ahoraLiteral = toMysqlUtcDatetime(ahoraRaw || new Date());
 
     const conn = await pool.getConnection();
     try {
@@ -345,8 +351,9 @@ function createReservaRepository(pool) {
             AND estado_reserva <> 'Cancelado'
             AND fecha_inicio < ?
             AND fecha_fin > ?
+            AND (estado_asistencia = 'show' OR fecha_inicio >= DATE_SUB(?, INTERVAL 15 MINUTE))
           FOR UPDATE`,
-        [idEspacio, idReserva, fechaFin, fechaInicio],
+        [idEspacio, idReserva, fechaFin, fechaInicio, ahoraLiteral],
       );
 
       const reservaSolicitada = {
