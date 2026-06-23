@@ -135,18 +135,8 @@ Beneficio: QA puede comenzar a diseñar pruebas en paralelo al desarrollo, y los
 ________________________________________
 4. Starter Kit: OfficeSpace - Gestión Híbrida Inteligente
 4.1 Estructura de Archivos Recomendada
-/officespace-starter-2026
-│
-├── /catalog-service          # Microservicio A (Lista de salas/escritorios)
-├── /booking-service          # Microservicio B (Motor de reservas y lógica)
-├── /frontend                 # Aplicación Web React/Vue/Angular
-├── /shared-infra             # Configuración común
-│   └── init-db.sql          # Script de base de datos
-├── /docs                     # Documentación técnica
-│   ├── ARCHITECTURE.md      # Decisiones arquitectónicas
-│   └── API_CONTRACT.md      # Contrato de API
-├── docker-compose.yml        # Orquestación de contenedores
-└── README.md                 # Manual de instrucciones
+<img width="627" height="345" alt="image" src="https://github.com/user-attachments/assets/06a4ae40-c29b-48ab-87d8-21f4ee7dfade" />
+
 4.2 El Desafío de Lógica (Para el README)
 Se debe incluir estas instrucciones en el README.md del kit:
 REGLAS DEL RETO:
