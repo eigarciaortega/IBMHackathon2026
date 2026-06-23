@@ -11,13 +11,15 @@
       </div>
 
       <div class="time-row">
-        <div class="field-group">
+        <div class="field-group time-field">
           <label class="field-label">Desde</label>
-          <input class="field-input" type="time" formControlName="startTime" />
+          <input class="field-input" type="time" formControlName="startTime"
+            [min]="minStartTime ?? ''" />
         </div>
-        <div class="field-group">
+        <div class="field-group time-field">
           <label class="field-label">Hasta</label>
-          <input class="field-input" type="time" formControlName="endTime" />
+          <input class="field-input" type="time" formControlName="endTime"
+            [min]="form.get('startTime')?.value ?? ''" />
         </div>
       </div>
 
@@ -35,10 +37,40 @@
         <input class="field-input" type="number" formControlName="minCapacity" min="1" placeholder="Ej. 5" />
       </div>
 
-      <button type="submit" class="btn btn--primary" style="width:100%; margin-top:8px; justify-content:center;" [disabled]="loading">
+      <button type="submit" class="btn btn--primary btn--full" [disabled]="loading">
         {{ loading ? 'Buscando...' : 'Buscar espacios' }}
       </button>
+
+      <!-- Botón del bot -->
+      <button type="button" class="btn btn--suggest btn--full" (click)="onSuggest()" [disabled]="loadingSuggestions">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        {{ loadingSuggestions ? 'Calculando...' : 'Sugerir horario' }}
+      </button>
     </form>
+
+    <!-- Panel de sugerencias del bot -->
+    <div class="suggestions-panel" *ngIf="showSuggestions">
+      <div class="suggestions-header">
+        <span class="suggestions-title">Sugerencias de horario</span>
+        <button class="btn-close" (click)="showSuggestions = false">✕</button>
+      </div>
+
+      <div *ngIf="loadingSuggestions" class="suggestions-loading">
+        <app-loading-spinner></app-loading-spinner>
+      </div>
+
+      <div *ngIf="!loadingSuggestions && suggestions.length === 0" class="suggestions-empty">
+        No hay sugerencias disponibles por el momento.
+      </div>
+
+      <div class="suggestion-item" *ngFor="let s of suggestions">
+        <div class="suggestion-label">{{ s.label }}</div>
+        <div class="suggestion-space">{{ s.spaceName }}</div>
+        <div class="suggestion-time">{{ s.date }} · {{ s.startTime }} – {{ s.endTime }}</div>
+        <div class="suggestion-reason">{{ s.reason }}</div>
+        <button class="btn btn--ghost btn--sm" (click)="applySuggestion(s)">Aplicar y buscar</button>
+      </div>
+    </div>
   </aside>
 
   <!-- Resultados -->
@@ -46,7 +78,9 @@
     <div class="results-header">
       <div>
         <h2 class="results-title">Espacios disponibles</h2>
-        <p class="results-sub" *ngIf="searched">{{ filteredSpaces.length }} resultado(s) encontrado(s)</p>
+        <p class="results-sub" *ngIf="searched">
+          {{ availableCount }} disponible(s) · {{ filteredSpaces.length - availableCount }} ocupada(s)
+        </p>
       </div>
     </div>
 
@@ -61,7 +95,7 @@
 
       <div class="empty-state" *ngIf="filteredSpaces.length === 0">
         <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <p>No hay espacios disponibles con esos filtros.</p>
+        <p>No hay espacios que coincidan con esos filtros.</p>
       </div>
     </div>
 

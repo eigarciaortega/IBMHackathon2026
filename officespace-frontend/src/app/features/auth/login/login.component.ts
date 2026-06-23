@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
@@ -12,16 +12,21 @@ export class LoginComponent {
   form: FormGroup;
   loading = false;
   errorMsg = '';
+  sessionExpired = false;
 
   constructor(
     private fb: FormBuilder,
     private auth: AuthService,
-    private router: Router
+    private router: Router,
+    private route: ActivatedRoute,
   ) {
     this.form = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', Validators.required],
     });
+
+    // Detectar redirección por token expirado
+    this.sessionExpired = this.route.snapshot.queryParamMap.get('expired') === '1';
   }
 
   onSubmit(): void {

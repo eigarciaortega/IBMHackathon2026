@@ -100,7 +100,20 @@
   color: #da1e28;
 }
 
-// Alert
+// Alerts
+.alert-warning {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: #fff8e1;
+  border-left: 3px solid #f1c21b;
+  color: #8a6914;
+  font-size: 0.875rem;
+
+  svg { flex-shrink: 0; stroke: #f1c21b; }
+}
+
 .alert-error {
   display: flex;
   align-items: center;

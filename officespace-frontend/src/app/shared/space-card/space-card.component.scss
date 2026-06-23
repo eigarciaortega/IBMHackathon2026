@@ -8,7 +8,35 @@
 
   &:hover { box-shadow: 0 2px 12px rgba(0,0,0,.1); }
 
-  &__header { margin-bottom: 12px; }
+  // Tarjeta ocupada: apagada visualmente
+  &--unavailable {
+    background: #f9f9f9;
+    border-color: #e0e0e0;
+    opacity: .72;
+
+    &:hover { box-shadow: none; }
+
+    .space-card__name { color: #6f6f6f; }
+  }
+
+  // Tarjeta en mantenimiento
+  &--maintenance {
+    background: #fffdf0;
+    border-color: #f1c21b;
+    opacity: .85;
+
+    &:hover { box-shadow: none; }
+
+    .space-card__name { color: #8a6914; }
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
 
   &__name {
     font-size: 1rem;
@@ -56,5 +84,38 @@
     background: #edf5ff;
     color: #0f62fe;
     svg { opacity: 1; }
+  }
+}
+
+.occupied-badge, .maint-badge {
+  font-size: 0.6875rem;
+  padding: 2px 8px;
+}
+
+.badge--yellow { background: #fff1c2; color: #8a6914; }
+
+.reserve-btn {
+  width: 100%;
+  margin-top: 16px;
+  justify-content: center;
+}
+
+.unavailable-msg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 16px;
+  padding: 10px;
+  background: #f4f4f4;
+  font-size: 0.8125rem;
+  color: #6f6f6f;
+
+  svg { opacity: .6; flex-shrink: 0; }
+
+  &--maint {
+    background: #fff8e1;
+    color: #8a6914;
+    svg { opacity: 1; stroke: #f1c21b; }
   }
 }

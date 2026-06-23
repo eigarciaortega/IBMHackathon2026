@@ -1,0 +1,80 @@
+version: '3.8'
+
+services:
+  # ─── Base de datos PostgreSQL compartida ───────────────────────────────────
+  postgres:
+    image: postgres:15-alpine
+    container_name: officespace-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: officespace
+      POSTGRES_PASSWORD: officespace123
+      POSTGRES_DB: officespace_db
+    ports:
+      - '5434:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./shared-infra/init-db.sql:/docker-entrypoint-initdb.d/00-init.sql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U officespace -d officespace_db']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ─── Microservicio A: Gestión de Espacios + Autenticación ──────────────────
+  catalog-service:
+    build:
+      context: ./catalog-service
+      dockerfile: Dockerfile
+    container_name: officespace-catalog
+    restart: unless-stopped
+    ports:
+      - '3001:3001'
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: officespace
+      DB_PASSWORD: officespace123
+      DB_DATABASE: officespace_db
+      JWT_SECRET: officespace-jwt-secret-2026
+      PORT: 3001
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ─── Microservicio B: Motor de Reservas ────────────────────────────────────
+  booking-service:
+    build:
+      context: ./booking-service
+      dockerfile: Dockerfile
+    container_name: officespace-booking
+    restart: unless-stopped
+    ports:
+      - '3002:3002'
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: officespace
+      DB_PASSWORD: officespace123
+      DB_DATABASE: officespace_db
+      JWT_SECRET: officespace-jwt-secret-2026
+      PORT: 3002
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ─── Frontend Angular (opcional, levantar por separado en dev) ─────────────
+  # frontend:
+  #   build:
+  #     context: ./officespace-frontend
+  #     dockerfile: Dockerfile
+  #   container_name: officespace-frontend
+  #   ports:
+  #     - '4200:80'
+  #   depends_on:
+  #     - catalog-service
+  #     - booking-service
+
+volumes:
+  postgres_data:
+    driver: local

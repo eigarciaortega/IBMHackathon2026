@@ -2,6 +2,7 @@
   display: flex;
   gap: 8px;
   justify-content: flex-end;
+  flex-wrap: wrap;
 }
 
 .empty-state a {
@@ -9,4 +10,24 @@
   text-decoration: none;
 
   &:hover { text-decoration: underline; }
+}
+
+.btn--cal {
+  background: #f4f4f4;
+  color: #393939;
+  border: 1px solid #c6c6c6;
+  gap: 4px;
+
+  &:hover { background: #e8e8e8; }
+}
+
+.checkin-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8125rem;
+  color: #6f6f6f;
+  margin-top: 16px;
+
+  svg { flex-shrink: 0; opacity: .6; }
 }

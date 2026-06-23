@@ -8,7 +8,13 @@ export interface Space {
   floor: string;
   hasProjector: boolean;
   hasAC: boolean;
+  hasWhiteboard: boolean;
+  hasTV: boolean;
+  hasVideoConf: boolean;
   isAvailable?: boolean;
+  isUnderMaintenance?: boolean;
+  maintenanceUntil?: string | null;
+  maintenanceReason?: string | null;
 }
 
 export interface SpaceCreateRequest {
@@ -18,6 +24,9 @@ export interface SpaceCreateRequest {
   floor: string;
   hasProjector: boolean;
   hasAC: boolean;
+  hasWhiteboard: boolean;
+  hasTV: boolean;
+  hasVideoConf: boolean;
 }
 
 export interface SpaceAvailabilityParams {

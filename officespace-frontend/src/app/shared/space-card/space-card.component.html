@@ -1,8 +1,19 @@
-<div class="space-card">
+<div class="space-card"
+  [class.space-card--unavailable]="space.isAvailable === false && !space.isUnderMaintenance"
+  [class.space-card--maintenance]="space.isUnderMaintenance && space.isAvailable === false">
+
   <div class="space-card__header">
-    <span class="space-card__type badge" [class.badge--blue]="space.type === 'SALA'" [class.badge--gray]="space.type === 'DESK'">
+    <span class="space-card__type badge"
+      [class.badge--blue]="space.type === 'SALA'"
+      [class.badge--gray]="space.type === 'DESK'">
       {{ space.type === 'SALA' ? 'Sala de juntas' : 'Escritorio' }}
     </span>
+    <!-- Badge mantenimiento: solo si el slot buscado cae dentro del período de mantenimiento -->
+    <span class="badge badge--yellow maint-badge"
+      *ngIf="space.isUnderMaintenance && space.isAvailable === false">En mantenimiento</span>
+    <!-- Badge ocupada: reservada por alguien más (no mantenimiento) -->
+    <span class="badge badge--red occupied-badge"
+      *ngIf="space.isAvailable === false && !space.isUnderMaintenance">Ocupada</span>
   </div>
 
   <h3 class="space-card__name">{{ space.name }}</h3>
@@ -19,17 +30,47 @@
   </div>
 
   <div class="space-card__amenities">
-    <span class="amenity" [class.amenity--on]="space.hasProjector">
+    <span class="amenity" [class.amenity--on]="space.hasProjector" title="Proyector">
       <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="15" rx="2"/><path d="M17 2l-5 5-5-5"/></svg>
       Proyector
     </span>
-    <span class="amenity" [class.amenity--on]="space.hasAC">
+    <span class="amenity" [class.amenity--on]="space.hasAC" title="Aire acondicionado">
       <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2v20M16 2v20M2 8h20M2 16h20"/></svg>
       Clima
     </span>
+    <span class="amenity" [class.amenity--on]="space.hasWhiteboard" title="Pizarrón">
+      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="1"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+      Pizarrón
+    </span>
+    <span class="amenity" [class.amenity--on]="space.hasTV" title="Pantalla / TV">
+      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><polyline points="8 21 12 17 16 21"/></svg>
+      Pantalla
+    </span>
+    <span class="amenity" [class.amenity--on]="space.hasVideoConf" title="Videoconferencia">
+      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+      Videoconf.
+    </span>
   </div>
 
-  <button class="btn btn--primary" style="width:100%; margin-top:16px; justify-content:center;" (click)="reserve.emit(space)">
+  <!-- Mantenimiento activo durante el slot buscado -->
+  <div *ngIf="space.isUnderMaintenance && space.isAvailable === false"
+    class="unavailable-msg unavailable-msg--maint">
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    {{ space.maintenanceReason || 'Espacio en mantenimiento' }}
+  </div>
+
+  <!-- Disponible: isAvailable es la fuente de verdad que el backend calcula para el slot buscado -->
+  <button
+    *ngIf="space.isAvailable !== false"
+    class="btn btn--primary reserve-btn"
+    (click)="reserve.emit(space)">
     Reservar
   </button>
+
+  <!-- Ocupada por reserva existente (no mantenimiento) -->
+  <div *ngIf="space.isAvailable === false && !space.isUnderMaintenance" class="unavailable-msg">
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+    No disponible en este horario
+  </div>
+
 </div>

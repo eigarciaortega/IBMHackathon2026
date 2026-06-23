@@ -3,7 +3,7 @@ export type UserRole = 'ADMINISTRADOR' | 'COLABORADOR';
 export interface User {
   id: number;
   email: string;
-  name: string;
+  name?: string;
   role: UserRole;
 }
 
@@ -13,6 +13,6 @@ export interface LoginRequest {
 }
 
 export interface AuthResponse {
-  token: string;
+  access_token: string;
   user: User;
 }

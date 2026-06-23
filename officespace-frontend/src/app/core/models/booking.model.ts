@@ -1,4 +1,4 @@
-export type BookingStatus = 'CONFIRMED' | 'CANCELLED';
+export type BookingStatus = 'CONFIRMED' | 'CHECKED_IN' | 'NO_SHOW' | 'CANCELLED';
 
 export interface Booking {
   id: number;
@@ -11,6 +11,7 @@ export interface Booking {
   endTime: string;    // HH:mm
   attendees: number;
   status: BookingStatus;
+  checkedInAt: string | null;
   createdAt: string;
 }
 
@@ -20,6 +21,17 @@ export interface BookingCreateRequest {
   startTime: string;
   endTime: string;
   attendees: number;
+}
+
+export interface BookingSuggestion {
+  spaceId: number;
+  spaceName: string;
+  spaceType: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  label: string;
+  reason: string;
 }
 
 export interface DashboardStats {

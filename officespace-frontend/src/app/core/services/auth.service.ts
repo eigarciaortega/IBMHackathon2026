@@ -6,7 +6,8 @@ import { AuthResponse, LoginRequest, User } from '../models/user.model';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private readonly BASE = environment.authApiUrl;
+  // Auth vive en catalog-service (puerto 3001)
+  private readonly BASE = environment.catalogApiUrl;
   private currentUserSubject = new BehaviorSubject<User | null>(this.loadUser());
   currentUser$ = this.currentUserSubject.asObservable();
 
@@ -15,21 +16,21 @@ export class AuthService {
   login(credentials: LoginRequest): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${this.BASE}/auth/login`, credentials).pipe(
       tap(res => {
-        localStorage.setItem('token', res.token);
-        localStorage.setItem('user', JSON.stringify(res.user));
-        this.currentUserSubject.next(res.user);
+        // Backend retorna access_token (JWT estándar)
+        localStorage.setItem('token', res.access_token);
+        const user: User = {
+          ...res.user,
+          name: res.user.email.split('@')[0].replace(/\./g, ' '),
+        };
+        localStorage.setItem('user', JSON.stringify(user));
+        this.currentUserSubject.next(user);
       })
     );
   }
 
-  logout(): Observable<void> {
-    return this.http.post<void>(`${this.BASE}/auth/logout`, {}).pipe(
-      tap(() => this.clearSession())
-    );
-  }
-
-  getProfile(): Observable<User> {
-    return this.http.get<User>(`${this.BASE}/auth/me`);
+  // JWT es stateless — cierre de sesión es solo local
+  logout(): void {
+    this.clearSession();
   }
 
   getToken(): string | null {

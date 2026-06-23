@@ -15,14 +15,21 @@
           <th>Tipo</th>
           <th>Capacidad</th>
           <th>Piso</th>
-          <th>Proyector</th>
-          <th>Clima</th>
+          <th>Recursos</th>
+          <th>Estado</th>
           <th></th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let s of spaces">
-          <td><strong>{{ s.name }}</strong></td>
+        <tr *ngFor="let s of spaces" [class.row--maintenance]="s.isUnderMaintenance">
+          <td>
+            <strong>{{ s.name }}</strong>
+            <div class="maint-reason" *ngIf="s.isUnderMaintenance">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              {{ s.maintenanceReason }}
+              <span *ngIf="s.maintenanceUntil"> · {{ maintenanceLabel(s) }}</span>
+            </div>
+          </td>
           <td>
             <span class="badge" [class.badge--blue]="s.type==='SALA'" [class.badge--gray]="s.type==='DESK'">
               {{ s.type === 'SALA' ? 'Sala' : 'Escritorio' }}
@@ -30,25 +37,39 @@
           </td>
           <td>{{ s.capacity }}</td>
           <td>{{ s.floor }}</td>
-          <td>
-            <span class="badge badge--green" *ngIf="s.hasProjector">Sí</span>
-            <span class="badge badge--gray"  *ngIf="!s.hasProjector">No</span>
+          <td class="resources-cell">
+            <span class="resource-tag resource-tag--on"  *ngIf="s.hasProjector">Proyector</span>
+            <span class="resource-tag resource-tag--on"  *ngIf="s.hasAC">Clima</span>
+            <span class="resource-tag resource-tag--on"  *ngIf="s.hasWhiteboard">Pizarrón</span>
+            <span class="resource-tag resource-tag--on"  *ngIf="s.hasTV">Pantalla</span>
+            <span class="resource-tag resource-tag--on"  *ngIf="s.hasVideoConf">Videoconf.</span>
+            <span class="resource-tag resource-tag--none"
+              *ngIf="!s.hasProjector && !s.hasAC && !s.hasWhiteboard && !s.hasTV && !s.hasVideoConf">—</span>
           </td>
           <td>
-            <span class="badge badge--green" *ngIf="s.hasAC">Sí</span>
-            <span class="badge badge--gray"  *ngIf="!s.hasAC">No</span>
+            <span class="badge badge--yellow" *ngIf="s.isUnderMaintenance">En mantenimiento</span>
+            <span class="badge badge--green"  *ngIf="!s.isUnderMaintenance">Activo</span>
           </td>
           <td class="td-actions">
             <button class="btn btn--ghost btn--sm" (click)="openEdit(s)">Editar</button>
-            <button class="btn btn--danger btn--sm" (click)="onDelete(s.id)">Eliminar</button>
+            <button class="btn btn--warning btn--sm" *ngIf="!s.isUnderMaintenance" (click)="openMaintenance(s)">
+              Mantenimiento
+            </button>
+            <button class="btn btn--ghost btn--sm" *ngIf="s.isUnderMaintenance" (click)="onClearMaintenance(s)">
+              Reactivar
+            </button>
+            <button class="btn btn--danger btn--sm" (click)="onDelete(s.id)"
+              [disabled]="deletingId === s.id">Eliminar</button>
           </td>
         </tr>
       </tbody>
     </table>
+    <p class="empty-msg" *ngIf="!loading && spaces.length === 0">No hay espacios registrados.</p>
+    <p class="empty-msg" *ngIf="loading">Cargando...</p>
   </div>
 </div>
 
-<!-- Modal -->
+<!-- ───── Modal: Crear / Editar espacio ───── -->
 <div class="modal-backdrop" *ngIf="showModal" (click)="closeModal()"></div>
 <div class="modal" *ngIf="showModal">
   <div class="modal-header">
@@ -81,22 +102,122 @@
       </div>
     </div>
 
+    <p class="resources-label">Recursos disponibles</p>
     <div class="checkboxes-row">
       <label class="checkbox-label">
-        <input type="checkbox" formControlName="hasProjector" />
-        <span>Proyector</span>
+        <input type="checkbox" formControlName="hasProjector" /><span>Proyector</span>
       </label>
       <label class="checkbox-label">
-        <input type="checkbox" formControlName="hasAC" />
-        <span>Aire acondicionado</span>
+        <input type="checkbox" formControlName="hasAC" /><span>Aire acondicionado</span>
+      </label>
+      <label class="checkbox-label">
+        <input type="checkbox" formControlName="hasWhiteboard" /><span>Pizarrón</span>
+      </label>
+      <label class="checkbox-label">
+        <input type="checkbox" formControlName="hasTV" /><span>Pantalla / TV</span>
+      </label>
+      <label class="checkbox-label">
+        <input type="checkbox" formControlName="hasVideoConf" /><span>Videoconferencia</span>
       </label>
     </div>
 
+    <p class="error-msg" *ngIf="errorMsg">{{ errorMsg }}</p>
     <div class="modal-footer">
       <button type="button" class="btn btn--ghost" (click)="closeModal()">Cancelar</button>
-      <button type="submit" class="btn btn--primary" [disabled]="form.invalid">
-        {{ editingId ? 'Guardar cambios' : 'Crear espacio' }}
+      <button type="submit" class="btn btn--primary" [disabled]="form.invalid || saving">
+        {{ saving ? 'Guardando...' : (editingId ? 'Guardar cambios' : 'Crear espacio') }}
       </button>
     </div>
   </form>
+</div>
+
+<!-- ───── Modal: Mantenimiento ───── -->
+<div class="modal-backdrop" *ngIf="showMaintenanceModal" (click)="closeMaintenance()"></div>
+<div class="modal" *ngIf="showMaintenanceModal">
+  <div class="modal-header">
+    <h3>
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f1c21b" stroke-width="2.5" style="vertical-align:-3px; margin-right:6px"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      Poner en mantenimiento: {{ maintenanceSpaceName }}
+    </h3>
+    <button class="modal-close" (click)="closeMaintenance()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+
+  <form [formGroup]="maintenanceForm" (ngSubmit)="onConfirmMaintenance()" class="modal-body">
+    <div class="field-group" style="margin-bottom: 16px;">
+      <label class="field-label">Motivo del mantenimiento</label>
+      <input class="field-input" formControlName="reason"
+        placeholder="Ej. Reparación del sistema de aire acondicionado" />
+    </div>
+    <div class="field-group" style="margin-bottom: 20px;">
+      <label class="field-label">Sala disponible nuevamente el</label>
+      <input class="field-input" type="datetime-local" formControlName="until" />
+    </div>
+
+    <p class="error-msg" *ngIf="maintenanceError">{{ maintenanceError }}</p>
+    <div class="modal-footer">
+      <button type="button" class="btn btn--ghost" (click)="closeMaintenance()">Cancelar</button>
+      <button type="submit" class="btn btn--warning" [disabled]="maintenanceForm.invalid || savingMaintenance">
+        {{ savingMaintenance ? 'Aplicando...' : 'Confirmar mantenimiento' }}
+      </button>
+    </div>
+  </form>
+</div>
+
+<!-- ───── Panel lateral: Reasignación de reservas afectadas ───── -->
+<div class="relocation-overlay" *ngIf="showRelocationPanel" (click)="closeRelocationPanel()"></div>
+<div class="relocation-panel" *ngIf="showRelocationPanel">
+  <div class="relocation-header">
+    <div>
+      <h3>Reservas afectadas</h3>
+      <p>Reasigna cada reserva a un espacio alternativo disponible</p>
+    </div>
+    <button class="modal-close" (click)="closeRelocationPanel()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+
+  <div class="relocation-body">
+    <!-- Cargando -->
+    <div class="loading-state" *ngIf="loadingAffected">
+      <p>Buscando reservas afectadas...</p>
+    </div>
+
+    <!-- Sin reservas afectadas -->
+    <div class="empty-state" *ngIf="!loadingAffected && affectedBookings.length === 0">
+      <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#42be65" stroke-width="1.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      <p>No hay reservas futuras afectadas.</p>
+    </div>
+
+    <!-- Lista de reservas afectadas -->
+    <div class="booking-reloc-card" *ngFor="let b of affectedBookings">
+      <div class="reloc-booking-info">
+        <span class="reloc-booking-date">{{ b.date | date:'dd/MM/yyyy' }}</span>
+        <span class="reloc-booking-time">{{ b.startTime }} – {{ b.endTime }}</span>
+        <span class="reloc-booking-user">{{ b.userName || 'Usuario #' + b.userId }}</span>
+        <span class="reloc-attendees">{{ b.attendees }} persona(s)</span>
+      </div>
+
+      <div class="reloc-alt-row">
+        <div class="field-group" style="flex: 1; min-width: 0;">
+          <label class="field-label">Espacio alternativo</label>
+          <div class="loading-inline" *ngIf="isLoadingAlt(b.id)">Buscando alternativas...</div>
+          <select class="field-select" *ngIf="!isLoadingAlt(b.id)"
+            [value]="getSelectedAlt(b.id)"
+            (change)="setSelectedAlt(b.id, +$any($event.target).value)">
+            <option *ngIf="getAlts(b.id).length === 0" [value]="null" disabled>Sin alternativas disponibles</option>
+            <option *ngFor="let alt of getAlts(b.id)" [value]="alt.id">
+              {{ alt.name }} — Piso {{ alt.floor }} · Cap. {{ alt.capacity }}
+            </option>
+          </select>
+        </div>
+        <button class="btn btn--primary btn--sm reloc-btn"
+          [disabled]="!getSelectedAlt(b.id) || getAlts(b.id).length === 0 || relocatingId === b.id"
+          (click)="onRelocate(b.id)">
+          {{ relocatingId === b.id ? '...' : 'Reasignar' }}
+        </button>
+      </div>
+    </div>
+  </div>
 </div>

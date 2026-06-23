@@ -22,7 +22,8 @@ export interface NoShowPrediction {
 
 @Injectable({ providedIn: 'root' })
 export class AiService {
-  private readonly BASE = environment.aiApiUrl;
+  // AI service no está implementado en el MVP — usar catalogApiUrl como fallback
+  private readonly BASE = environment.catalogApiUrl;
 
   constructor(private http: HttpClient) {}
 

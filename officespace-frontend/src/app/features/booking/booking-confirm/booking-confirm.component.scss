@@ -93,3 +93,34 @@
   border-bottom-color: #da1e28;
   background: #fff1f1;
 }
+
+.cal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+
+.cal-label {
+  font-size: 0.8125rem;
+  color: #6f6f6f;
+}
+
+.btn--cal {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 14px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  background: #f4f4f4;
+  color: #393939;
+  border: 1px solid #c6c6c6;
+  cursor: pointer;
+  transition: background .15s;
+
+  &:hover { background: #e8e8e8; }
+}

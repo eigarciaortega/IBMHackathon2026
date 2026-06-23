@@ -20,18 +20,43 @@
       </thead>
       <tbody>
         <tr *ngFor="let b of bookings">
-          <td>
-            <strong>{{ b.spaceName }}</strong>
-          </td>
+          <td><strong>{{ b.spaceName }}</strong></td>
           <td>{{ b.date }}</td>
           <td>{{ b.startTime }} – {{ b.endTime }}</td>
           <td>{{ b.attendees }}</td>
           <td>
-            <span class="badge" [class.badge--green]="b.status==='CONFIRMED'" [class.badge--gray]="b.status==='CANCELLED'">
-              {{ b.status === 'CONFIRMED' ? 'Confirmada' : 'Cancelada' }}
+            <span class="badge" [ngClass]="statusBadgeClass(b.status)">
+              {{ statusLabel(b.status) }}
             </span>
           </td>
           <td class="td-actions">
+            <!-- Check-in: disponible 5 min antes hasta 15 min después del inicio -->
+            <button
+              class="btn btn--primary btn--sm"
+              *ngIf="isCheckInWindow(b)"
+              [disabled]="checkingInId === b.id"
+              (click)="onCheckIn(b.id)">
+              {{ checkingInId === b.id ? 'Procesando...' : 'Check-in' }}
+            </button>
+
+            <!-- Agregar al calendario -->
+            <ng-container *ngIf="b.status === 'CONFIRMED' || b.status === 'CHECKED_IN'">
+              <button class="btn btn--cal btn--sm" title="Agregar a Google Calendar" (click)="addToGoogle(b)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M6 2v2M18 2v2M3 8h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                Google
+              </button>
+              <button class="btn btn--cal btn--sm" title="Agregar a Outlook" (click)="addToOutlook(b)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/>
+                  <line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" stroke-width="2"/>
+                </svg>
+                Outlook
+              </button>
+            </ng-container>
+
+            <!-- Cancelar -->
             <button
               class="btn btn--danger btn--sm"
               *ngIf="b.status === 'CONFIRMED' && isFuture(b.date)"
@@ -51,4 +76,10 @@
       </div>
     </ng-template>
   </div>
+
+  <!-- Leyenda check-in -->
+  <p class="checkin-hint" *ngIf="!loading && bookings.length > 0">
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    El botón <strong>Check-in</strong> aparece 5 minutos antes del inicio y hasta 15 minutos después. Las salas sin check-in se liberan automáticamente.
+  </p>
 </div>

@@ -1,8 +1,8 @@
 .search-layout {
   display: grid;
-  grid-template-columns: 280px 1fr;
-  gap: 24px;
-  max-width: 1200px;
+  grid-template-columns: 340px 1fr;
+  gap: 28px;
+  max-width: 1280px;
   margin: 0 auto;
   padding: 32px 24px;
   align-items: start;
@@ -28,12 +28,122 @@
   gap: 16px;
 }
 
+// Fix overflow: min-width:0 permite que los grid-items encojan
 .time-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
+  overflow: hidden;
 }
 
+.time-field {
+  min-width: 0;
+
+  .field-input {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+.btn--full {
+  width: 100%;
+  justify-content: center;
+}
+
+.btn--suggest {
+  background: #f0f4ff;
+  color: #0f62fe;
+  border: 1px solid #0f62fe;
+  gap: 6px;
+
+  &:hover { background: #e0ebff; }
+  &:disabled { opacity: .5; cursor: not-allowed; }
+}
+
+// ── Suggestions panel ────────────────────────────────────────
+.suggestions-panel {
+  margin-top: 16px;
+  border-top: 1px solid #e0e0e0;
+  padding-top: 16px;
+}
+
+.suggestions-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.suggestions-title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #161616;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+.btn-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6f6f6f;
+  font-size: 0.875rem;
+  padding: 2px 6px;
+
+  &:hover { color: #161616; }
+}
+
+.suggestions-loading {
+  padding: 8px 0;
+  transform: scale(0.7);
+  transform-origin: left;
+}
+
+.suggestions-empty {
+  font-size: 0.8125rem;
+  color: #6f6f6f;
+  padding: 8px 0;
+}
+
+.suggestion-item {
+  padding: 12px;
+  background: #f9f9f9;
+  border: 1px solid #e0e0e0;
+  margin-bottom: 10px;
+
+  &:last-child { margin-bottom: 0; }
+}
+
+.suggestion-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: #0f62fe;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  margin-bottom: 4px;
+}
+
+.suggestion-space {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #161616;
+  margin-bottom: 2px;
+}
+
+.suggestion-time {
+  font-size: 0.8125rem;
+  color: #525252;
+  margin-bottom: 4px;
+}
+
+.suggestion-reason {
+  font-size: 0.75rem;
+  color: #6f6f6f;
+  margin-bottom: 10px;
+  line-height: 1.4;
+}
+
+// ── Results ──────────────────────────────────────────────────
 .results-section { min-height: 400px; }
 
 .results-header {
