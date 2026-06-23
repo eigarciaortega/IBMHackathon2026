@@ -40,6 +40,113 @@
 
     </main>
 
+    <div id="bookingModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 transition-opacity">
+        <div class="bg-white w-full max-w-lg p-8 rounded-[2rem] shadow-2xl relative">
+            
+            <button onclick="closeBookingModal()" class="absolute top-6 right-6 text-gray-400 hover:text-gray-700">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+
+            <h2 class="text-3xl font-serif text-[#2C3E50] mb-1">Reservar espacio</h2>
+            <p class="text-sm text-gray-500 mb-6">
+                Espacio: <span id="modalSpaceName" class="font-bold text-gray-700"></span><br>
+                Capacidad máxima: <span id="modalCapacity" class="font-bold text-gray-700"></span> asistentes
+            </p>
+
+            <form id="bookingForm" class="space-y-5">
+                <input type="hidden" id="modalSpaceId">
+                
+                <div>
+                    <label class="block text-sm text-gray-600 mb-1">Fecha de la reserva</label>
+                    <input type="date" id="bookingDate" required 
+                           class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:border-blue-400 bg-gray-50">
+                </div>
+
+                <div class="flex gap-4">
+                    <div class="flex-1">
+                        <label class="block text-sm text-gray-600 mb-1">Hora Inicio</label>
+                        <input type="time" id="startTime" required 
+                               class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:border-blue-400 bg-gray-50">
+                    </div>
+                    <div class="flex-1">
+                        <label class="block text-sm text-gray-600 mb-1">Hora Fin</label>
+                        <input type="time" id="endTime" required 
+                               class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:border-blue-400 bg-gray-50">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm text-gray-600 mb-1">Número de Asistentes</label>
+                    <input type="number" id="attendees" min="1" required placeholder="Ej. 3"
+                           class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:border-blue-400 bg-gray-50">
+                </div>
+
+                <div id="bookingError" class="hidden bg-red-50 text-red-600 text-sm p-3 rounded-xl border border-red-100"></div>
+                <div id="bookingSuccess" class="hidden bg-green-50 text-green-600 text-sm p-3 rounded-xl border border-green-100">
+                    ¡Reserva confirmada exitosamente!
+                </div>
+
+                <button type="submit" 
+                        class="w-full bg-[#4A4A4A] text-white py-3.5 rounded-full font-medium hover:bg-[#333333] transition mt-2">
+                    Confirmar Reserva
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div id="createSpaceModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 transition-opacity">
+        <div class="bg-white w-full max-w-lg p-8 rounded-[2rem] shadow-2xl relative">
+            
+            <button onclick="closeCreateSpaceModal()" class="absolute top-6 right-6 text-gray-400 hover:text-gray-700">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+
+            <h2 class="text-3xl font-serif text-[#2C3E50] mb-6">Nuevo Espacio</h2>
+
+            <form id="createSpaceForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm text-gray-600 mb-1">Nombre del Espacio</label>
+                    <input type="text" id="spaceName" required placeholder="Ej. Sala de Innovación"
+                           class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:border-blue-400 bg-gray-50">
+                </div>
+
+                <div class="flex gap-4">
+                    <div class="flex-1">
+                        <label class="block text-sm text-gray-600 mb-1">Tipo</label>
+                        <select id="spaceType" required class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:border-blue-400 bg-gray-50">
+                            <option value="SALA">Sala</option>
+                            <option value="ESCRITORIO">Escritorio</option>
+                        </select>
+                    </div>
+                    <div class="flex-1">
+                        <label class="block text-sm text-gray-600 mb-1">Capacidad</label>
+                        <input type="number" id="spaceCapacity" min="1" required placeholder="Ej. 10"
+                               class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:border-blue-400 bg-gray-50">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm text-gray-600 mb-1">Ubicación</label>
+                    <input type="text" id="spaceLocation" required placeholder="Ej. Piso 5, Torre A"
+                           class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:border-blue-400 bg-gray-50">
+                </div>
+
+                <div>
+                    <label class="block text-sm text-gray-600 mb-1">Recursos (separados por coma)</label>
+                    <input type="text" id="spaceResources" required placeholder="Pantalla 4K, Pizarra, A/C"
+                           class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:border-blue-400 bg-gray-50">
+                </div>
+
+                <div id="createSpaceError" class="hidden bg-red-50 text-red-600 text-sm p-3 rounded-xl border border-red-100"></div>
+
+                <button type="submit" 
+                        class="w-full bg-[#4A4A4A] text-white py-3.5 rounded-full font-medium hover:bg-[#333333] transition mt-4">
+                    Guardar Espacio
+                </button>
+            </form>
+        </div>
+    </div>
+
     <script>
         // 1. Verificación de Seguridad del Frontend
         const token = localStorage.getItem('token');
@@ -54,7 +161,10 @@
         document.getElementById('userRoleBadge').innerText = role;
         if (role === 'ADMINISTRADOR') {
             document.getElementById('btnCreateSpace').classList.remove('hidden');
+            // AGREGAR ESTA LÍNEA PARA ABRIR EL MODAL:
+            document.getElementById('btnCreateSpace').addEventListener('click', openCreateSpaceModal);
         }
+        
 
         // 3. Función para traer los espacios del catalog-service
         async function loadSpaces() {
@@ -111,10 +221,128 @@
             window.location.href = 'index.html';
         }
 
-        // 6. Preparar función de reserva (siguiente paso)
-        function openBookingModal(spaceId, spaceName, spaceCapacity) {
-            alert(`Pronto abriremos el formulario para reservar: ${spaceName}`);
+        // 6. Funciones del Modal de Reserva
+        function openBookingModal(spaceId, spaceName, capacity) {
+            // Llenamos los datos visuales y ocultos
+            document.getElementById('modalSpaceId').value = spaceId;
+            document.getElementById('modalSpaceName').innerText = spaceName;
+            document.getElementById('modalCapacity').innerText = capacity;
+            
+            // Limitamos dinámicamente el input de asistentes
+            document.getElementById('attendees').max = capacity;
+            
+            // Limpiamos formularios y alertas viejas
+            document.getElementById('bookingForm').reset();
+            document.getElementById('bookingError').classList.add('hidden');
+            document.getElementById('bookingSuccess').classList.add('hidden');
+            
+            // Mostramos el modal
+            document.getElementById('bookingModal').classList.remove('hidden');
         }
+
+        function closeBookingModal() {
+            document.getElementById('bookingModal').classList.add('hidden');
+        }
+
+        // 7. Enviar la reserva al Backend
+        document.getElementById('bookingForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const errorDiv = document.getElementById('bookingError');
+            const successDiv = document.getElementById('bookingSuccess');
+            errorDiv.classList.add('hidden');
+            successDiv.classList.add('hidden');
+
+            // Formatear las horas agregando ":00" para los segundos que espera Java
+            let start = document.getElementById('startTime').value;
+            let end = document.getElementById('endTime').value;
+            if(start.length === 5) start += ":00";
+            if(end.length === 5) end += ":00";
+
+            const payload = {
+                spaceId: parseInt(document.getElementById('modalSpaceId').value),
+                userId: parseInt(localStorage.getItem('userId')), // Sacamos el ID del storage
+                bookingDate: document.getElementById('bookingDate').value,
+                startTime: start,
+                endTime: end,
+                attendees: parseInt(document.getElementById('attendees').value)
+            };
+
+            try {
+                // Petición al booking-service (Puerto 8082)
+                const response = await fetch('http://localhost:8082/api/bookings', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}` // Enviamos el pasaporte
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    successDiv.classList.remove('hidden');
+                    setTimeout(() => { closeBookingModal(); }, 2000); // Cierra automáticamente en 2 segundos
+                } else {
+                    // Si Java arrojó un error (ej. Solapamiento o Fecha pasada)
+                    const errorMessage = await response.text();
+                    errorDiv.innerText = errorMessage;
+                    errorDiv.classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error("Error al reservar:", error);
+                errorDiv.innerText = "Error de red al intentar conectar con el servidor.";
+                errorDiv.classList.remove('hidden');
+            }
+        });
+
+        // 8. Funciones del Modal de Nuevo Espacio
+        function openCreateSpaceModal() {
+            document.getElementById('createSpaceForm').reset();
+            document.getElementById('createSpaceError').classList.add('hidden');
+            document.getElementById('createSpaceModal').classList.remove('hidden');
+        }
+
+        function closeCreateSpaceModal() {
+            document.getElementById('createSpaceModal').classList.add('hidden');
+        }
+
+        document.getElementById('createSpaceForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const errorDiv = document.getElementById('createSpaceError');
+            errorDiv.classList.add('hidden');
+
+            const payload = {
+                name: document.getElementById('spaceName').value,
+                type: document.getElementById('spaceType').value,
+                capacity: parseInt(document.getElementById('spaceCapacity').value),
+                location: document.getElementById('spaceLocation').value,
+                resources: document.getElementById('spaceResources').value
+            };
+
+            try {
+                // Petición al catalog-service (Puerto 8081)
+                const response = await fetch('http://localhost:8081/api/spaces', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}` // El pasaporte de Admin
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    closeCreateSpaceModal();
+                    loadSpaces(); // Recarga las tarjetas para mostrar el nuevo espacio
+                } else {
+                    errorDiv.innerText = "Error al crear el espacio. Verifica tus permisos.";
+                    errorDiv.classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error("Error creando espacio:", error);
+                errorDiv.innerText = "Error de conexión con el servidor.";
+                errorDiv.classList.remove('hidden');
+            }
+        });
 
         // Arrancar la carga al iniciar
         loadSpaces();

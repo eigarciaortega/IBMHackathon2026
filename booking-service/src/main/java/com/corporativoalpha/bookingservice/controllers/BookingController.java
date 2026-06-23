@@ -9,6 +9,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -38,7 +41,7 @@ public class BookingController {
     }
 
     @PostMapping
-    public ResponseEntity<?> createBooking(@RequestBody Booking booking) {
+    public ResponseEntity<?> createBooking(@RequestBody Booking booking, @RequestHeader("Authorization") String authHeader) {
 
         // ==========================================
         // VALIDACIÓN NUEVA: FECHAS EN EL PASADO
@@ -63,7 +66,20 @@ public class BookingController {
         // ==========================================
         try {
             String catalogUrl = "http://localhost:8081/api/spaces/" + booking.getSpaceId();
-            ResponseEntity<SpaceDTO> response = restTemplate.getForEntity(catalogUrl, SpaceDTO.class);
+
+            // 1. Preparamos la cabecera con el pasaporte
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("Authorization", authHeader);
+            HttpEntity<String> entity = new HttpEntity<>(headers);
+
+            // 2. Usamos exchange en lugar de getForEntity para poder enviar la cabecera
+            ResponseEntity<SpaceDTO> response = restTemplate.exchange(
+                    catalogUrl,
+                    HttpMethod.GET,
+                    entity,
+                    SpaceDTO.class
+            );
+
             SpaceDTO space = response.getBody();
 
             if (space != null && booking.getAttendees() > space.getCapacity()) {
@@ -72,8 +88,9 @@ public class BookingController {
                         .body("Error: El número de asistentes (" + booking.getAttendees() +
                                 ") supera la capacidad máxima del espacio (" + space.getCapacity() + ").");
             }
-        } catch (HttpClientErrorException.NotFound e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Error: El espacio solicitado no existe.");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error comunicándose con el catálogo de espacios.");
         }
 
         // ==========================================
