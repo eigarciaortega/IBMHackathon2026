@@ -8,11 +8,10 @@ const CLAVE = 'officespace_tema'
 
 export function temaInicial(): Tema {
   try {
-    const guardado = localStorage.getItem(CLAVE)
-    if (guardado === 'claro' || guardado === 'oscuro') return guardado
-    if (window.matchMedia('(prefers-color-scheme: dark)').matches) return 'oscuro'
+    // Solo respeta una elección explícita previa; el tema claro es el predeterminado.
+    if (localStorage.getItem(CLAVE) === 'oscuro') return 'oscuro'
   } catch {
-    // Sin acceso a localStorage/matchMedia: tema claro por defecto.
+    // Sin acceso a localStorage: tema claro por defecto.
   }
   return 'claro'
 }

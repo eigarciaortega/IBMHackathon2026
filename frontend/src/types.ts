@@ -15,14 +15,23 @@ export interface LoginResponse {
 
 export type TipoEspacio = 'SALA' | 'DESK'
 
+export interface Recurso {
+  id: number
+  nombre: string
+  creado_en?: string
+}
+
+export interface RecursoInput {
+  nombre: string
+}
+
 export interface Espacio {
   id: number
   nombre: string
   tipo: TipoEspacio
   capacidad: number
-  tiene_proyector: boolean
-  tiene_aire: boolean
   piso: string
+  recursos: Recurso[]
   creado_en: string
 }
 
@@ -30,9 +39,8 @@ export interface EspacioInput {
   nombre: string
   tipo: TipoEspacio
   capacidad: number
-  tiene_proyector: boolean
-  tiene_aire: boolean
   piso: string
+  recurso_ids: number[]
 }
 
 export type EstadoReserva = 'CONFIRMADA' | 'CANCELADA'

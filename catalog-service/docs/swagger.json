@@ -22,7 +22,185 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_handlers.SaludResponse"
+                            "$ref": "#/definitions/handlers.SaludResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/resources": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "recursos"
+                ],
+                "summary": "Listar recursos",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Recurso"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.AppError"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "recursos"
+                ],
+                "summary": "Crear recurso",
+                "parameters": [
+                    {
+                        "description": "Datos del recurso",
+                        "name": "recurso",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.RecursoRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/models.Recurso"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.AppError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.AppError"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.AppError"
+                        }
+                    }
+                }
+            }
+        },
+        "/resources/{id}": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "recursos"
+                ],
+                "summary": "Actualizar recurso",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID del recurso",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Datos del recurso",
+                        "name": "recurso",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.RecursoRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Recurso"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.AppError"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.AppError"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "recursos"
+                ],
+                "summary": "Eliminar recurso",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID del recurso",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Sin contenido"
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.AppError"
                         }
                     }
                 }
@@ -63,14 +241,14 @@
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_catalog-service_internal_models.Espacio"
+                                "$ref": "#/definitions/models.Espacio"
                             }
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_catalog-service_internal_apperror.AppError"
+                            "$ref": "#/definitions/apperror.AppError"
                         }
                     }
                 }
@@ -98,7 +276,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_catalog-service_internal_models.EspacioRequest"
+                            "$ref": "#/definitions/models.EspacioRequest"
                         }
                     }
                 ],
@@ -106,25 +284,25 @@
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_catalog-service_internal_models.Espacio"
+                            "$ref": "#/definitions/models.Espacio"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_catalog-service_internal_apperror.AppError"
+                            "$ref": "#/definitions/apperror.AppError"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_catalog-service_internal_apperror.AppError"
+                            "$ref": "#/definitions/apperror.AppError"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_catalog-service_internal_apperror.AppError"
+                            "$ref": "#/definitions/apperror.AppError"
                         }
                     }
                 }
@@ -157,13 +335,13 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_catalog-service_internal_models.Espacio"
+                            "$ref": "#/definitions/models.Espacio"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_catalog-service_internal_apperror.AppError"
+                            "$ref": "#/definitions/apperror.AppError"
                         }
                     }
                 }
@@ -198,7 +376,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_catalog-service_internal_models.EspacioRequest"
+                            "$ref": "#/definitions/models.EspacioRequest"
                         }
                     }
                 ],
@@ -206,19 +384,19 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_catalog-service_internal_models.Espacio"
+                            "$ref": "#/definitions/models.Espacio"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_catalog-service_internal_apperror.AppError"
+                            "$ref": "#/definitions/apperror.AppError"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_catalog-service_internal_apperror.AppError"
+                            "$ref": "#/definitions/apperror.AppError"
                         }
                     }
                 }
@@ -252,7 +430,7 @@
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_catalog-service_internal_apperror.AppError"
+                            "$ref": "#/definitions/apperror.AppError"
                         }
                     }
                 }
@@ -260,7 +438,7 @@
         }
     },
     "definitions": {
-        "github_com_i0dk1_OfficeSpace_catalog-service_internal_apperror.AppError": {
+        "apperror.AppError": {
             "type": "object",
             "properties": {
                 "codigo": {
@@ -274,7 +452,20 @@
                 }
             }
         },
-        "github_com_i0dk1_OfficeSpace_catalog-service_internal_models.Espacio": {
+        "handlers.SaludResponse": {
+            "type": "object",
+            "properties": {
+                "servicio": {
+                    "type": "string",
+                    "example": "catalog-service"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "ok"
+                }
+            }
+        },
+        "models.Espacio": {
             "type": "object",
             "properties": {
                 "capacidad": {
@@ -296,13 +487,11 @@
                     "type": "string",
                     "example": "Piso 1"
                 },
-                "tiene_aire": {
-                    "type": "boolean",
-                    "example": true
-                },
-                "tiene_proyector": {
-                    "type": "boolean",
-                    "example": true
+                "recursos": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Recurso"
+                    }
                 },
                 "tipo": {
                     "type": "string",
@@ -310,7 +499,7 @@
                 }
             }
         },
-        "github_com_i0dk1_OfficeSpace_catalog-service_internal_models.EspacioRequest": {
+        "models.EspacioRequest": {
             "type": "object",
             "properties": {
                 "capacidad": {
@@ -325,13 +514,15 @@
                     "type": "string",
                     "example": "Piso 1"
                 },
-                "tiene_aire": {
-                    "type": "boolean",
-                    "example": true
-                },
-                "tiene_proyector": {
-                    "type": "boolean",
-                    "example": true
+                "recurso_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    },
+                    "example": [
+                        1,
+                        2
+                    ]
                 },
                 "tipo": {
                     "type": "string",
@@ -339,16 +530,28 @@
                 }
             }
         },
-        "internal_handlers.SaludResponse": {
+        "models.Recurso": {
             "type": "object",
             "properties": {
-                "servicio": {
-                    "type": "string",
-                    "example": "catalog-service"
+                "creado_en": {
+                    "type": "string"
                 },
-                "status": {
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "nombre": {
                     "type": "string",
-                    "example": "ok"
+                    "example": "Proyector"
+                }
+            }
+        },
+        "models.RecursoRequest": {
+            "type": "object",
+            "properties": {
+                "nombre": {
+                    "type": "string",
+                    "example": "Proyector"
                 }
             }
         }

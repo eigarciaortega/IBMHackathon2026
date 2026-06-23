@@ -68,6 +68,8 @@ flowchart LR
 erDiagram
     USUARIOS ||--o{ RESERVAS : "realiza"
     ESPACIOS ||--o{ RESERVAS : "se reserva en"
+    ESPACIOS ||--o{ ESPACIO_RECURSOS : "tiene"
+    RECURSOS ||--o{ ESPACIO_RECURSOS : "asignado a"
 
     USUARIOS {
         serial      id PK
@@ -83,10 +85,19 @@ erDiagram
         text        nombre
         text        tipo "SALA | DESK"
         int         capacidad "> 0"
-        boolean     tiene_proyector
-        boolean     tiene_aire
         text        piso
         timestamptz creado_en
+    }
+
+    RECURSOS {
+        serial      id PK
+        text        nombre UK
+        timestamptz creado_en
+    }
+
+    ESPACIO_RECURSOS {
+        int espacio_id FK
+        int recurso_id FK
     }
 
     RESERVAS {
@@ -115,6 +126,12 @@ erDiagram
 `NOTIFICACIONES` es una bitácora de eventos sin FKs a propósito: una notificación de
 "espacio eliminado" debe sobrevivir al borrado del espacio. No es una tabla de dominio
 que un servicio consulte para decidir lógica; catalog y booking solo le **agregan** filas.
+
+`RECURSOS` es un catálogo que el administrador gestiona (CRUD), asociado a los espacios
+por la tabla puente `ESPACIO_RECURSOS` (N:M). Sustituye a las antiguas banderas fijas
+`tiene_proyector`/`tiene_aire`, de modo que se pueden definir recursos arbitrarios
+(pizarrón, videoconferencia, TV...) sin tocar el esquema. El borrado de un espacio o de
+un recurso limpia sus vínculos en cascada.
 
 ### Garantía anti-solapamiento a nivel de base de datos
 

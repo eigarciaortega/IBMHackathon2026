@@ -11,6 +11,7 @@ import { toast } from '../lib/toast'
 import { CargandoBloque, EstadoVacio, PillTipo, Spinner } from '../components/ui'
 import { OccupancyTrack } from '../components/OccupancyTrack'
 import { EspacioFormModal } from '../components/EspacioFormModal'
+import { RecursosAdmin } from '../components/RecursosAdmin'
 import { Modal } from '../components/Modal'
 import {
   IconAdmin,
@@ -213,9 +214,11 @@ export function AdminPage() {
                       <IconUsuarios className="size-4 text-muted md:hidden" />{e.capacidad}
                     </div>
                     <div className="flex flex-wrap gap-1.5 text-xs text-muted">
-                      {e.tiene_proyector && <span className="pill bg-surface-muted text-body">Proyector</span>}
-                      {e.tiene_aire && <span className="pill bg-surface-muted text-body">Aire</span>}
-                      {!e.tiene_proyector && !e.tiene_aire && <span>—</span>}
+                      {e.recursos.length > 0
+                        ? e.recursos.map((r) => (
+                            <span key={r.id} className="pill bg-surface-muted text-body">{r.nombre}</span>
+                          ))
+                        : <span>—</span>}
                     </div>
                     <div className="flex items-center justify-end gap-1">
                       <button
@@ -241,6 +244,9 @@ export function AdminPage() {
               </ul>
             </div>
           </section>
+
+          {/* CRUD del catálogo de recursos */}
+          <RecursosAdmin onCambio={cargarEspacios} />
         </div>
       )}
 

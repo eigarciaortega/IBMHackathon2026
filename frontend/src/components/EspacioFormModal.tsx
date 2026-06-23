@@ -1,8 +1,8 @@
 // Formulario de crear/editar espacio (solo ADMINISTRADOR). Reutiliza el mismo
 // modal para alta y edición según reciba o no un espacio inicial.
 import { useEffect, useState } from 'react'
-import type { Espacio, EspacioInput, TipoEspacio } from '../types'
-import { catalogApi } from '../services/catalog'
+import type { Espacio, EspacioInput, Recurso, TipoEspacio } from '../types'
+import { catalogApi, recursosApi } from '../services/catalog'
 import { ApiError } from '../lib/api'
 import { toast } from '../lib/toast'
 import { Modal } from './Modal'
@@ -19,13 +19,13 @@ const VACIO: EspacioInput = {
   nombre: '',
   tipo: 'SALA',
   capacidad: 1,
-  tiene_proyector: false,
-  tiene_aire: false,
   piso: '',
+  recurso_ids: [],
 }
 
 export function EspacioFormModal({ abierto, espacio, onCerrar, onGuardado }: Props) {
   const [form, setForm] = useState<EspacioInput>(VACIO)
+  const [recursos, setRecursos] = useState<Recurso[]>([])
   const [error, setError] = useState<string | null>(null)
   const [guardando, setGuardando] = useState(false)
 
@@ -33,19 +33,28 @@ export function EspacioFormModal({ abierto, espacio, onCerrar, onGuardado }: Pro
     if (!abierto) return
     setError(null)
     setGuardando(false)
+    recursosApi.listar().then(setRecursos).catch(() => setRecursos([]))
     if (espacio) {
       setForm({
         nombre: espacio.nombre,
         tipo: espacio.tipo,
         capacidad: espacio.capacidad,
-        tiene_proyector: espacio.tiene_proyector,
-        tiene_aire: espacio.tiene_aire,
         piso: espacio.piso,
+        recurso_ids: espacio.recursos.map((r) => r.id),
       })
     } else {
       setForm(VACIO)
     }
   }, [abierto, espacio])
+
+  function alternarRecurso(id: number) {
+    setForm((f) => ({
+      ...f,
+      recurso_ids: f.recurso_ids.includes(id)
+        ? f.recurso_ids.filter((x) => x !== id)
+        : [...f.recurso_ids, id],
+    }))
+  }
 
   const nombreInvalido = form.nombre.trim() === ''
   const capacidadInvalida = !form.capacidad || form.capacidad < 1
@@ -140,18 +149,24 @@ export function EspacioFormModal({ abierto, espacio, onCerrar, onGuardado }: Pro
           />
         </div>
 
-        <fieldset className="grid grid-cols-2 gap-3">
+        <fieldset>
           <legend className="label">Recursos</legend>
-          <CasillaRecurso
-            etiqueta="Proyector"
-            activo={form.tiene_proyector}
-            onChange={(v) => setForm({ ...form, tiene_proyector: v })}
-          />
-          <CasillaRecurso
-            etiqueta="Aire acondicionado"
-            activo={form.tiene_aire}
-            onChange={(v) => setForm({ ...form, tiene_aire: v })}
-          />
+          {recursos.length === 0 ? (
+            <p className="rounded-[0.5rem] border border-dashed border-border-strong bg-surface-muted px-3 py-2.5 text-sm text-muted">
+              No hay recursos en el catálogo. Créalos en la sección «Recursos» de Administración.
+            </p>
+          ) : (
+            <div className="grid grid-cols-2 gap-3">
+              {recursos.map((r) => (
+                <CasillaRecurso
+                  key={r.id}
+                  etiqueta={r.nombre}
+                  activo={form.recurso_ids.includes(r.id)}
+                  onChange={() => alternarRecurso(r.id)}
+                />
+              ))}
+            </div>
+          )}
         </fieldset>
 
         {error && (

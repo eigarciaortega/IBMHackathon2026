@@ -7,13 +7,16 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/i0dk1/OfficeSpace/catalog-service/internal/apperror"
 	"github.com/i0dk1/OfficeSpace/catalog-service/internal/models"
 )
 
-// EspacioRepository accede a la tabla espacios.
+const codigoFKViolada = "23503" // foreign_key_violation (recurso inexistente)
+
+// EspacioRepository accede a la tabla espacios y a su relación con recursos.
 type EspacioRepository struct {
 	pool *pgxpool.Pool
 }
@@ -22,10 +25,13 @@ func NewEspacioRepository(pool *pgxpool.Pool) *EspacioRepository {
 	return &EspacioRepository{pool: pool}
 }
 
-const columnas = "id, nombre, tipo, capacidad, tiene_proyector, tiene_aire, piso, creado_en"
+const columnas = "id, nombre, tipo, capacidad, piso, creado_en"
 
-// Listar devuelve los espacios aplicando los filtros opcionales (tipo y
-// capacidad mínima). Los filtros se aplican de verdad en la consulta SQL.
+func escanearEspacio(fila pgx.Row, e *models.Espacio) error {
+	return fila.Scan(&e.ID, &e.Nombre, &e.Tipo, &e.Capacidad, &e.Piso, &e.CreadoEn)
+}
+
+// Listar devuelve los espacios (con sus recursos) aplicando los filtros opcionales.
 func (r *EspacioRepository) Listar(ctx context.Context, filtro models.FiltroEspacios) ([]models.Espacio, error) {
 	consulta := "SELECT " + columnas + " FROM espacios"
 	condiciones := []string{}
@@ -56,69 +62,102 @@ func (r *EspacioRepository) Listar(ctx context.Context, filtro models.FiltroEspa
 	defer filas.Close()
 
 	espacios := []models.Espacio{}
+	ids := []int{}
 	for filas.Next() {
 		var e models.Espacio
-		if err := filas.Scan(&e.ID, &e.Nombre, &e.Tipo, &e.Capacidad, &e.TieneProyector, &e.TieneAire, &e.Piso, &e.CreadoEn); err != nil {
+		if err := escanearEspacio(filas, &e); err != nil {
 			return nil, err
 		}
+		e.Recursos = []models.Recurso{}
 		espacios = append(espacios, e)
+		ids = append(ids, e.ID)
 	}
-	return espacios, filas.Err()
+	if err := filas.Err(); err != nil {
+		return nil, err
+	}
+
+	// Carga los recursos de todos los espacios en una sola consulta.
+	porEspacio, err := r.recursosPorEspacio(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	for i := range espacios {
+		if rec, ok := porEspacio[espacios[i].ID]; ok {
+			espacios[i].Recursos = rec
+		}
+	}
+	return espacios, nil
 }
 
-// ObtenerPorID devuelve un espacio o ErrEspacioNoEncontrado.
+// ObtenerPorID devuelve un espacio (con sus recursos) o ErrEspacioNoEncontrado.
 func (r *EspacioRepository) ObtenerPorID(ctx context.Context, id int) (*models.Espacio, error) {
-	consulta := "SELECT " + columnas + " FROM espacios WHERE id = $1"
 	var e models.Espacio
-	err := r.pool.QueryRow(ctx, consulta, id).Scan(
-		&e.ID, &e.Nombre, &e.Tipo, &e.Capacidad, &e.TieneProyector, &e.TieneAire, &e.Piso, &e.CreadoEn,
-	)
-	if err != nil {
+	if err := escanearEspacio(r.pool.QueryRow(ctx, "SELECT "+columnas+" FROM espacios WHERE id = $1", id), &e); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, apperror.ErrEspacioNoEncontrado
 		}
 		return nil, err
 	}
+	rec, err := r.recursosDeEspacio(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	e.Recursos = rec
 	return &e, nil
 }
 
-// Crear inserta un espacio y devuelve el registro resultante.
+// Crear inserta un espacio y sus recursos asignados en una transacción.
 func (r *EspacioRepository) Crear(ctx context.Context, req models.EspacioRequest) (*models.Espacio, error) {
-	consulta := `
-		INSERT INTO espacios (nombre, tipo, capacidad, tiene_proyector, tiene_aire, piso)
-		VALUES ($1, $2, $3, $4, $5, $6)
-		RETURNING ` + columnas
-	var e models.Espacio
-	err := r.pool.QueryRow(ctx, consulta,
-		req.Nombre, req.Tipo, req.Capacidad, req.TieneProyector, req.TieneAire, req.Piso,
-	).Scan(&e.ID, &e.Nombre, &e.Tipo, &e.Capacidad, &e.TieneProyector, &e.TieneAire, &e.Piso, &e.CreadoEn)
+	tx, err := r.pool.Begin(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return &e, nil
+	defer tx.Rollback(ctx)
+
+	var e models.Espacio
+	consulta := "INSERT INTO espacios (nombre, tipo, capacidad, piso) VALUES ($1, $2, $3, $4) RETURNING " + columnas
+	if err := escanearEspacio(tx.QueryRow(ctx, consulta, req.Nombre, req.Tipo, req.Capacidad, req.Piso), &e); err != nil {
+		return nil, err
+	}
+	if err := asignarRecursos(ctx, tx, e.ID, req.RecursoIDs); err != nil {
+		return nil, err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return nil, err
+	}
+	return r.ObtenerPorID(ctx, e.ID)
 }
 
-// Actualizar modifica un espacio existente; ErrEspacioNoEncontrado si no existe.
+// Actualizar modifica un espacio y reemplaza el conjunto de recursos asignados.
 func (r *EspacioRepository) Actualizar(ctx context.Context, id int, req models.EspacioRequest) (*models.Espacio, error) {
-	consulta := `
-		UPDATE espacios
-		SET nombre = $1, tipo = $2, capacidad = $3, tiene_proyector = $4, tiene_aire = $5, piso = $6
-		WHERE id = $7
-		RETURNING ` + columnas
-	var e models.Espacio
-	err := r.pool.QueryRow(ctx, consulta,
-		req.Nombre, req.Tipo, req.Capacidad, req.TieneProyector, req.TieneAire, req.Piso, id,
-	).Scan(&e.ID, &e.Nombre, &e.Tipo, &e.Capacidad, &e.TieneProyector, &e.TieneAire, &e.Piso, &e.CreadoEn)
+	tx, err := r.pool.Begin(ctx)
 	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback(ctx)
+
+	var e models.Espacio
+	consulta := "UPDATE espacios SET nombre = $1, tipo = $2, capacidad = $3, piso = $4 WHERE id = $5 RETURNING " + columnas
+	if err := escanearEspacio(tx.QueryRow(ctx, consulta, req.Nombre, req.Tipo, req.Capacidad, req.Piso, id), &e); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, apperror.ErrEspacioNoEncontrado
 		}
 		return nil, err
 	}
-	return &e, nil
+	if _, err := tx.Exec(ctx, "DELETE FROM espacio_recursos WHERE espacio_id = $1", id); err != nil {
+		return nil, err
+	}
+	if err := asignarRecursos(ctx, tx, id, req.RecursoIDs); err != nil {
+		return nil, err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return nil, err
+	}
+	return r.ObtenerPorID(ctx, id)
 }
 
-// Eliminar borra un espacio; ErrEspacioNoEncontrado si no existía.
+// Eliminar borra un espacio; ErrEspacioNoEncontrado si no existía. Sus filas en
+// espacio_recursos se borran en cascada (FK ON DELETE CASCADE).
 func (r *EspacioRepository) Eliminar(ctx context.Context, id int) error {
 	etiqueta, err := r.pool.Exec(ctx, "DELETE FROM espacios WHERE id = $1", id)
 	if err != nil {
@@ -128,4 +167,58 @@ func (r *EspacioRepository) Eliminar(ctx context.Context, id int) error {
 		return apperror.ErrEspacioNoEncontrado
 	}
 	return nil
+}
+
+// asignarRecursos inserta los vínculos espacio↔recurso. Un recurso inexistente
+// viola la FK y se mapea a ErrRecursoInvalido (400).
+func asignarRecursos(ctx context.Context, tx pgx.Tx, espacioID int, recursoIDs []int) error {
+	for _, rid := range recursoIDs {
+		if _, err := tx.Exec(ctx, "INSERT INTO espacio_recursos (espacio_id, recurso_id) VALUES ($1, $2) ON CONFLICT DO NOTHING", espacioID, rid); err != nil {
+			var pgErr *pgconn.PgError
+			if errors.As(err, &pgErr) && pgErr.Code == codigoFKViolada {
+				return apperror.ErrRecursoInvalido
+			}
+			return err
+		}
+	}
+	return nil
+}
+
+func (r *EspacioRepository) recursosDeEspacio(ctx context.Context, espacioID int) ([]models.Recurso, error) {
+	porEspacio, err := r.recursosPorEspacio(ctx, []int{espacioID})
+	if err != nil {
+		return nil, err
+	}
+	if rec, ok := porEspacio[espacioID]; ok {
+		return rec, nil
+	}
+	return []models.Recurso{}, nil
+}
+
+// recursosPorEspacio carga, en una sola consulta, los recursos de varios espacios.
+func (r *EspacioRepository) recursosPorEspacio(ctx context.Context, ids []int) (map[int][]models.Recurso, error) {
+	porEspacio := map[int][]models.Recurso{}
+	if len(ids) == 0 {
+		return porEspacio, nil
+	}
+	filas, err := r.pool.Query(ctx, `
+		SELECT er.espacio_id, r.id, r.nombre, r.creado_en
+		  FROM espacio_recursos er
+		  JOIN recursos r ON r.id = er.recurso_id
+		 WHERE er.espacio_id = ANY($1)
+		 ORDER BY r.nombre`, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer filas.Close()
+
+	for filas.Next() {
+		var espacioID int
+		var rec models.Recurso
+		if err := filas.Scan(&espacioID, &rec.ID, &rec.Nombre, &rec.CreadoEn); err != nil {
+			return nil, err
+		}
+		porEspacio[espacioID] = append(porEspacio[espacioID], rec)
+	}
+	return porEspacio, filas.Err()
 }
