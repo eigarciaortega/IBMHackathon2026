@@ -2,6 +2,7 @@ const express = require("express");
 const swaggerUi = require("swagger-ui-express");
 const { checkDatabase } = require("./db");
 const accountsRoutes = require("./routes/accountsRoutes");
+const { logEvent, sendError } = require("./utils/http");
 const swaggerDocument = require("./swagger");
 
 const app = express();
@@ -20,14 +21,7 @@ app.get("/health", async (_request, response) => {
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    console.error(
-      JSON.stringify({
-        level: "error",
-        service: "accounts-service",
-        message: error.message,
-        timestamp: new Date().toISOString()
-      })
-    );
+    logEvent("ERROR", "internal_error", { message: error.message });
 
     response.status(503).json({
       status: "error",
@@ -41,28 +35,10 @@ app.get("/health", async (_request, response) => {
 app.use(accountsRoutes);
 
 app.use((error, _request, response, _next) => {
-  console.error(
-    JSON.stringify({
-      level: "error",
-      service: "accounts-service",
-      message: error.message,
-      timestamp: new Date().toISOString()
-    })
-  );
-
-  response.status(500).json({
-    error: "internal_server_error",
-    message: "Unexpected error in accounts-service."
-  });
+  logEvent("ERROR", "internal_error", { message: error.message });
+  return sendError(response, 500, "internal_server_error", "Unexpected error in accounts-service.");
 });
 
 app.listen(port, () => {
-  console.log(
-    JSON.stringify({
-      level: "info",
-      service: "accounts-service",
-      message: `Listening on port ${port}`,
-      timestamp: new Date().toISOString()
-    })
-  );
+  logEvent("INFO", "service_started", { port });
 });

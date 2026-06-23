@@ -133,6 +133,13 @@ Esta fase incluye:
 - Compensacion tipo Saga: si falla el credito despues del debito, el sender recibe una compensacion y la transaccion queda `ROLLED_BACK`.
 - Simulacion demo de fallo de credito con `X-Simulate-Credit-Failure: true`.
 - Endpoint `GET /api/audit/money-conservation` para verificar que el total de dinero en usuarios seed sigue siendo `1050.00`.
+- Endpoint `GET /api/audit/reconciliation` para conteos por estado y alertas de transacciones abiertas.
+- Manejo uniforme de errores con `error`, `message`, `statusCode`, `timestamp` y `service`.
+- Logs estructurados JSON para auditoria de operaciones monetarias y errores.
+- Health checks mejorados: `processor-service` valida base de datos y conectividad hacia `accounts-service`.
+- Validaciones reforzadas contra ids invalidos, montos no numericos, arrays, objetos, `NaN`, montos con mas de 2 decimales y operaciones internas invalidas.
+- Prevencion de SQL Injection mediante consultas parametrizadas.
+- Indices en `transactions` para `sender_id`, `receiver_id`, `created_at` e `idempotency_key`.
 - Comunicacion HTTP de `processor-service` hacia `accounts-service`.
 - Endpoint `GET /api/transactions/:user_id` funcional para historial enviado/recibido.
 

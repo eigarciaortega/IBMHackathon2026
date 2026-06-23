@@ -20,6 +20,15 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_transactions_idempotency_key
 ON transactions (idempotency_key)
 WHERE idempotency_key IS NOT NULL;
 
+CREATE INDEX IF NOT EXISTS idx_transactions_sender_id
+ON transactions (sender_id);
+
+CREATE INDEX IF NOT EXISTS idx_transactions_receiver_id
+ON transactions (receiver_id);
+
+CREATE INDEX IF NOT EXISTS idx_transactions_created_at
+ON transactions (created_at);
+
 CREATE OR REPLACE FUNCTION set_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN

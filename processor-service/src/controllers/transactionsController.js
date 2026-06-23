@@ -1,25 +1,20 @@
 const { pool } = require("../db");
 const { getAccount } = require("../services/accountsClient");
+const { sendError } = require("../utils/http");
 const { parsePositiveInteger } = require("../utils/validation");
 
 async function getTransactionsByUser(request, response, next) {
   const userId = parsePositiveInteger(request.params.user_id);
 
   if (!userId) {
-    return response.status(400).json({
-      error: "invalid_user_id",
-      message: "User id must be a positive integer."
-    });
+    return sendError(response, 400, "invalid_user_id", "User id must be a positive integer.");
   }
 
   try {
     const account = await getAccount(userId);
 
     if (account.status === 404) {
-      return response.status(404).json({
-        error: "user_not_found",
-        message: "Account was not found."
-      });
+      return sendError(response, 404, "user_not_found", "Account was not found.");
     }
 
     if (!account.ok) {
@@ -56,4 +51,3 @@ async function getTransactionsByUser(request, response, next) {
 module.exports = {
   getTransactionsByUser
 };
-

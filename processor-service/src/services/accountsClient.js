@@ -16,6 +16,15 @@ async function getAccount(userId) {
   };
 }
 
+async function checkAccountsService() {
+  try {
+    const response = await fetch(`${accountsServiceUrl}/health`);
+    return response.ok;
+  } catch (_error) {
+    return false;
+  }
+}
+
 async function updateBalance({ userId, amount, operation }) {
   const response = await fetch(`${accountsServiceUrl}/accounts/update-balance`, {
     method: "POST",
@@ -39,7 +48,7 @@ async function updateBalance({ userId, amount, operation }) {
 
 module.exports = {
   accountsServiceUrl,
+  checkAccountsService,
   getAccount,
   updateBalance
 };
-

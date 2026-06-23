@@ -10,7 +10,7 @@ const swaggerDocument = {
   openapi: "3.0.3",
   info: {
     title: "NeoWallet Processor Service API",
-    version: "0.4.0",
+    version: "0.5.0",
     description: "Service for resilient P2P transfer orchestration, transaction history, idempotency, Saga compensation, and money conservation audit."
   },
   servers: [
@@ -267,9 +267,41 @@ const swaggerDocument = {
           "500": { description: "Internal server error" }
         }
       }
+    },
+    "/api/audit/reconciliation": {
+      get: {
+        summary: "Run a simple reconciliation report",
+        description: "Counts transactions by status and verifies seed-account money conservation. This endpoint is read-only and does not repair data.",
+        responses: {
+          "200": {
+            description: "Reconciliation report",
+            content: {
+              "application/json": {
+                example: {
+                  message: "Reconciliation completed",
+                  money_conservation: {
+                    total_balance: "1050.00",
+                    expected_seed_total: "1050.00",
+                    status: "CONSISTENT"
+                  },
+                  transactions: {
+                    pending_count: 0,
+                    debited_count: 0,
+                    failed_count: 1,
+                    rolled_back_count: 1,
+                    completed_count: 2
+                  },
+                  warnings: [],
+                  status: "OK"
+                }
+              }
+            }
+          },
+          "500": { description: "Internal server error" }
+        }
+      }
     }
   }
 };
 
 module.exports = swaggerDocument;
-

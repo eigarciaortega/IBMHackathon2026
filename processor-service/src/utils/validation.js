@@ -1,4 +1,8 @@
 function parsePositiveInteger(value) {
+  if (typeof value === "object" || typeof value === "boolean") {
+    return null;
+  }
+
   const parsed = Number(value);
 
   if (!Number.isInteger(parsed) || parsed <= 0) {
@@ -10,6 +14,10 @@ function parsePositiveInteger(value) {
 
 function parseMoneyAmount(value) {
   if (value === undefined || value === null || value === "") {
+    return null;
+  }
+
+  if (Array.isArray(value) || typeof value === "object" || typeof value === "boolean") {
     return null;
   }
 
@@ -32,4 +40,3 @@ module.exports = {
   parseMoneyAmount,
   parsePositiveInteger
 };
-

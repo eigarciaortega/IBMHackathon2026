@@ -4,12 +4,10 @@ const {
   parseMoneyAmount,
   parsePositiveInteger
 } = require("../utils/validation");
+const { logEvent, sendError } = require("../utils/http");
 
 function invalidInput(response, message, error = "invalid_input") {
-  return response.status(400).json({
-    error,
-    message
-  });
+  return sendError(response, 400, error, message);
 }
 
 async function getAccount(request, response, next) {
@@ -26,12 +24,10 @@ async function getAccount(request, response, next) {
     );
 
     if (result.rowCount === 0) {
-      return response.status(404).json({
-        error: "user_not_found",
-        message: "Account was not found."
-      });
+      return sendError(response, 404, "user_not_found", "Account was not found.");
     }
 
+    logEvent("INFO", "account_lookup", { user_id: userId });
     return response.status(200).json(result.rows[0]);
   } catch (error) {
     return next(error);
@@ -63,10 +59,7 @@ async function rechargeAccount(request, response, next) {
 
     if (accountResult.rowCount === 0) {
       await client.query("ROLLBACK");
-      return response.status(404).json({
-        error: "user_not_found",
-        message: "Account was not found."
-      });
+      return sendError(response, 404, "user_not_found", "Account was not found.");
     }
 
     const previousBalance = accountResult.rows[0].balance;
@@ -80,6 +73,12 @@ async function rechargeAccount(request, response, next) {
     );
 
     await client.query("COMMIT");
+
+    logEvent("INFO", "recharge_completed", {
+      user_id: userId,
+      amount,
+      payment_method: paymentMethod
+    });
 
     return response.status(201).json({
       message: "Recharge completed successfully",
@@ -126,20 +125,19 @@ async function updateBalance(request, response, next) {
 
     if (accountResult.rowCount === 0) {
       await client.query("ROLLBACK");
-      return response.status(404).json({
-        error: "user_not_found",
-        message: "Account was not found."
-      });
+      return sendError(response, 404, "user_not_found", "Account was not found.");
     }
 
     const previousBalance = accountResult.rows[0].balance;
 
     if (operation === "debit" && Number(previousBalance) < Number(amount)) {
       await client.query("ROLLBACK");
-      return response.status(400).json({
-        error: "insufficient_funds",
-        message: "The account does not have enough balance for this debit."
+      logEvent("WARN", "insufficient_funds", {
+        user_id: userId,
+        amount,
+        previous_balance: previousBalance
       });
+      return sendError(response, 400, "insufficient_funds", "The account does not have enough balance for this debit.");
     }
 
     const operator = operation === "credit" ? "+" : "-";
@@ -153,6 +151,14 @@ async function updateBalance(request, response, next) {
     );
 
     await client.query("COMMIT");
+
+    logEvent("INFO", "balance_updated", {
+      user_id: userId,
+      operation,
+      amount,
+      previous_balance: previousBalance,
+      new_balance: updateResult.rows[0].balance
+    });
 
     return response.status(200).json({
       message: "Balance updated successfully",
@@ -175,4 +181,3 @@ module.exports = {
   rechargeAccount,
   updateBalance
 };
-

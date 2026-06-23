@@ -2,7 +2,8 @@ const express = require("express");
 const swaggerUi = require("swagger-ui-express");
 const { checkDatabase } = require("./db");
 const processorRoutes = require("./routes/processorRoutes");
-const { accountsServiceUrl } = require("./services/accountsClient");
+const { accountsServiceUrl, checkAccountsService } = require("./services/accountsClient");
+const { logEvent, sendError } = require("./utils/http");
 const swaggerDocument = require("./swagger");
 
 const app = express();
@@ -14,22 +15,28 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 app.get("/health", async (_request, response) => {
   try {
     await checkDatabase();
+    const accountsReachable = await checkAccountsService();
+
+    if (!accountsReachable) {
+      return response.status(503).json({
+        status: "error",
+        service: "processor-service",
+        database: "connected",
+        accountsService: "unreachable",
+        timestamp: new Date().toISOString()
+      });
+    }
+
     response.status(200).json({
       status: "ok",
       service: "processor-service",
       database: "connected",
+      accountsService: "reachable",
       accounts_service_url: accountsServiceUrl,
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    console.error(
-      JSON.stringify({
-        level: "error",
-        service: "processor-service",
-        message: error.message,
-        timestamp: new Date().toISOString()
-      })
-    );
+    logEvent("ERROR", "internal_error", { message: error.message });
 
     response.status(503).json({
       status: "error",
@@ -43,28 +50,10 @@ app.get("/health", async (_request, response) => {
 app.use(processorRoutes);
 
 app.use((error, _request, response, _next) => {
-  console.error(
-    JSON.stringify({
-      level: "error",
-      service: "processor-service",
-      message: error.message,
-      timestamp: new Date().toISOString()
-    })
-  );
-
-  response.status(500).json({
-    error: "internal_server_error",
-    message: "Unexpected error in processor-service."
-  });
+  logEvent("ERROR", "internal_error", { message: error.message });
+  return sendError(response, 500, "internal_server_error", "Unexpected error in processor-service.");
 });
 
 app.listen(port, () => {
-  console.log(
-    JSON.stringify({
-      level: "info",
-      service: "processor-service",
-      message: `Listening on port ${port}`,
-      timestamp: new Date().toISOString()
-    })
-  );
+  logEvent("INFO", "service_started", { port });
 });

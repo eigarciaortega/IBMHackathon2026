@@ -10,7 +10,7 @@ const swaggerDocument = {
   openapi: "3.0.3",
   info: {
     title: "NeoWallet Accounts Service API",
-    version: "0.2.0",
+    version: "0.5.0",
     description: "Service for user balances, simulated recharges, and internal balance updates."
   },
   servers: [
