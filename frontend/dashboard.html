@@ -20,6 +20,7 @@
         <div class="flex items-center gap-6">
             <span id="userRoleBadge" class="text-xs uppercase tracking-widest bg-white/20 px-3 py-1 rounded-full">Cargando...</span>
             <button onclick="logout()" class="text-sm font-medium hover:text-gray-300 transition">Cerrar Sesión</button>
+            <button onclick="openHistoryModal()" class="text-sm font-medium text-gray-200 hover:text-white transition">Mis Reservas</button>
         </div>
     </nav>
 
@@ -33,6 +34,10 @@
             <button id="btnCreateSpace" class="hidden bg-[#4A4A4A] text-white px-6 py-2 rounded-full font-medium hover:bg-[#333333] transition">
                 + Nuevo Espacio
             </button>
+            <div class="mt-6">
+                <input type="text" id="searchInput" placeholder="🔍 Buscar por nombre, tipo, o recurso..." 
+                       class="w-full max-w-md px-5 py-3 rounded-full border border-gray-200 focus:outline-none focus:border-[#4A4A4A] bg-gray-50 transition">
+            </div>
         </header>
 
         <div id="spacesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -147,6 +152,30 @@
         </div>
     </div>
 
+    <div id="historyModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 transition-opacity">
+        <div class="bg-white w-full max-w-2xl p-8 rounded-[2rem] shadow-2xl relative max-h-[80vh] flex flex-col">
+            <button onclick="closeHistoryModal()" class="absolute top-6 right-6 text-gray-400 hover:text-gray-700">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+            <h2 class="text-3xl font-serif text-[#2C3E50] mb-6">Mis Reservas</h2>
+            
+            <div class="overflow-y-auto flex-grow">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b border-gray-200 text-sm text-gray-500">
+                            <th class="py-3 font-medium">Fecha</th>
+                            <th class="py-3 font-medium">Horario</th>
+                            <th class="py-3 font-medium">ID Espacio</th>
+                            <th class="py-3 font-medium">Asistentes</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTableBody" class="text-sm text-gray-700">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
     <script>
         // 1. Verificación de Seguridad del Frontend
         const token = localStorage.getItem('token');
@@ -166,19 +195,17 @@
         }
         
 
+        let allSpaces = [];
+
         // 3. Función para traer los espacios del catalog-service
         async function loadSpaces() {
             try {
-                // Hacemos GET al catalog-service enviando nuestro Token en los Headers
                 const response = await fetch('http://localhost:8081/api/spaces', {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
+                    headers: { 'Authorization': `Bearer ${token}` }
                 });
-
                 if (response.ok) {
-                    const spaces = await response.json();
-                    renderSpaces(spaces);
+                    allSpaces = await response.json(); // Guardamos en la variable global
+                    renderSpaces(allSpaces); // Pintamos todos inicialmente
                 } else if (response.status === 401) {
                     alert('Tu sesión ha expirado');
                     logout();
@@ -343,6 +370,59 @@
                 errorDiv.classList.remove('hidden');
             }
         });
+
+        // Buscador en tiempo real
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            const filteredSpaces = allSpaces.filter(space => 
+                space.name.toLowerCase().includes(searchTerm) || 
+                space.type.toLowerCase().includes(searchTerm) ||
+                space.resources.toLowerCase().includes(searchTerm)
+            );
+            renderSpaces(filteredSpaces);
+        });
+
+        // Funciones del Historial
+        async function openHistoryModal() {
+            document.getElementById('historyModal').classList.remove('hidden');
+            const tbody = document.getElementById('historyTableBody');
+            tbody.innerHTML = '<tr><td colspan="4" class="py-4 text-center text-gray-500">Cargando reservas...</td></tr>';
+
+            const userId = localStorage.getItem('userId');
+            
+            try {
+                const response = await fetch(`http://localhost:8082/api/bookings/user/${userId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (response.ok) {
+                    const bookings = await response.json();
+                    tbody.innerHTML = '';
+                    
+                    if(bookings.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="4" class="py-4 text-center text-gray-500">No tienes reservas activas.</td></tr>';
+                        return;
+                    }
+
+                    bookings.forEach(b => {
+                        tbody.innerHTML += `
+                            <tr class="border-b border-gray-100 hover:bg-gray-50">
+                                <td class="py-3 font-medium text-gray-900">${b.bookingDate}</td>
+                                <td class="py-3">${b.startTime} - ${b.endTime}</td>
+                                <td class="py-3">Espacio #${b.spaceId}</td>
+                                <td class="py-3 text-center">${b.attendees}</td>
+                            </tr>
+                        `;
+                    });
+                }
+            } catch (error) {
+                tbody.innerHTML = '<tr><td colspan="4" class="py-4 text-center text-red-500">Error cargando el historial.</td></tr>';
+            }
+        }
+
+        function closeHistoryModal() {
+            document.getElementById('historyModal').classList.add('hidden');
+        }
 
         // Arrancar la carga al iniciar
         loadSpaces();
