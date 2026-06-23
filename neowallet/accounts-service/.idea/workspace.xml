@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="f536743a-bf45-43d8-9688-dfb4ca5f2cca" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/dataSources.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/encodings.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/jarRepositories.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../processor-service/.idea/compiler.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../processor-service/.idea/encodings.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../processor-service/.idea/jarRepositories.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../processor-service/.idea/vcs.xml" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="EmbeddingIndexingInfo">
+    <option name="cachedIndexableFilesCount" value="49" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/../.." />
+  </component>
+  <component name="KubernetesApiProvider">{
+  &quot;isMigrated&quot;: true
+}</component>
+  <component name="McpProjectServerCommands">
+    <commands />
+    <urls />
+  </component>
+  <component name="NextEditCompletionFeaturesState">
+    <decayedCancelled>
+      <entry key="MS100" value="1.0000000000000002" />
+      <entry key="MS500" value="1.0006848140872278" />
+      <entry key="S2" value="1.1617682068103592" />
+      <entry key="S5" value="1.48257045545554" />
+      <entry key="S10" value="1.699054331377573" />
+      <entry key="S30" value="2.3647727266639307" />
+      <entry key="S60" value="3.5360703076211553" />
+      <entry key="M2" value="5.189940976098205" />
+      <entry key="M5" value="7.594676513430099" />
+      <entry key="M10" value="9.011416875979036" />
+      <entry key="M15" value="9.598890738942327" />
+      <entry key="M30" value="10.258229387054417" />
+      <entry key="H1" value="10.61808888528704" />
+      <entry key="H2" value="10.806191950656615" />
+      <entry key="H4" value="10.902370463723727" />
+      <entry key="D1" value="10.983626575270716" />
+      <entry key="W1" value="10.997658431321453" />
+    </decayedCancelled>
+    <decayedSelected>
+      <entry key="MS100" value="0.0" />
+      <entry key="MS500" value="1.5816844684640107E-230" />
+      <entry key="S2" value="3.546336667723348E-58" />
+      <entry key="S5" value="1.0469163563685259E-23" />
+      <entry key="S10" value="3.2356086851912818E-12" />
+      <entry key="S30" value="1.4790584291634698E-4" />
+      <entry key="S60" value="0.012161654612607072" />
+      <entry key="M2" value="0.11027989214996117" />
+      <entry key="M5" value="0.41399827645526593" />
+      <entry key="M10" value="0.6434269783396295" />
+      <entry key="M15" value="0.7453029570994975" />
+      <entry key="M30" value="0.863309305579117" />
+      <entry key="H1" value="0.9291443943645775" />
+      <entry key="H2" value="0.9639213631643287" />
+      <entry key="H4" value="0.98179497002395" />
+      <entry key="D1" value="0.996942553440292" />
+      <entry key="W1" value="0.9995626485091544" />
+    </decayedSelected>
+    <decayedShown>
+      <entry key="MS100" value="1.3174172808893644E-4" />
+      <entry key="MS500" value="0.16791668961815226" />
+      <entry key="S2" value="0.7848527420391682" />
+      <entry key="S5" value="1.2984415185961211" />
+      <entry key="S10" value="1.598672565089408" />
+      <entry key="S30" value="2.329138120660187" />
+      <entry key="S60" value="3.529604531266212" />
+      <entry key="M2" value="5.289297185921688" />
+      <entry key="M5" value="8.002420118326429" />
+      <entry key="M10" value="9.651010713329736" />
+      <entry key="M15" value="10.341429721465607" />
+      <entry key="M30" value="11.120036017692986" />
+      <entry key="H1" value="11.546448294510341" />
+      <entry key="H2" value="11.769711936362519" />
+      <entry key="H4" value="11.883962462099255" />
+      <entry key="D1" value="11.98053497767008" />
+      <entry key="W1" value="11.997216193143405" />
+    </decayedShown>
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;customColor&quot;: &quot;&quot;,
+  &quot;associatedIndex&quot;: 6
+}</component>
+  <component name="ProjectId" id="3FY6blKssXM1kCe9BKRZXPcPpCk" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.MCP Project settings loaded": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "codeWithMe.voiceChat.enabledByDefault": "false",
+    "git-widget-placeholder": "JCSU__Escenario2",
+    "ignore.virus.scanning.warn.message": "true",
+    "kotlin-language-version-configured": "true",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "project.structure.last.edited": "Project",
+    "project.structure.proportion": "0.0",
+    "project.structure.side.proportion": "0.2",
+    "settings.editor.selected.configurable": "preferences.pluginManager",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-jdk-30f59d01ecdd-37e91769500f-intellij.indexing.shared.core-IU-261.25134.95" />
+        <option value="bundled-js-predefined-d6986cc7102b-31caf2ab9e3c-JavaScript-IU-261.25134.95" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="f536743a-bf45-43d8-9688-dfb4ca5f2cca" name="Changes" comment="" />
+      <created>1782239729028</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1782239729028</updated>
+      <workItem from="1782239730689" duration="620000" />
+      <workItem from="1782241720057" duration="983000" />
+      <workItem from="1782242863692" duration="569000" />
+      <workItem from="1782243459102" duration="1471000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="XSLT-Support.FileAssociations.UIState">
+    <expand />
+    <select />
+  </component>
+</project>

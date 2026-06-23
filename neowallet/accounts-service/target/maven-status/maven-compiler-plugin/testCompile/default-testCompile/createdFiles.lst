@@ -1,0 +1,5 @@
+com\neowallet\accounts\application\service\AccountsDomainServiceTest.class
+com\neowallet\accounts\application\service\AccountsDomainServiceTest$UserDomainTests.class
+com\neowallet\accounts\AccountsServiceApplicationTests.class
+com\neowallet\accounts\infrastructure\adapter\in\web\AccountsControllerTest.class
+com\neowallet\accounts\application\service\AccountsDomainServiceTest$GetBalanceTests.class

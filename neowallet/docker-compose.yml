@@ -1,0 +1,137 @@
+version: '3.9'
+
+# ══════════════════════════════════════════════════════════════════════
+# NeoWallet P2P Payments - Docker Compose
+# Arquitectura: 2 microservicios + 2 bases de datos PostgreSQL
+# ══════════════════════════════════════════════════════════════════════
+
+networks:
+  neowallet-network:
+    driver: bridge
+    name: neowallet-network
+
+volumes:
+  accounts-db-data:
+    name: neowallet-accounts-db
+  processor-db-data:
+    name: neowallet-processor-db
+
+x-common-env: &common-env
+  JWT_SECRET: NeoWalletSuperSecretKeyForJWT2026MustBe256BitsLong!!
+  JWT_EXPIRATION_MS: "86400000"
+  INTERNAL_API_KEY: internal-neowallet-key-2026
+
+services:
+
+  # ──────────────────────────────────────────────
+  # Accounts Database
+  # ──────────────────────────────────────────────
+  accounts-db:
+    image: postgres:16-alpine
+    container_name: neowallet-accounts-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: accounts_db
+      POSTGRES_USER: neowallet
+      POSTGRES_PASSWORD: neowallet123
+    ports:
+      - "5432:5432"
+    volumes:
+      - accounts-db-data:/var/lib/postgresql/data
+    networks:
+      - neowallet-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U neowallet -d accounts_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ──────────────────────────────────────────────
+  # Processor Database
+  # ──────────────────────────────────────────────
+  processor-db:
+    image: postgres:16-alpine
+    container_name: neowallet-processor-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: processor_db
+      POSTGRES_USER: neowallet
+      POSTGRES_PASSWORD: neowallet123
+    ports:
+      - "5433:5432"
+    volumes:
+      - processor-db-data:/var/lib/postgresql/data
+    networks:
+      - neowallet-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U neowallet -d processor_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ──────────────────────────────────────────────
+  # Accounts Service (puerto externo: 3000)
+  # ──────────────────────────────────────────────
+  accounts-service:
+    build:
+      context: ./accounts-service
+      dockerfile: Dockerfile
+    container_name: neowallet-accounts-service
+    restart: unless-stopped
+    ports:
+      - "3000:8080"
+    environment:
+      <<: *common-env
+      DB_HOST: accounts-db
+      DB_PORT: "5432"
+      DB_NAME: accounts_db
+      DB_USER: neowallet
+      DB_PASS: neowallet123
+    networks:
+      - neowallet-network
+    depends_on:
+      accounts-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # ──────────────────────────────────────────────
+  # Processor Service (puerto externo: 3001)
+  # ──────────────────────────────────────────────
+  processor-service:
+    build:
+      context: ./processor-service
+      dockerfile: Dockerfile
+    container_name: neowallet-processor-service
+    restart: unless-stopped
+    ports:
+      - "3001:8081"
+    environment:
+      <<: *common-env
+      DB_HOST: processor-db
+      DB_PORT: "5432"
+      DB_NAME: processor_db
+      DB_USER: neowallet
+      DB_PASS: neowallet123
+      ACCOUNTS_SERVICE_URL: http://accounts-service:8080
+    networks:
+      - neowallet-network
+    depends_on:
+      accounts-db:
+        condition: service_healthy
+      processor-db:
+        condition: service_healthy
+      accounts-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8081/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 90s

@@ -1,0 +1,7 @@
+com\neowallet\processor\ProcessorServiceApplicationTests.class
+com\neowallet\processor\application\service\ProcessorDomainServiceTest.class
+com\neowallet\processor\infrastructure\adapter\in\web\ProcessorControllerTest.class
+com\neowallet\processor\application\service\ProcessorDomainServiceTest$SuccessfulTransfer.class
+com\neowallet\processor\application\service\ProcessorDomainServiceTest$SelfTransfer.class
+com\neowallet\processor\application\service\ProcessorDomainServiceTest$SagaCompensation.class
+com\neowallet\processor\application\service\ProcessorDomainServiceTest$InsufficientFunds.class
