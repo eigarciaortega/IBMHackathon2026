@@ -3,6 +3,7 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { NotificacionesMenu } from './NotificacionesMenu'
+import { ThemeToggle } from './ThemeToggle'
 import { IconAdmin, IconBuscar, IconReservas, IconSalir, Logo } from './icons'
 
 function enlaceClase({ isActive }: { isActive: boolean }) {
@@ -51,6 +52,7 @@ export function Layout() {
           </nav>
 
           <div className="ml-auto flex items-center gap-3">
+            <ThemeToggle />
             {esAdmin && <NotificacionesMenu />}
             <div className="hidden text-right leading-tight sm:block">
               <p className="text-sm font-medium text-body">{usuario?.nombre}</p>

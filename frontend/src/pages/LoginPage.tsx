@@ -5,6 +5,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { ApiError } from '../lib/api'
 import { IconChevron, IconCheck, Logo } from '../components/icons'
+import { ThemeToggle } from '../components/ThemeToggle'
 import { Spinner } from '../components/ui'
 
 const VENTAJAS = [
@@ -54,9 +55,10 @@ export function LoginPage() {
   }
 
   return (
-    <div className="grid min-h-dvh lg:grid-cols-2">
+    <div className="relative grid min-h-dvh lg:grid-cols-2">
+      <ThemeToggle className="absolute right-3 top-3 z-10" />
       {/* Panel de marca (oculto en móvil) */}
-      <aside className="relative hidden flex-col overflow-hidden px-12 py-12 text-white lg:flex xl:px-20 bg-gradient-to-br from-azul-strong via-azul-strong to-[#0d2150]">
+      <aside className="relative hidden flex-col overflow-hidden px-12 py-12 text-white lg:flex xl:px-20 bg-gradient-to-br from-[#16357a] via-[#16357a] to-[#0d2150]">
         {/* Motivo de cuadrícula tenue. */}
         <div
           aria-hidden="true"
@@ -103,9 +105,9 @@ export function LoginPage() {
           </ul>
         </div>
 
-        <div className="relative flex items-center justify-between text-sm text-azul-soft/70">
+        <div className="relative flex items-center justify-between text-sm text-white/65">
           <span>Corporativo Alpha · Gestión de espacios</span>
-          <Link to="/about" className="rounded text-azul-soft/80 underline-offset-4 hover:text-white hover:underline">
+          <Link to="/about" className="rounded text-white/75 underline-offset-4 hover:text-white hover:underline">
             Acerca de
           </Link>
         </div>

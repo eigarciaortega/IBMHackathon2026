@@ -54,7 +54,7 @@ export function NotificacionesMenu() {
       >
         <IconCampana className="size-[18px]" />
         {noLeidas > 0 && (
-          <span className="absolute -right-0.5 -top-0.5 grid min-w-[1.05rem] place-items-center rounded-full bg-peligro px-1 text-[0.65rem] font-semibold leading-[1.05rem] text-white ring-2 ring-surface">
+          <span className="absolute -right-0.5 -top-0.5 grid min-w-[1.05rem] place-items-center rounded-full bg-peligro-fuerte px-1 text-[0.65rem] font-semibold leading-[1.05rem] text-white ring-2 ring-surface">
             {noLeidas > 9 ? '9+' : noLeidas}
           </span>
         )}
