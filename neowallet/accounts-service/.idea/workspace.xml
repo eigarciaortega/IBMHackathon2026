@@ -4,86 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="f536743a-bf45-43d8-9688-dfb4ca5f2cca" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/../processor-service/.idea/dataSources.local.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../processor-service/.idea/dataSources.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/db/migration/V2__seed_data.sql" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/db/migration/V2__seed_data.sql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/com/neowallet/accounts/AccountsServiceApplicationTests.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/com/neowallet/accounts/AccountsServiceApplicationTests.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/accounts-service-1.0.0.jar" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/accounts-service-1.0.0.jar.original" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/application.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/neowallet/accounts/AccountsServiceApplication.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/neowallet/accounts/application/service/AccountsDomainService.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/neowallet/accounts/application/service/UpdateBalanceResult.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/neowallet/accounts/domain/exception/InsufficientFundsException.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/neowallet/accounts/domain/exception/InvalidAmountException.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/neowallet/accounts/domain/exception/UserNotFoundException.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/neowallet/accounts/domain/model/User.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/neowallet/accounts/domain/port/in/GetBalanceUseCase.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/neowallet/accounts/domain/port/in/RechargeBalanceUseCase.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/neowallet/accounts/domain/port/in/UpdateBalanceUseCase.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/neowallet/accounts/domain/port/out/UserRepositoryPort.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/neowallet/accounts/infrastructure/adapter/in/web/AccountsController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/neowallet/accounts/infrastructure/adapter/in/web/AuthController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/neowallet/accounts/infrastructure/adapter/in/web/dto/RechargeRequest.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/neowallet/accounts/infrastructure/adapter/in/web/dto/RechargeResponse.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/neowallet/accounts/infrastructure/adapter/in/web/dto/TokenRequest.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/neowallet/accounts/infrastructure/adapter/in/web/dto/TokenResponse.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/neowallet/accounts/infrastructure/adapter/in/web/dto/UpdateBalanceRequest.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/neowallet/accounts/infrastructure/adapter/in/web/dto/UpdateBalanceResponse.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/neowallet/accounts/infrastructure/adapter/in/web/dto/UserResponse.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/neowallet/accounts/infrastructure/adapter/out/persistence/UserJpaEntity.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/neowallet/accounts/infrastructure/adapter/out/persistence/UserJpaRepository.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/neowallet/accounts/infrastructure/adapter/out/persistence/UserPersistenceAdapter.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/neowallet/accounts/infrastructure/config/InternalApiKeyFilter.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/neowallet/accounts/infrastructure/config/JwtAuthenticationFilter.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/neowallet/accounts/infrastructure/config/JwtUtil.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/neowallet/accounts/infrastructure/config/SecurityConfig.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/neowallet/accounts/infrastructure/config/SwaggerConfig.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/neowallet/accounts/infrastructure/exception/ErrorResponse.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/neowallet/accounts/infrastructure/exception/GlobalExceptionHandler.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/db/migration/V1__create_users_table.sql" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/db/migration/V2__seed_data.sql" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/maven-archiver/pom.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/createdFiles.lst" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/testCompile/default-testCompile/createdFiles.lst" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/testCompile/default-testCompile/inputFiles.lst" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/surefire-reports/TEST-com.neowallet.accounts.AccountsServiceApplicationTests.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/surefire-reports/TEST-com.neowallet.accounts.application.service.AccountsDomainServiceTest$UserDomainTests.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/surefire-reports/TEST-com.neowallet.accounts.application.service.AccountsDomainServiceTest.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/surefire-reports/TEST-com.neowallet.accounts.infrastructure.adapter.in.web.AccountsControllerTest.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/surefire-reports/com.neowallet.accounts.AccountsServiceApplicationTests.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/surefire-reports/com.neowallet.accounts.application.service.AccountsDomainServiceTest$UserDomainTests.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/surefire-reports/com.neowallet.accounts.application.service.AccountsDomainServiceTest.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/surefire-reports/com.neowallet.accounts.infrastructure.adapter.in.web.AccountsControllerTest.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/test-classes/application.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/test-classes/com/neowallet/accounts/AccountsServiceApplicationTests.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/test-classes/com/neowallet/accounts/application/service/AccountsDomainServiceTest$GetBalanceTests.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/test-classes/com/neowallet/accounts/application/service/AccountsDomainServiceTest$UserDomainTests.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/test-classes/com/neowallet/accounts/application/service/AccountsDomainServiceTest.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/test-classes/com/neowallet/accounts/infrastructure/adapter/in/web/AccountsControllerTest.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/../docker-compose.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../processor-service/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../processor-service/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../processor-service/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../processor-service/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../processor-service/target/processor-service-1.0.0.jar" beforeDir="false" afterPath="$PROJECT_DIR$/../processor-service/target/processor-service-1.0.0.jar" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../processor-service/target/processor-service-1.0.0.jar.original" beforeDir="false" afterPath="$PROJECT_DIR$/../processor-service/target/processor-service-1.0.0.jar.original" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../processor-service/target/surefire-reports/TEST-com.neowallet.processor.ProcessorServiceApplicationTests.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../processor-service/target/surefire-reports/TEST-com.neowallet.processor.ProcessorServiceApplicationTests.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../processor-service/target/surefire-reports/TEST-com.neowallet.processor.application.service.ProcessorDomainServiceTest$InsufficientFunds.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../processor-service/target/surefire-reports/TEST-com.neowallet.processor.application.service.ProcessorDomainServiceTest$InsufficientFunds.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../processor-service/target/surefire-reports/TEST-com.neowallet.processor.application.service.ProcessorDomainServiceTest$SagaCompensation.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../processor-service/target/surefire-reports/TEST-com.neowallet.processor.application.service.ProcessorDomainServiceTest$SagaCompensation.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../processor-service/target/surefire-reports/TEST-com.neowallet.processor.application.service.ProcessorDomainServiceTest$SelfTransfer.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../processor-service/target/surefire-reports/TEST-com.neowallet.processor.application.service.ProcessorDomainServiceTest$SelfTransfer.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../processor-service/target/surefire-reports/TEST-com.neowallet.processor.application.service.ProcessorDomainServiceTest$SuccessfulTransfer.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../processor-service/target/surefire-reports/TEST-com.neowallet.processor.application.service.ProcessorDomainServiceTest$SuccessfulTransfer.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../processor-service/target/surefire-reports/TEST-com.neowallet.processor.application.service.ProcessorDomainServiceTest.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../processor-service/target/surefire-reports/TEST-com.neowallet.processor.application.service.ProcessorDomainServiceTest.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../processor-service/target/surefire-reports/TEST-com.neowallet.processor.infrastructure.adapter.in.web.ProcessorControllerTest.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../processor-service/target/surefire-reports/TEST-com.neowallet.processor.infrastructure.adapter.in.web.ProcessorControllerTest.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../processor-service/target/surefire-reports/com.neowallet.processor.ProcessorServiceApplicationTests.txt" beforeDir="false" afterPath="$PROJECT_DIR$/../processor-service/target/surefire-reports/com.neowallet.processor.ProcessorServiceApplicationTests.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../processor-service/target/surefire-reports/com.neowallet.processor.application.service.ProcessorDomainServiceTest$InsufficientFunds.txt" beforeDir="false" afterPath="$PROJECT_DIR$/../processor-service/target/surefire-reports/com.neowallet.processor.application.service.ProcessorDomainServiceTest$InsufficientFunds.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../processor-service/target/surefire-reports/com.neowallet.processor.application.service.ProcessorDomainServiceTest$SagaCompensation.txt" beforeDir="false" afterPath="$PROJECT_DIR$/../processor-service/target/surefire-reports/com.neowallet.processor.application.service.ProcessorDomainServiceTest$SagaCompensation.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../processor-service/target/surefire-reports/com.neowallet.processor.application.service.ProcessorDomainServiceTest$SelfTransfer.txt" beforeDir="false" afterPath="$PROJECT_DIR$/../processor-service/target/surefire-reports/com.neowallet.processor.application.service.ProcessorDomainServiceTest$SelfTransfer.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../processor-service/target/surefire-reports/com.neowallet.processor.application.service.ProcessorDomainServiceTest$SuccessfulTransfer.txt" beforeDir="false" afterPath="$PROJECT_DIR$/../processor-service/target/surefire-reports/com.neowallet.processor.application.service.ProcessorDomainServiceTest$SuccessfulTransfer.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../processor-service/target/surefire-reports/com.neowallet.processor.application.service.ProcessorDomainServiceTest.txt" beforeDir="false" afterPath="$PROJECT_DIR$/../processor-service/target/surefire-reports/com.neowallet.processor.application.service.ProcessorDomainServiceTest.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../processor-service/target/surefire-reports/com.neowallet.processor.infrastructure.adapter.in.web.ProcessorControllerTest.txt" beforeDir="false" afterPath="$PROJECT_DIR$/../processor-service/target/surefire-reports/com.neowallet.processor.infrastructure.adapter.in.web.ProcessorControllerTest.txt" afterDir="false" />
-    </list>
+    <list default="true" id="f536743a-bf45-43d8-9688-dfb4ca5f2cca" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -170,30 +91,30 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "RunOnceActivity.MCP Project settings loaded": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
-    "codeWithMe.voiceChat.enabledByDefault": "false",
-    "git-widget-placeholder": "JCSU__Escenario2",
-    "ignore.virus.scanning.warn.message": "true",
-    "kotlin-language-version-configured": "true",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "project.structure.last.edited": "Project",
-    "project.structure.proportion": "0.0",
-    "project.structure.side.proportion": "0.2",
-    "settings.editor.selected.configurable": "preferences.pluginManager",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.MCP Project settings loaded&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
+    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;JCSU__Escenario2&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Project&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.0&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
