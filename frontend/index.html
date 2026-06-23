@@ -8,13 +8,14 @@
     <meta name="theme-color" content="#eef1f6" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#0d1320" media="(prefers-color-scheme: dark)" />
     <title>OfficeSpace — Gestión de espacios</title>
-    <!-- Aplica el tema antes de pintar para evitar el parpadeo (FOUC). -->
+    <!-- Aplica el tema antes de pintar para evitar el parpadeo (FOUC).
+         Claro por defecto: solo se activa oscuro si el usuario lo eligió antes. -->
     <script>
       (function () {
         try {
-          var t = localStorage.getItem('officespace_tema')
-          var oscuro = t === 'oscuro' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches)
-          if (oscuro) document.documentElement.classList.add('dark')
+          if (localStorage.getItem('officespace_tema') === 'oscuro') {
+            document.documentElement.classList.add('dark')
+          }
         } catch (e) {}
       })()
     </script>
