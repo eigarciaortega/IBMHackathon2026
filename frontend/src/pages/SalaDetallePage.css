@@ -1,0 +1,58 @@
+/* Detalle de una sala. */
+
+.page--sala-detalle {
+  padding: 1.25rem;
+}
+
+.sala-detalle__volver {
+  margin: 0 0 0.5rem;
+}
+
+.sala-detalle__info dl {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.5rem 1.5rem;
+  margin: 0 0 1rem;
+}
+
+.sala-detalle__info dt {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #616e7c;
+}
+
+.sala-detalle__info dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+.recursos-lista {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem;
+}
+
+.recursos-lista li {
+  background: #eef2ff;
+  color: #3730a3;
+  border-radius: 999px;
+  padding: 0.2rem 0.7rem;
+  font-size: 0.85rem;
+}
+
+.reuniones-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.5rem;
+}
+
+.reuniones-table th,
+.reuniones-table td {
+  border: 1px solid #e4e7eb;
+  padding: 0.5rem 0.65rem;
+  text-align: left;
+}

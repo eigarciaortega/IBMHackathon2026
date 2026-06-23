@@ -11,6 +11,8 @@ const EXPECTED = [
   { path: '/reservas', method: 'get', codes: [200, 401, 403, 500], request: 'params' },
   { path: '/reservas', method: 'post', codes: [201, 400, 401, 404, 409, 500], request: 'body' },
   { path: '/reservas/mias', method: 'get', codes: [200, 401, 500], request: 'params' },
+  { path: '/agenda', method: 'get', codes: [200, 401, 500], request: 'params' },
+  { path: '/reservas/{id}/asistencia', method: 'put', codes: [200, 400, 401, 403, 404, 500], request: 'body' },
   { path: '/reservas/{id}', method: 'put', codes: [200, 400, 401, 403, 404, 409, 500], request: 'body' },
   { path: '/reservas/{id}', method: 'delete', codes: [200, 400, 401, 403, 404, 500], request: 'params' },
 ];

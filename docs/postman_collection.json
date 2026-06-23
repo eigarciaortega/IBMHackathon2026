@@ -275,6 +275,30 @@
           }
         },
         {
+          "name": "GET /agenda (reuniones por espacio)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{bookingUrl}}/agenda", "host": ["{{bookingUrl}}"], "path": ["agenda"] }
+          }
+        },
+        {
+          "name": "PUT /reservas/{{idReserva}}/asistencia (show)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{bookingUrl}}/reservas/{{idReserva}}/asistencia",
+              "host": ["{{bookingUrl}}"],
+              "path": ["reservas", "{{idReserva}}", "asistencia"]
+            },
+            "body": { "mode": "raw", "raw": "{\n  \"estado\": \"show\"\n}" }
+          }
+        },
+        {
           "name": "DELETE /reservas/{{idReserva}}",
           "request": {
             "method": "DELETE",

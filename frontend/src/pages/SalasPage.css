@@ -1,0 +1,65 @@
+/* Vista de Salas (colaborador). */
+
+.page--salas {
+  padding: 1.25rem;
+}
+
+.salas-grid {
+  list-style: none;
+  margin: 1rem 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1rem;
+}
+
+.sala-card {
+  display: flex;
+}
+
+.sala-card__btn {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  width: 100%;
+  text-align: left;
+  background: #fff;
+  border: 1px solid #e4e7eb;
+  border-radius: 8px;
+  padding: 1rem;
+  cursor: pointer;
+}
+
+.sala-card__btn:hover {
+  border-color: #2563eb;
+  box-shadow: 0 1px 6px rgba(37, 99, 235, 0.15);
+}
+
+.sala-card__nombre {
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.sala-card__meta {
+  color: #616e7c;
+  font-size: 0.85rem;
+}
+
+.sala-card__estado {
+  margin-top: 0.25rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  align-self: flex-start;
+}
+
+.sala-card__estado--ocupada {
+  background: #fdf6b2;
+  color: #8a5300;
+}
+
+.sala-card__estado--libre {
+  background: #def7ec;
+  color: #03543f;
+}

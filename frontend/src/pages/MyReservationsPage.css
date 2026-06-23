@@ -104,3 +104,24 @@
   font-size: 0.85rem;
   width: 100%;
 }
+
+/* Control de registro de asistencia (dentro de la ventana horaria). */
+.mr-asistencia {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.4rem;
+}
+
+.mr-asistencia button {
+  font-size: 0.78rem;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid #cbd2d9;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.mr-asistencia button:hover:not(:disabled) {
+  border-color: #2563eb;
+}

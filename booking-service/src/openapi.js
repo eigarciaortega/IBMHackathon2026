@@ -389,6 +389,96 @@ function buildSpec() {
           },
         },
       },
+      '/agenda': {
+        get: {
+          summary: 'Agenda de reuniones por Espacio',
+          description:
+            'Devuelve las reuniones (reservas activas) de todos los Espacios, ordenadas por fecha próxima. Permite ver qué salas tienen reuniones programadas. Requiere sesión.',
+          tags: ['Reservas'],
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: 'Authorization',
+              in: 'header',
+              required: true,
+              schema: { type: 'string' },
+              example: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+            },
+          ],
+          responses: {
+            200: {
+              description: 'Reuniones activas ordenadas por inicio ascendente.',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      reservas: { type: 'array', items: { $ref: '#/components/schemas/Reserva' } },
+                    },
+                  },
+                  example: { reservas: [reservaEjemplo] },
+                },
+              },
+            },
+            401: respuesta401,
+            500: respuesta500,
+          },
+        },
+      },
+      '/reservas/{id}/asistencia': {
+        put: {
+          summary: 'Registrar asistencia',
+          description:
+            "Registra el estado de asistencia ('show' | 'no-show') de una Reserva propia. Solo se habilita cerca del horario o dentro del horario de la Reserva (15 min antes del inicio hasta el fin). Requiere ser propietario.",
+          tags: ['Reservas'],
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            { name: 'id', in: 'path', required: true, schema: { type: 'integer' }, example: 1 },
+          ],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  required: ['estado'],
+                  properties: {
+                    estado: { type: 'string', enum: ['show', 'no-show'], example: 'show' },
+                  },
+                },
+                example: { estado: 'show' },
+              },
+            },
+          },
+          responses: {
+            200: {
+              description: 'Asistencia registrada.',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: { reserva: { $ref: '#/components/schemas/Reserva' } },
+                  },
+                  example: { reserva: { ...reservaEjemplo, estado_asistencia: 'show' } },
+                },
+              },
+            },
+            400: respuesta400,
+            401: respuesta401,
+            403: {
+              description: 'La Reserva no pertenece al Usuario solicitante.',
+              content: {
+                'application/json': {
+                  schema: { $ref: '#/components/schemas/Error' },
+                  example: { error: { code: 'AUTHORIZATION_ERROR', message: 'Permisos insuficientes' } },
+                },
+              },
+            },
+            404: respuesta404,
+            500: respuesta500,
+          },
+        },
+      },
       '/reservas/{id}': {
         put: {
           summary: 'Editar Reserva',

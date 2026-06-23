@@ -396,12 +396,61 @@ function createReservaRepository(pool) {
     }
   }
 
+  /**
+   * Lista la AGENDA de reuniones activas (no canceladas) de todos los Espacios,
+   * enriquecida con el nombre del Espacio, ordenada por inicio ascendente
+   * (próximas primero). Visible para cualquier usuario autenticado: permite a
+   * los colaboradores ver qué salas tienen reuniones programadas. No expone
+   * datos personales del propietario más allá del identificador.
+   * @returns {Promise<object[]>}
+   */
+  async function listarAgenda() {
+    const [rows] = await pool.query(
+      `SELECT r.id_reserva, r.id_espacio, r.id_usuario, r.fecha_inicio, r.fecha_fin,
+              r.cantidad_asistentes, r.estado_reserva, r.estado_asistencia,
+              e.nombre AS espacio_nombre, e.piso AS espacio_piso, e.ubicacion AS espacio_ubicacion
+         FROM reserva r
+         JOIN espacio e ON e.id_espacio = r.id_espacio
+        WHERE r.estado_reserva <> 'Cancelado'
+        ORDER BY r.fecha_inicio ASC`,
+    );
+    return rows;
+  }
+
+  /**
+   * Actualiza el `estado_asistencia` de una Reserva ('show' | 'no-show') dentro
+   * de una transacción. Devuelve la Reserva actualizada, o null si no existe.
+   * @param {number|string} idReserva
+   * @param {'show'|'no-show'} estado
+   * @returns {Promise<object|null>}
+   */
+  async function actualizarAsistencia(idReserva, estado) {
+    const conn = await pool.getConnection();
+    try {
+      await conn.beginTransaction();
+      await conn.query('UPDATE reserva SET estado_asistencia = ? WHERE id_reserva = ?', [
+        estado,
+        idReserva,
+      ]);
+      const reserva = await obtenerReservaPorId(idReserva, conn);
+      await conn.commit();
+      return reserva;
+    } catch (err) {
+      await conn.rollback();
+      throw err;
+    } finally {
+      conn.release();
+    }
+  }
+
   return {
     obtenerEspacioPorId,
     crearReservaConVerificacion,
     listarReservasDeUsuario,
     listarTodasLasReservas,
+    listarAgenda,
     actualizarReservaConVerificacion,
+    actualizarAsistencia,
     obtenerReservaPorId,
     cancelarReserva,
     eliminarReserva,

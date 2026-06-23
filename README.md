@@ -217,8 +217,10 @@ Cada servicio expone su especificación **OpenAPI 3.0 / Swagger UI** (con los co
 | POST   | `/reservas`         | Crea una reserva                              | COLABORADOR   |
 | GET    | `/reservas/mias`    | Lista las reservas del solicitante            | COLABORADOR   |
 | PUT    | `/reservas/{id}`    | Edita una reserva propia futura               | COLABORADOR   |
+| PUT    | `/reservas/{id}/asistencia` | Registra asistencia (`show`/`no-show`) dentro de la ventana horaria | COLABORADOR |
 | DELETE | `/reservas/{id}`    | Cancela (colaborador) / elimina (admin)       | COLABORADOR/ADMIN |
 | GET    | `/reservas`         | Lista **todas** las reservas                  | ADMINISTRADOR |
+| GET    | `/agenda`           | Reuniones programadas por espacio (próximas)  | COLABORADOR   |
 
 ### Ejemplos de uso con `curl`
 
@@ -270,14 +272,30 @@ curl -X POST http://localhost:3002/espacios \
 ### Cómo buscar y reservar un espacio (COLABORADOR)
 
 1. En el **panel de búsqueda**, indica **fecha**, **hora de inicio** y **hora de fin**.
-2. (Opcional) Filtra por **tipo de espacio**, **capacidad mínima** y **recursos** (marca con palomita los recursos que necesitas).
+2. (Opcional) Filtra por **tipo de espacio**, **cantidad de personas para la reunión** y **recursos** (marca con palomita los recursos que necesitas). El sistema muestra únicamente los espacios cuya **capacidad cubre** la cantidad de personas indicada.
 3. Pulsa **Buscar**. Verás la lista de espacios disponibles (o un mensaje de "sin resultados").
 4. Pulsa **Reservar** en el espacio deseado.
 5. En la **confirmación**, indica el número de **asistentes** (entre 1 y la capacidad del espacio) y pulsa **Confirmar Reserva**.
 6. Verás un mensaje de éxito y un enlace **Ver Mis Reservas**.
-7. En **Mis reservas** puedes **editar** (fecha/hora/asistentes) o **cancelar** tus reservas futuras.
+7. En **Mis reservas** puedes **editar** (fecha/hora/asistentes) o **cancelar** tus reservas futuras, y **registrar tu asistencia** cuando estés cerca del horario (ver más abajo).
 
 > El sistema impide solapamientos: si el espacio ya está ocupado en ese rango, no aparecerá en la búsqueda y cualquier intento de reservarlo se rechaza con código `409`.
+
+### Cómo ver las salas y sus reuniones (COLABORADOR)
+
+1. En la barra superior, entra a **Salas**.
+2. Verás todas las salas existentes; cada una indica si **tiene reuniones programadas** próximas o está libre.
+3. Pulsa una sala para abrir su **detalle**: información de la sala, sus **características** (recursos) y las **reuniones programadas en orden de fecha próxima**.
+
+### Estado de asistencia (ambos roles)
+
+Cada reserva tiene un **estado de asistencia** visible para colaboradores y administradores:
+
+- **SHOW** (asistió) se muestra en **rojo**.
+- **NO_SHOW** (no asistió) se muestra en **gris**.
+- "Sin registro" cuando aún no se ha marcado.
+
+**Registro de asistencia (COLABORADOR):** en *Mis reservas*, los botones **Marcar SHOW** / **Marcar NO_SHOW** se habilitan **únicamente** dentro de la ventana horaria de la reserva: desde **15 minutos antes** del inicio y hasta el **fin** de la misma. Fuera de esa ventana el registro se rechaza (`400`), para evitar marcas erróneas a destiempo. El administrador puede visualizar el estado de asistencia de todas las reservas.
 
 ### Cómo administrar espacios (ADMINISTRADOR)
 
@@ -289,6 +307,17 @@ curl -X POST http://localhost:3002/espacios \
 3. En **Todas las reservas** puedes ver las reservas de todo el corporativo y **eliminarlas** (individualmente o con **Eliminar todas**).
 
 ---
+
+## Reglas de negocio
+
+- **Sin solapamientos (límites exclusivos):** dos reservas del mismo espacio no pueden intersecarse. Una reserva de 10:00–11:00 es válida tras otra de 09:00–10:00 (los límites son exclusivos). Un solapamiento se rechaza con `409`.
+- **No en el pasado:** no se permiten reservas cuyo inicio sea anterior al instante actual (`400`).
+- **Capacidad:** el número de asistentes no puede superar la capacidad del espacio (`400`).
+- **Búsqueda por cantidad requerida:** al buscar, el usuario indica la **cantidad de personas para la reunión**; el sistema devuelve únicamente los espacios cuya **capacidad puede cubrir** esa cantidad (capacidad ≥ cantidad).
+- **Propiedad de la reserva:** un colaborador solo puede editar/cancelar sus propias reservas (`403` en caso contrario). El administrador puede ver y eliminar cualquier reserva.
+- **Estado de asistencia:** cada reserva tiene un estado de asistencia (`show`/`no-show`). Se muestra **SHOW en rojo** y **NO_SHOW en gris** en ambos roles.
+- **Ventana de registro de asistencia:** el colaborador solo puede registrar la asistencia de su reserva desde **15 minutos antes** del inicio hasta el **fin** de la misma; fuera de esa ventana se rechaza (`400`).
+- **Salas y agenda:** cualquier usuario autenticado puede ver las salas y sus reuniones programadas (próximas), ordenadas por fecha.
 
 ## Pruebas
 

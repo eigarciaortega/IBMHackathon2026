@@ -106,6 +106,40 @@ function parsearRecursosQuery(raw) {
   return Array.from(new Set(partes));
 }
 
+/** Minutos de anticipación con los que se habilita el registro de asistencia. */
+const VENTANA_ASISTENCIA_MIN = 15;
+
+/**
+ * Normaliza el estado de asistencia recibido a uno de los valores del dominio
+ * ('show' | 'no-show'). Acepta variantes de mayúsculas y guión bajo
+ * (SHOW, NO_SHOW, no_show, etc.). Devuelve null si no es válido.
+ * @param {*} valor
+ * @returns {('show'|'no-show')|null}
+ */
+function normalizarAsistencia(valor) {
+  if (typeof valor !== 'string') return null;
+  const v = valor.trim().toLowerCase().replace(/_/g, '-');
+  if (v === 'show') return 'show';
+  if (v === 'no-show') return 'no-show';
+  return null;
+}
+
+/**
+ * Indica si el instante `ahora` está dentro de la ventana en la que se permite
+ * registrar la asistencia: desde `VENTANA_ASISTENCIA_MIN` minutos antes del
+ * inicio y hasta el fin de la Reserva.
+ * @param {object} reserva
+ * @param {Date} ahora
+ * @returns {boolean}
+ */
+function dentroDeVentanaAsistencia(reserva, ahora) {
+  const inicio = new Date(reserva.fecha_inicio).getTime();
+  const fin = new Date(reserva.fecha_fin).getTime();
+  const t = (ahora instanceof Date ? ahora : new Date()).getTime();
+  if (Number.isNaN(inicio) || Number.isNaN(fin)) return false;
+  return t >= inicio - VENTANA_ASISTENCIA_MIN * 60000 && t <= fin;
+}
+
 /**
  * Crea la aplicación Express del booking-service.
  *
@@ -215,6 +249,19 @@ function crearApp(options = {}) {
       }),
     );
 
+    // --- GET /agenda — reuniones programadas por Espacio (cualquier usuario) ---
+    // Permite a los colaboradores ver qué salas tienen reuniones y, en el detalle
+    // de cada sala, listarlas en orden de fecha próxima. Solo reservas activas.
+    app.get(
+      '/agenda',
+      authenticate,
+      colaboradorOnly,
+      asyncHandler(async (req, res) => {
+        const reservas = await reservaRepository.listarAgenda();
+        res.status(200).json({ reservas: Array.isArray(reservas) ? reservas : [] });
+      }),
+    );
+
     // --- PUT /reservas/:id (COLABORADOR, propietario) — editar una Reserva ---
     // Permite modificar el rango (fecha/hora) y el número de asistentes de una
     // Reserva propia, futura y no cancelada, re-verificando el solapamiento.
@@ -282,6 +329,58 @@ function crearApp(options = {}) {
           throw overlapError('La Reserva solapa con otra existente');
         }
         res.status(200).json({ reserva: resultado.reserva });
+      }),
+    );
+
+    // --- PUT /reservas/:id/asistencia (COLABORADOR, propietario) ---
+    // Registra el estado de asistencia ('show' | 'no-show'). Solo se habilita
+    // cerca del horario o dentro del horario de la Reserva (ventana de
+    // VENTANA_ASISTENCIA_MIN minutos antes del inicio hasta el fin), para evitar
+    // registros erróneos fuera de tiempo.
+    app.put(
+      '/reservas/:id/asistencia',
+      authenticate,
+      colaboradorOnly,
+      asyncHandler(async (req, res) => {
+        const estado = normalizarAsistencia(
+          req.body && (req.body.estado !== undefined ? req.body.estado : req.body.estado_asistencia),
+        );
+        if (!estado) {
+          throw new ApiError(
+            400,
+            'VALIDATION_ERROR',
+            "El estado de asistencia debe ser 'show' o 'no-show'",
+            ['estado'],
+          );
+        }
+
+        const reserva = await reservaRepository.obtenerReservaPorId(req.params.id);
+        if (!reserva) {
+          throw notFoundError('La Reserva referenciada no existe');
+        }
+
+        // Debe ser propia.
+        if (String(reserva.id_usuario) !== String(req.user.sub)) {
+          throw authorizationError('No puede registrar la asistencia de una Reserva ajena');
+        }
+
+        // No tiene sentido sobre una Reserva cancelada.
+        if (reserva.estado_reserva === 'Cancelado') {
+          throw new ApiError(400, 'VALIDATION_ERROR', 'La Reserva está cancelada', ['estado']);
+        }
+
+        // Solo dentro de la ventana de asistencia.
+        if (!dentroDeVentanaAsistencia(reserva, resolverAhora() || new Date())) {
+          throw new ApiError(
+            400,
+            'VALIDATION_ERROR',
+            'El registro de asistencia solo se habilita cerca del horario de la Reserva',
+            ['estado'],
+          );
+        }
+
+        const actualizada = await reservaRepository.actualizarAsistencia(req.params.id, estado);
+        res.status(200).json({ reserva: actualizada });
       }),
     );
 

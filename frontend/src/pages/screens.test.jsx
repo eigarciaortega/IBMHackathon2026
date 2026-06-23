@@ -110,7 +110,7 @@ describe('Tarea 9.8 - render de las cuatro pantallas y presencia de controles', 
     expect(screen.getByLabelText('Hora de inicio')).toBeInTheDocument();
     expect(screen.getByLabelText('Hora de fin')).toBeInTheDocument();
     expect(screen.getByLabelText('Tipo de espacio')).toBeInTheDocument();
-    expect(screen.getByLabelText('Capacidad mínima')).toBeInTheDocument();
+    expect(screen.getByLabelText('Cantidad de personas para la reunión')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Buscar' })).toBeInTheDocument();
   });
 

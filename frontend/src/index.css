@@ -23,3 +23,26 @@ body {
 h1 {
   margin-top: 0;
 }
+
+/* Estado de asistencia de las reservas (requerido). */
+.asistencia {
+  display: inline-block;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+/* SHOW en rojo. */
+.asistencia--show {
+  background: #fde8e8;
+  color: #c81e1e;
+}
+/* NO_SHOW en gris. */
+.asistencia--noshow {
+  background: #e4e7eb;
+  color: #616e7c;
+}
+.asistencia--sin {
+  color: #9aa5b1;
+}

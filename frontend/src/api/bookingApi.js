@@ -45,6 +45,19 @@ export function todasLasReservas() {
   return request(SERVICE_URLS.booking, '/reservas');
 }
 
+/** Devuelve la agenda de reuniones activas por Espacio (cualquier usuario). */
+export function agenda() {
+  return request(SERVICE_URLS.booking, '/agenda');
+}
+
+/** Registra la asistencia ('show' | 'no-show') de una Reserva propia. */
+export function actualizarAsistencia(id, estado) {
+  return request(SERVICE_URLS.booking, `/reservas/${id}/asistencia`, {
+    method: 'PUT',
+    body: { estado },
+  });
+}
+
 /** Cancela una Reserva propia futura (R7.3). */
 export function cancelarReserva(id) {
   return request(SERVICE_URLS.booking, `/reservas/${id}`, { method: 'DELETE' });

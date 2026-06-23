@@ -68,11 +68,13 @@ export function validateSearch(values = {}, now = new Date()) {
     }
   }
 
-  // Capacidad mínima: filtro opcional, pero si se indica debe ser entero 1..999.
+  // Cantidad requerida para la reunión: filtro opcional. Si se indica, el
+  // sistema solo mostrará espacios cuya capacidad pueda cubrir esa cantidad
+  // (capacidad >= cantidad). Debe ser un entero entre 1 y 999.
   if (capacidadMin !== '' && capacidadMin != null) {
     const n = typeof capacidadMin === 'number' ? capacidadMin : Number(capacidadMin);
     if (!Number.isInteger(n) || n < CAPACIDAD_MIN || n > CAPACIDAD_MAX) {
-      errors.capacidadMin = `La capacidad mínima debe ser un entero entre ${CAPACIDAD_MIN} y ${CAPACIDAD_MAX}`;
+      errors.capacidadMin = `La cantidad de personas debe ser un entero entre ${CAPACIDAD_MIN} y ${CAPACIDAD_MAX}`;
     }
   }
 

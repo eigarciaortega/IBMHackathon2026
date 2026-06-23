@@ -175,7 +175,7 @@ describe('Property 21 — Validaciones de cliente y render de resultados', () =>
         const fecha = screen.getByLabelText('Fecha');
         const hi = screen.getByLabelText('Hora de inicio');
         const hf = screen.getByLabelText('Hora de fin');
-        const cap = screen.getByLabelText('Capacidad mínima');
+        const cap = screen.getByLabelText('Cantidad de personas para la reunión');
 
         fireEvent.change(fecha, { target: { value: valores.fecha } });
         fireEvent.change(hi, { target: { value: valores.horaInicio } });

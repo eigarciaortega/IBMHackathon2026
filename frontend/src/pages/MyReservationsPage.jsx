@@ -5,7 +5,8 @@
 // Usa el booking-service: GET /reservas/mias, PUT /reservas/:id, DELETE /reservas/:id.
 
 import { useCallback, useEffect, useState } from 'react';
-import { misReservas, actualizarReserva, cancelarReserva } from '../api/bookingApi';
+import { misReservas, actualizarReserva, cancelarReserva, actualizarAsistencia } from '../api/bookingApi';
+import { presentarAsistencia, dentroDeVentanaAsistencia } from '../lib/asistencia';
 import './MyReservationsPage.css';
 
 /** Extrae la fecha (YYYY-MM-DD) en UTC de un datetime. */
@@ -47,6 +48,7 @@ export default function MyReservationsPage() {
   const [errorForm, setErrorForm] = useState('');
   const [guardando, setGuardando] = useState(false);
   const [cancelandoId, setCancelandoId] = useState(null);
+  const [registrandoId, setRegistrandoId] = useState(null);
 
   const cargar = useCallback(async () => {
     setCargando(true);
@@ -138,6 +140,21 @@ export default function MyReservationsPage() {
     }
   }
 
+  /** Registra la asistencia ('show' | 'no-show') de una reserva propia. */
+  async function registrarAsistencia(reserva, estado) {
+    setFeedback(null);
+    setRegistrandoId(reserva.id_reserva);
+    try {
+      await actualizarAsistencia(reserva.id_reserva, estado);
+      await cargar();
+      setFeedback({ tipo: 'exito', texto: 'Asistencia registrada.' });
+    } catch (err) {
+      setFeedback({ tipo: 'error', texto: err?.message || 'No se pudo registrar la asistencia.' });
+    } finally {
+      setRegistrandoId(null);
+    }
+  }
+
   return (
     <main className="page page--my-reservations">
       <h1>Mis reservas</h1>
@@ -173,6 +190,7 @@ export default function MyReservationsPage() {
               <th scope="col">Fin</th>
               <th scope="col">Asistentes</th>
               <th scope="col">Estado</th>
+              <th scope="col">Asistencia</th>
               <th scope="col">Acciones</th>
             </tr>
           </thead>
@@ -190,6 +208,31 @@ export default function MyReservationsPage() {
                     <span className={`estado estado--${reserva.estado_reserva}`}>
                       {reserva.estado_reserva}
                     </span>
+                  </td>
+                  <td>
+                    {(() => {
+                      const a = presentarAsistencia(reserva.estado_asistencia);
+                      return <span className={a.className}>{a.label}</span>;
+                    })()}
+                    {reserva.estado_reserva !== 'Cancelado' &&
+                      dentroDeVentanaAsistencia(reserva) && (
+                        <div className="mr-asistencia">
+                          <button
+                            type="button"
+                            onClick={() => registrarAsistencia(reserva, 'show')}
+                            disabled={registrandoId === reserva.id_reserva}
+                          >
+                            Marcar SHOW
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => registrarAsistencia(reserva, 'no-show')}
+                            disabled={registrandoId === reserva.id_reserva}
+                          >
+                            Marcar NO_SHOW
+                          </button>
+                        </div>
+                      )}
                   </td>
                   <td className="mr-table__actions">
                     {editable ? (

@@ -209,7 +209,7 @@ export default function SearchPage() {
         </div>
 
         <div className="search-field">
-          <label htmlFor="capacidadMin">Capacidad mínima</label>
+          <label htmlFor="capacidadMin">Cantidad de personas para la reunión</label>
           <input
             id="capacidadMin"
             name="capacidadMin"

@@ -36,6 +36,9 @@ export default function AppHeader() {
             <NavLink to="/buscar" className="app-header__link">
               Buscar
             </NavLink>
+            <NavLink to="/salas" className="app-header__link">
+              Salas
+            </NavLink>
             <NavLink to="/mis-reservas" className="app-header__link">
               Mis reservas
             </NavLink>

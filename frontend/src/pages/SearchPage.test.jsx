@@ -146,7 +146,7 @@ describe('SearchPage (componente)', () => {
     expect(screen.getByLabelText('Hora de inicio')).toBeInTheDocument();
     expect(screen.getByLabelText('Hora de fin')).toBeInTheDocument();
     expect(screen.getByLabelText('Tipo de espacio')).toBeInTheDocument();
-    expect(screen.getByLabelText('Capacidad mínima')).toBeInTheDocument();
+    expect(screen.getByLabelText('Cantidad de personas para la reunión')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Buscar' })).toBeInTheDocument();
   });
 
@@ -209,7 +209,7 @@ describe('SearchPage (componente)', () => {
     fireEvent.change(screen.getByLabelText('Hora de inicio'), { target: { value: '09:00' } });
     fireEvent.change(screen.getByLabelText('Hora de fin'), { target: { value: '10:00' } });
     fireEvent.change(screen.getByLabelText('Tipo de espacio'), { target: { value: 'Sala de juntas' } });
-    fireEvent.change(screen.getByLabelText('Capacidad mínima'), { target: { value: '5' } });
+    fireEvent.change(screen.getByLabelText('Cantidad de personas para la reunión'), { target: { value: '5' } });
     fireEvent.click(screen.getByRole('button', { name: 'Buscar' }));
 
     await waitFor(() =>

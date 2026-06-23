@@ -18,6 +18,7 @@ import {
   deleteEspacio,
 } from '../api/catalogApi';
 import { todasLasReservas, cancelarReserva } from '../api/bookingApi';
+import { presentarAsistencia } from '../lib/asistencia';
 import './AdminPage.css';
 
 /** Valores válidos de Tipo_Espacio (R3.3). */
@@ -458,6 +459,7 @@ export default function AdminPage() {
                     <th scope="col">Fin</th>
                     <th scope="col">Asistentes</th>
                     <th scope="col">Estado</th>
+                    <th scope="col">Asistencia</th>
                     <th scope="col">Acciones</th>
                   </tr>
                 </thead>
@@ -473,6 +475,12 @@ export default function AdminPage() {
                         <span className={`estado estado--${r.estado_reserva}`}>
                           {r.estado_reserva}
                         </span>
+                      </td>
+                      <td>
+                        {(() => {
+                          const a = presentarAsistencia(r.estado_asistencia);
+                          return <span className={a.className}>{a.label}</span>;
+                        })()}
                       </td>
                       <td className="admin-table__actions">
                         <button

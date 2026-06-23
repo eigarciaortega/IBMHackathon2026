@@ -89,14 +89,14 @@ Documento de pruebas manuales del MVP. Cada caso indica **precondiciones**, **pa
   2. Pulsar **Eliminar** en un espacio y **confirmar** en el diálogo.
 - **Resultado esperado:** Edición → HTTP **200** y la tabla refleja el nuevo valor. Eliminación → se exige **confirmación explícita**; al confirmar, HTTP **200** y el espacio desaparece de la tabla.
 
-## CP-10 — Búsqueda de disponibilidad con filtros
+## CP-10 — Búsqueda de disponibilidad por cantidad requerida y filtros
 
 - **Precondiciones:** Sesión de colaborador. Existen espacios.
 - **Pasos:**
   1. En el panel de búsqueda, indicar fecha futura, hora inicio 09:00, hora fin 10:00.
-  2. Filtrar por tipo "Sala de juntas", capacidad mínima 4 y marcar el recurso **Proyector**.
+  2. Filtrar por tipo "Sala de juntas", **cantidad de personas para la reunión** = 4 y marcar el recurso **Proyector**.
   3. Pulsar **Buscar**.
-- **Resultado esperado:** HTTP **200** con la lista de espacios que cumplen tipo, capacidad y que **contienen** el recurso seleccionado, sin solapamiento en el rango. Cada resultado muestra botón **Reservar**.
+- **Resultado esperado:** HTTP **200** con la lista de espacios cuya **capacidad puede cubrir** la cantidad indicada (capacidad ≥ 4), del tipo pedido y que **contienen** el recurso seleccionado, sin solapamiento en el rango. Cada resultado muestra botón **Reservar**.
 
 ## CP-11 — Crear reserva válida
 
@@ -181,10 +181,52 @@ Documento de pruebas manuales del MVP. Cada caso indica **precondiciones**, **pa
   2. Solicitar `GET /api-docs.json` en cada servicio.
 - **Resultado esperado:** Swagger UI carga correctamente. El JSON es una especificación **OpenAPI 3.0** válida que documenta el 100% de los endpoints con ejemplos, esquemas y códigos HTTP.
 
+## CP-21 — Colaborador visualiza las salas y si tienen reuniones
+
+- **Precondiciones:** Sesión de colaborador. Existen salas; al menos una con una reserva activa futura.
+- **Pasos:**
+  1. En la barra superior, entrar a **Salas**.
+- **Resultado esperado:** Se listan todas las salas. Cada tarjeta indica "N reunión(es) programada(s)" si tiene reservas activas próximas, o "Sin reuniones programadas" en caso contrario.
+
+## CP-22 — Detalle de sala con reuniones por fecha próxima
+
+- **Precondiciones:** Sesión de colaborador. Una sala con varias reservas futuras.
+- **Pasos:**
+  1. En **Salas**, pulsar una sala.
+- **Resultado esperado:** Se abre la página de detalle con la información de la sala, sus **características** (recursos) y la lista de **reuniones programadas ordenadas por fecha próxima** (la más cercana primero), cada una con su estado de asistencia.
+
+## CP-23 — Visualización del estado de asistencia con colores (ambos roles)
+
+- **Precondiciones:** Existen reservas con `estado_asistencia` en `show` y `no-show`.
+- **Pasos:**
+  1. Como colaborador, abrir **Mis reservas**.
+  2. Como administrador, abrir **Todas las reservas**.
+- **Resultado esperado:** En ambas vistas, **SHOW** se muestra en **rojo** y **NO_SHOW** en **gris**. Las reservas sin registro muestran "Sin registro".
+
+## CP-24 — Registro de asistencia dentro de la ventana (habilitado)
+
+- **Precondiciones:** El colaborador tiene una reserva activa cuyo horario está en curso o inicia en ≤ 15 minutos.
+- **Pasos:**
+  1. En **Mis reservas**, pulsar **Marcar SHOW** (o **Marcar NO_SHOW**).
+- **Resultado esperado:** HTTP **200**. El estado de asistencia se actualiza y se refleja con su color (SHOW rojo / NO_SHOW gris).
+
+## CP-25 — Registro de asistencia fuera de la ventana (rechazado)
+
+- **Precondiciones:** El colaborador tiene una reserva cuyo inicio es dentro de más de 15 minutos (o ya finalizó).
+- **Pasos:**
+  1. Intentar `PUT /reservas/{id}/asistencia` con `{ "estado": "show" }`.
+- **Resultado esperado:** HTTP **400** (el registro solo se habilita cerca del horario). En la UI, los botones de asistencia no aparecen fuera de la ventana.
+
+## CP-26 — Registrar asistencia de una reserva ajena (no permitido)
+
+- **Precondiciones:** Reserva del usuario A. Sesión del usuario B (colaborador).
+- **Pasos:**
+  1. `PUT /reservas/{id de A}/asistencia` con el token de B, dentro de la ventana.
+- **Resultado esperado:** HTTP **403**. No se modifica la asistencia.
+
 ---
 
 ### Matriz de cobertura (caso → requisito / código HTTP)
-
 | Caso  | Foco                          | Código(s) HTTP   |
 |-------|-------------------------------|------------------|
 | CP-01 | Login admin                   | 200              |
@@ -207,3 +249,9 @@ Documento de pruebas manuales del MVP. Cada caso indica **precondiciones**, **pa
 | CP-18 | Sin token / token inválido    | 401              |
 | CP-19 | Admin ve/elimina reservas     | 200              |
 | CP-20 | Documentación OpenAPI         | 200              |
+| CP-21 | Salas: indicador de reuniones | (UI)             |
+| CP-22 | Detalle de sala + reuniones   | (UI)             |
+| CP-23 | Asistencia: colores SHOW/NO_SHOW | (UI)          |
+| CP-24 | Registrar asistencia (ventana)| 200              |
+| CP-25 | Asistencia fuera de ventana   | 400              |
+| CP-26 | Asistencia de reserva ajena   | 403              |
