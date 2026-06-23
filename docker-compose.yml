@@ -1,0 +1,21 @@
+# docker-compose.yml
+version: '3.8'
+
+services:
+  # PostgreSQL Database Service
+  db:
+    image: postgres:15
+    container_name: officespace_db
+    environment:
+      POSTGRES_DB: officespace_db
+      POSTGRES_USER: officespace_user
+      POSTGRES_PASSWORD: officespace_password
+    ports:
+      - "5432:5432" # Mapea el puerto de la DB localmente
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/ # Persiste los datos
+
+  # ... (otros servicios se añadirán aquí más adelante)
+
+volumes:
+  postgres_data:
