@@ -95,49 +95,10 @@ DECISIÓN ARQUITECTÓNICA EXPLÍCITA:
 El sistema debe implementarse como Microservicios con Base de Datos Compartida (Arquitectura Híbrida). 
 Estructura de Servicios Requerida:
 
-/officespace-starter-2026
-|
-|----/catalog-service          # Microservicio A: Gestión de Espacios
-|	|---src
-|	|	|---/controllers
-|	|	|---/models
-|	|	|---/routes
+<img width="572" height="757" alt="image" src="https://github.com/user-attachments/assets/dc5d8a3a-8bb1-42e1-a786-86db4b0f3921" />
+<img width="522" height="487" alt="image" src="https://github.com/user-attachments/assets/2d53fed1-db27-43c0-9c90-ebcdc0469a1d" />
 
-|	|	|---/services
-|	|--- package.json
-|	|--- Dockerfile
-|	|--- README.md
-|
-|---/booking-service          # Microservicio B: Motor de Reservas
-|	|--- /src
-|	|	|---/controllers
-|	|	|---/models
-|	|	|---/routes
-|	|	|---/services
-|	|	|---/validators 		# Validaciones críticas
-|	|--- package.json
-|	|--- Dockerfile
-|	|--- README.md
-|
-|-- /auth-service             # Microservicio C: Autenticación (OPCIONAL)
-|   └── (Si el equipo decide separar la autenticación)
-|
-|--- /frontend                 # Aplicación Web
-| 	|--- /public
-| 	|--- /src
-|	|	|---/components
-|	|	|---/pages	#Las 4 pantallas mínimo
-|	|	|---/services	#API clients
-|	|	|---/utils
-|	|--- package.json
-|	|--- Dockerfile
-|
-|--- /shared-infra             # Configuración Común}
-|	|---init-db.sql          # Script de inicialización DB
-|	|---/scripts
-|
-|---docker-compose.yml        # Orquestación de contenedores
-|---README.md                 # Documentación principal
+
 Aunque los servicios comparten la misma base de datos PostgreSQL, cada servicio debe:
 •	Tener su propio puerto y proceso independiente
 •	Comunicarse con otros servicios vía HTTP (no acceso directo a funciones)
