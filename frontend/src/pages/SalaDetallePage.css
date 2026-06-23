@@ -56,3 +56,69 @@
   padding: 0.5rem 0.65rem;
   text-align: left;
 }
+
+/* Alta de reservación desde el detalle de la sala. */
+.sala-detalle__reuniones-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.sala-reserva-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin: 0.5rem 0 1rem;
+  padding: 0.75rem;
+  background: #f5f7fa;
+  border-radius: 8px;
+}
+
+.sala-reserva-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.85rem;
+}
+
+.sala-reserva-form input {
+  padding: 0.4rem 0.5rem;
+  border: 1px solid #cbd2d9;
+  border-radius: 6px;
+}
+
+.sala-reserva-form__actions {
+  width: 100%;
+}
+
+.sala-reserva-form__actions button {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.campo-error {
+  color: #cf1124;
+  font-size: 0.85rem;
+  width: 100%;
+}
+
+.mr-feedback {
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+}
+
+.mr-feedback--exito {
+  background: #def7ec;
+  color: #03543f;
+}
+
+.mr-feedback--error {
+  background: #fde8e8;
+  color: #9b1c1c;
+}

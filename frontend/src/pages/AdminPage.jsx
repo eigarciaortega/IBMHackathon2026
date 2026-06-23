@@ -17,7 +17,7 @@ import {
   updateEspacio,
   deleteEspacio,
 } from '../api/catalogApi';
-import { todasLasReservas, cancelarReserva } from '../api/bookingApi';
+import { todasLasReservas, cancelarReserva, actualizarReserva } from '../api/bookingApi';
 import { presentarAsistencia } from '../lib/asistencia';
 import './AdminPage.css';
 
@@ -100,6 +100,18 @@ function formatFecha(valor) {
   return `${d.toISOString().slice(0, 10)} ${d.toISOString().slice(11, 16)}`;
 }
 
+/** Fecha (YYYY-MM-DD) en UTC de un datetime. */
+function fechaUTC(valor) {
+  const d = new Date(valor);
+  return Number.isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10);
+}
+
+/** Hora (HH:MM) en UTC de un datetime. */
+function horaUTC(valor) {
+  const d = new Date(valor);
+  return Number.isNaN(d.getTime()) ? '' : d.toISOString().slice(11, 16);
+}
+
 export default function AdminPage() {
   const [espacios, setEspacios] = useState([]);
   const [ocupacion, setOcupacion] = useState([]);
@@ -123,6 +135,17 @@ export default function AdminPage() {
   const [reservaAEliminar, setReservaAEliminar] = useState(null);
   const [eliminandoReserva, setEliminandoReserva] = useState(false);
   const [eliminarTodas, setEliminarTodas] = useState(false);
+
+  // Edición de Reservas (el administrador puede editar cualquier reserva).
+  const [reservaEditandoId, setReservaEditandoId] = useState(null);
+  const [formReserva, setFormReserva] = useState({
+    fecha: '',
+    horaInicio: '',
+    horaFin: '',
+    asistentes: '',
+  });
+  const [errorReserva, setErrorReserva] = useState('');
+  const [guardandoReserva, setGuardandoReserva] = useState(false);
 
   /** Recarga Espacios, Tablero_Ocupacion y catálogo de Recursos. */
   const cargarDatos = useCallback(async () => {
@@ -321,6 +344,66 @@ export default function AdminPage() {
     }
   }
 
+  /** Abre el formulario de edición de una reserva, precargando sus datos (UTC). */
+  function abrirEdicionReserva(r) {
+    setReservaEditandoId(r.id_reserva);
+    setFormReserva({
+      fecha: fechaUTC(r.fecha_inicio),
+      horaInicio: horaUTC(r.fecha_inicio),
+      horaFin: horaUTC(r.fecha_fin),
+      asistentes: r.cantidad_asistentes != null ? String(r.cantidad_asistentes) : '',
+    });
+    setErrorReserva('');
+    setFeedback(null);
+  }
+
+  function cerrarEdicionReserva() {
+    setReservaEditandoId(null);
+    setErrorReserva('');
+  }
+
+  function actualizarCampoReserva(campo, valor) {
+    setFormReserva((previo) => ({ ...previo, [campo]: valor }));
+  }
+
+  /** Guarda la edición de una reserva (el backend re-valida y verifica solapamiento). */
+  async function guardarEdicionReserva(evento, r) {
+    evento.preventDefault();
+    setErrorReserva('');
+
+    if (!formReserva.fecha || !formReserva.horaInicio || !formReserva.horaFin) {
+      setErrorReserva('Completa fecha, hora de inicio y hora de fin.');
+      return;
+    }
+    if (formReserva.horaFin <= formReserva.horaInicio) {
+      setErrorReserva('La hora de fin debe ser posterior a la hora de inicio.');
+      return;
+    }
+    const asistentes = Number(formReserva.asistentes);
+    if (!Number.isInteger(asistentes) || asistentes < 1) {
+      setErrorReserva('Los asistentes deben ser un entero mayor o igual a 1.');
+      return;
+    }
+
+    setGuardandoReserva(true);
+    try {
+      await actualizarReserva(r.id_reserva, {
+        idEspacio: r.id_espacio,
+        fechaInicio: `${formReserva.fecha}T${formReserva.horaInicio}:00Z`,
+        fechaFin: `${formReserva.fecha}T${formReserva.horaFin}:00Z`,
+        asistentes,
+      });
+      await cargarReservas();
+      setReservaEditandoId(null);
+      setFeedback({ tipo: 'exito', texto: 'Reserva actualizada correctamente.' });
+    } catch (err) {
+      // Conservar el formulario y mostrar el motivo (p. ej. 409 por solapamiento).
+      setErrorReserva(err?.message || 'No se pudo actualizar la reserva.');
+    } finally {
+      setGuardandoReserva(false);
+    }
+  }
+
   return (
     <main className="page page--admin">
       <h1>Administración</h1>
@@ -483,6 +566,9 @@ export default function AdminPage() {
                         })()}
                       </td>
                       <td className="admin-table__actions">
+                        <button type="button" onClick={() => abrirEdicionReserva(r)}>
+                          Editar
+                        </button>
                         <button
                           type="button"
                           className="boton--peligro"
@@ -490,6 +576,64 @@ export default function AdminPage() {
                         >
                           Eliminar
                         </button>
+                        {reservaEditandoId === r.id_reserva && (
+                          <form
+                            className="mr-edit"
+                            onSubmit={(e) => guardarEdicionReserva(e, r)}
+                            noValidate
+                          >
+                            <label>
+                              Fecha
+                              <input
+                                type="date"
+                                value={formReserva.fecha}
+                                onChange={(e) => actualizarCampoReserva('fecha', e.target.value)}
+                              />
+                            </label>
+                            <label>
+                              Inicio
+                              <input
+                                type="time"
+                                value={formReserva.horaInicio}
+                                onChange={(e) => actualizarCampoReserva('horaInicio', e.target.value)}
+                              />
+                            </label>
+                            <label>
+                              Fin
+                              <input
+                                type="time"
+                                value={formReserva.horaFin}
+                                onChange={(e) => actualizarCampoReserva('horaFin', e.target.value)}
+                              />
+                            </label>
+                            <label>
+                              Asistentes
+                              <input
+                                type="number"
+                                min="1"
+                                value={formReserva.asistentes}
+                                onChange={(e) => actualizarCampoReserva('asistentes', e.target.value)}
+                              />
+                            </label>
+                            {errorReserva && (
+                              <span className="campo-error" role="alert">
+                                {errorReserva}
+                              </span>
+                            )}
+                            <div className="mr-edit__actions">
+                              <button type="submit" disabled={guardandoReserva}>
+                                {guardandoReserva ? 'Guardando…' : 'Guardar cambios'}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={cerrarEdicionReserva}
+                                disabled={guardandoReserva}
+                              >
+                                Cancelar edición
+                              </button>
+                            </div>
+                          </form>
+                        )}
                       </td>
                     </tr>
                   ))}

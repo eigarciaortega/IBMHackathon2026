@@ -49,3 +49,15 @@ Característica: Salas y registro de asistencia
     Dado que existe una reserva de otro usuario en curso
     Cuando intento registrar la asistencia de esa reserva
     Entonces recibo un código HTTP 403
+
+  Escenario: Agregar reservación desde el detalle de una sala
+    Dado que abro el detalle de la sala "Sala Alfa"
+    Cuando agrego una reservación en un rango libre
+    Entonces recibo un código HTTP 201
+    Y la nueva reunión aparece en la lista de la sala
+
+  Escenario: Agregar reservación que solapa desde el detalle de una sala
+    Dado que la sala "Sala Alfa" tiene una reunión de "09:00" a "10:00"
+    Cuando intento agregar una reservación de "09:30" a "10:30" en esa sala
+    Entonces recibo un código HTTP 409
+    Y la reservación no se crea

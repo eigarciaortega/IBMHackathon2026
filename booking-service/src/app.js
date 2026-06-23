@@ -278,17 +278,21 @@ function crearApp(options = {}) {
 
         // 2. Precondiciones de edición: propia, futura y no cancelada (reutiliza
         //    la autorización de cancelación: mismas reglas R7.4/R7.5/R7.6).
-        const veredicto = cancellationValidator(reserva, { sub: req.user.sub }, resolverAhora());
-        if (!veredicto.autorizado) {
-          if (veredicto.statusCode === 403) {
-            throw authorizationError('No puede modificar una Reserva que no le pertenece');
+        //    El ADMINISTRADOR puede editar cualquier Reserva (supervisión), por
+        //    lo que omite estas precondiciones de propiedad/estado.
+        if (req.user.role !== 'ADMINISTRADOR') {
+          const veredicto = cancellationValidator(reserva, { sub: req.user.sub }, resolverAhora());
+          if (!veredicto.autorizado) {
+            if (veredicto.statusCode === 403) {
+              throw authorizationError('No puede modificar una Reserva que no le pertenece');
+            }
+            throw new ApiError(
+              veredicto.statusCode || 400,
+              veredicto.codigoError || 'VALIDATION_ERROR',
+              'No se puede modificar la Reserva en su estado actual',
+              veredicto.fields,
+            );
           }
-          throw new ApiError(
-            veredicto.statusCode || 400,
-            veredicto.codigoError || 'VALIDATION_ERROR',
-            'No se puede modificar la Reserva en su estado actual',
-            veredicto.fields,
-          );
         }
 
         // 3. El Espacio no se cambia; se valida fecha/rango/capacidad sobre él.

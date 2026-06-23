@@ -216,7 +216,7 @@ Cada servicio expone su especificación **OpenAPI 3.0 / Swagger UI** (con los co
 | GET    | `/disponibilidad`   | Busca espacios libres (filtros opcionales)    | COLABORADOR   |
 | POST   | `/reservas`         | Crea una reserva                              | COLABORADOR   |
 | GET    | `/reservas/mias`    | Lista las reservas del solicitante            | COLABORADOR   |
-| PUT    | `/reservas/{id}`    | Edita una reserva propia futura               | COLABORADOR   |
+| PUT    | `/reservas/{id}`    | Edita una reserva (colaborador: propia · admin: cualquiera) | COLABORADOR/ADMIN |
 | PUT    | `/reservas/{id}/asistencia` | Registra asistencia (`show`/`no-show`) dentro de la ventana horaria | COLABORADOR |
 | DELETE | `/reservas/{id}`    | Cancela (colaborador) / elimina (admin)       | COLABORADOR/ADMIN |
 | GET    | `/reservas`         | Lista **todas** las reservas                  | ADMINISTRADOR |
@@ -286,6 +286,7 @@ curl -X POST http://localhost:3002/espacios \
 1. En la barra superior, entra a **Salas**.
 2. Verás todas las salas existentes; cada una indica si **tiene reuniones programadas** próximas o está libre.
 3. Pulsa una sala para abrir su **detalle**: información de la sala, sus **características** (recursos) y las **reuniones programadas en orden de fecha próxima**.
+4. Desde el detalle puedes **Agregar reservación** para esa sala indicando fecha, hora de inicio/fin y asistentes. El sistema verifica que **no se solape** con las reuniones existentes (rechaza con `409` si choca).
 
 ### Estado de asistencia (ambos roles)
 
@@ -304,7 +305,7 @@ Cada reserva tiene un **estado de asistencia** visible para colaboradores y admi
    - **Crear espacio:** rellena nombre, tipo, capacidad, piso, ubicación y marca los **recursos** (checklist). Pulsa **Guardar**.
    - **Editar:** modifica los datos y guarda.
    - **Eliminar:** se pide **confirmación explícita** antes de borrar.
-3. En **Todas las reservas** puedes ver las reservas de todo el corporativo y **eliminarlas** (individualmente o con **Eliminar todas**).
+3. En **Todas las reservas** puedes ver las reservas de todo el corporativo, **editarlas** (fecha/hora/asistentes, con verificación de solapamiento) y **eliminarlas** (individualmente o con **Eliminar todas**).
 
 ---
 
@@ -314,7 +315,8 @@ Cada reserva tiene un **estado de asistencia** visible para colaboradores y admi
 - **No en el pasado:** no se permiten reservas cuyo inicio sea anterior al instante actual (`400`).
 - **Capacidad:** el número de asistentes no puede superar la capacidad del espacio (`400`).
 - **Búsqueda por cantidad requerida:** al buscar, el usuario indica la **cantidad de personas para la reunión**; el sistema devuelve únicamente los espacios cuya **capacidad puede cubrir** esa cantidad (capacidad ≥ cantidad).
-- **Propiedad de la reserva:** un colaborador solo puede editar/cancelar sus propias reservas (`403` en caso contrario). El administrador puede ver y eliminar cualquier reserva.
+- **Propiedad de la reserva:** un colaborador solo puede editar/cancelar sus propias reservas (`403` en caso contrario). El administrador puede **editar y eliminar cualquier reserva**.
+- **Alta desde el detalle de sala:** cualquier usuario autenticado puede crear una reservación desde el detalle de una sala; se aplica la misma verificación de solapamiento (`409` si choca).
 - **Estado de asistencia:** cada reserva tiene un estado de asistencia (`show`/`no-show`). Se muestra **SHOW en rojo** y **NO_SHOW en gris** en ambos roles.
 - **Ventana de registro de asistencia:** el colaborador solo puede registrar la asistencia de su reserva desde **15 minutos antes** del inicio hasta el **fin** de la misma; fuera de esa ventana se rechaza (`400`).
 - **Salas y agenda:** cualquier usuario autenticado puede ver las salas y sus reuniones programadas (próximas), ordenadas por fecha.

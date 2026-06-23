@@ -41,3 +41,9 @@ Característica: Administración de espacios y reservas
     Cuando consulto "Todas las reservas"
     Entonces veo las reservas de todos los usuarios
     Y puedo eliminar cualquiera de ellas con código HTTP 200
+
+  Escenario: El administrador edita la reserva de un colaborador
+    Dado que existe una reserva creada por un colaborador
+    Cuando edito esa reserva a un horario sin solapamiento
+    Entonces recibo un código HTTP 200
+    Y la reserva queda actualizada con los nuevos datos

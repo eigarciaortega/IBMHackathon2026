@@ -224,6 +224,23 @@ Documento de pruebas manuales del MVP. Cada caso indica **precondiciones**, **pa
   1. `PUT /reservas/{id de A}/asistencia` con el token de B, dentro de la ventana.
 - **Resultado esperado:** HTTP **403**. No se modifica la asistencia.
 
+## CP-27 — Administrador edita una reserva de un colaborador
+
+- **Precondiciones:** Existe una reserva creada por un colaborador. Sesión de administrador.
+- **Pasos:**
+  1. En **Todas las reservas**, pulsar **Editar** en la reserva de un colaborador.
+  2. Cambiar la fecha/hora (a un rango sin solapamiento) y guardar.
+- **Resultado esperado:** HTTP **200**. La reserva ajena se actualiza con los nuevos datos. (El admin no está sujeto a las restricciones de propiedad del colaborador.)
+
+## CP-28 — Agregar reservación desde el detalle de la sala (con verificación de solapamiento)
+
+- **Precondiciones:** Sesión iniciada. Abrir el detalle de una sala (`/salas/{id}`).
+- **Pasos:**
+  1. Pulsar **Agregar reservación**.
+  2. Indicar fecha futura, hora de inicio/fin y asistentes (≤ capacidad) en un rango libre. Crear.
+  3. Repetir intentando un rango que **solape** con una reunión existente de esa sala.
+- **Resultado esperado:** El primer alta responde **201** y aparece en la lista de reuniones. El alta solapada se rechaza con **409** (mensaje de conflicto), conservando los datos del formulario.
+
 ---
 
 ### Matriz de cobertura (caso → requisito / código HTTP)
@@ -255,3 +272,5 @@ Documento de pruebas manuales del MVP. Cada caso indica **precondiciones**, **pa
 | CP-24 | Registrar asistencia (ventana)| 200              |
 | CP-25 | Asistencia fuera de ventana   | 400              |
 | CP-26 | Asistencia de reserva ajena   | 403              |
+| CP-27 | Admin edita reserva ajena     | 200              |
+| CP-28 | Alta desde detalle de sala / solapamiento | 201 / 409 |
