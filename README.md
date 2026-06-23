@@ -228,7 +228,7 @@ El payload incluye: `id_usuario`, `email`, `rol` y `exp` (expiración a 24 horas
 
 ## 📡 Documentación de API
 
-> **Nota:** La documentación interactiva Swagger estará disponible próximamente en `http://localhost:8001/api-docs`.
+La documentación interactiva está disponible en: `http://localhost:8888/officespace-ibm/api-docs.php`
 
 ### Auth Service — Puerto 8003
 
