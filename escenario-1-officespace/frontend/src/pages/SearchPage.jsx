@@ -26,6 +26,13 @@ function SearchPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  const handleDateChange = (e) => {
+    setDate(e.target.value);
+    setSpaces([]);
+    setSearched(false);
+    setError('');
+  };
+
   const handleSearch = async (e) => {
     e.preventDefault();
     setLoading(true);
