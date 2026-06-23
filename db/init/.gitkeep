@@ -1,0 +1,2 @@
+# Los scripts de migración y seed de la base de datos se añaden en la tarea 1.2.
+# docker-compose monta este directorio en /docker-entrypoint-initdb.d del contenedor `db`.
