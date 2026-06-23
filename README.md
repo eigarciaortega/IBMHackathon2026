@@ -39,6 +39,10 @@ neowallet-p2p-payments/
 │   └── package.json
 ├── processor-service/
 │   ├── src/
+│   │   ├── controllers/
+│   │   ├── routes/
+│   │   ├── services/
+│   │   ├── utils/
 │   │   ├── db.js
 │   │   ├── index.js
 │   │   └── swagger.js
@@ -102,7 +106,7 @@ docker compose config
 - `POST /api/transfer`
 - `GET /api/transactions/:user_id`
 
-## Alcance actual: fase 1.2
+## Alcance actual: fase 1.3
 
 Esta fase incluye:
 
@@ -120,10 +124,16 @@ Esta fase incluye:
 - Validacion de montos positivos con maximo 2 decimales.
 - Prevencion de saldo negativo en debitos.
 - Bloqueo `SELECT ... FOR UPDATE` para reducir race conditions simples en operaciones de balance.
-- Endpoint `GET /api/transactions/:user_id` preparado para leer historial cuando existan transacciones.
-- Endpoint `POST /api/transfer` documentado como placeholder.
+- Endpoint `POST /api/transfer` funcional para transferencias P2P.
+- Validacion de usuarios existentes consultando `accounts-service`.
+- Validacion de fondos suficientes antes de debitar.
+- Bloqueo de auto-transferencias.
+- Estados de transaccion `PENDING`, `DEBITED` y `COMPLETED`.
+- Registro de `X-Idempotency-Key` cuando se recibe, preparado para idempotencia completa en una fase posterior.
+- Comunicacion HTTP de `processor-service` hacia `accounts-service`.
+- Endpoint `GET /api/transactions/:user_id` funcional para historial enviado/recibido.
 
-## Fuera de alcance en fase 1.2
+## Fuera de alcance en fase 1.3
 
 - Frontend.
 - JWT u OAuth.
@@ -132,8 +142,9 @@ Esta fase incluye:
 - Integracion con Stripe, PayPal, SPEI, Pix, PSE, tarjetas u otros procesadores.
 - Multiples monedas.
 - Retiros bancarios.
-- Saga completa.
+- Saga avanzada con rollback completo.
 - Idempotencia final.
+- Job de reconciliacion.
 - Tests completos.
 - Coleccion final de Postman.
 
