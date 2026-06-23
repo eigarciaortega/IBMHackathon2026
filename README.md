@@ -223,7 +223,6 @@ Esta innovacion se alinea con la opcion de **CI/CD con Pruebas Automatizadas** d
 - valida `docker compose config`;
 - evita que errores de sintaxis o configuracion invalida lleguen a la rama principal de entrega.
 
-Alcance defendible: es un pipeline ligero para hackathon. No incluye aun cobertura de codigo ni pruebas end-to-end completas.
 
 ## QA Strategy
 
