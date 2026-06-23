@@ -8,9 +8,9 @@ import (
 
 	"github.com/shopspring/decimal"
 
-	"github.com/mirto/neowallet/accounts-service/internal/apperror"
-	"github.com/mirto/neowallet/accounts-service/internal/models"
-	"github.com/mirto/neowallet/accounts-service/internal/repository"
+	"github.com/i0dk1/NeoWallet/accounts-service/internal/apperror"
+	"github.com/i0dk1/NeoWallet/accounts-service/internal/models"
+	"github.com/i0dk1/NeoWallet/accounts-service/internal/repository"
 )
 
 type AccountService struct {

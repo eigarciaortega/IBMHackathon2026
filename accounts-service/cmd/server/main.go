@@ -16,12 +16,12 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/mirto/neowallet/accounts-service/internal/handlers"
-	"github.com/mirto/neowallet/accounts-service/internal/middleware"
-	"github.com/mirto/neowallet/accounts-service/internal/repository"
-	"github.com/mirto/neowallet/accounts-service/internal/services"
+	"github.com/i0dk1/NeoWallet/accounts-service/internal/handlers"
+	"github.com/i0dk1/NeoWallet/accounts-service/internal/middleware"
+	"github.com/i0dk1/NeoWallet/accounts-service/internal/repository"
+	"github.com/i0dk1/NeoWallet/accounts-service/internal/services"
 
-	_ "github.com/mirto/neowallet/accounts-service/docs"
+	_ "github.com/i0dk1/NeoWallet/accounts-service/docs"
 )
 
 func main() {

@@ -6,8 +6,8 @@ import (
 	"github.com/go-chi/chi/v5"
 	httpSwagger "github.com/swaggo/http-swagger"
 
-	"github.com/mirto/neowallet/accounts-service/internal/middleware"
-	"github.com/mirto/neowallet/accounts-service/internal/services"
+	"github.com/i0dk1/NeoWallet/accounts-service/internal/middleware"
+	"github.com/i0dk1/NeoWallet/accounts-service/internal/services"
 )
 
 func SetupRouter(svc *services.AccountService, internalAPIKey string) http.Handler {

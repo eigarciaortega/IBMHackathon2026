@@ -1,4 +1,4 @@
-module github.com/mirto/neowallet/accounts-service
+module github.com/i0dk1/NeoWallet/accounts-service
 
 go 1.26.2
 

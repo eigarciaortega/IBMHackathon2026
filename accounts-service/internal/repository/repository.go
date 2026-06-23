@@ -11,7 +11,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/shopspring/decimal"
 
-	"github.com/mirto/neowallet/accounts-service/internal/models"
+	"github.com/i0dk1/NeoWallet/accounts-service/internal/models"
 )
 
 type Repository struct {

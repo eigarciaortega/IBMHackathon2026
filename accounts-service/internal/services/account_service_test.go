@@ -11,9 +11,9 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/shopspring/decimal"
 
-	"github.com/mirto/neowallet/accounts-service/internal/models"
-	"github.com/mirto/neowallet/accounts-service/internal/repository"
-	"github.com/mirto/neowallet/accounts-service/internal/services"
+	"github.com/i0dk1/NeoWallet/accounts-service/internal/models"
+	"github.com/i0dk1/NeoWallet/accounts-service/internal/repository"
+	"github.com/i0dk1/NeoWallet/accounts-service/internal/services"
 )
 
 func setupTestDB(t *testing.T) *pgxpool.Pool {

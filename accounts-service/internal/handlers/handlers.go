@@ -8,10 +8,10 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/mirto/neowallet/accounts-service/internal/apperror"
-	"github.com/mirto/neowallet/accounts-service/internal/middleware"
-	"github.com/mirto/neowallet/accounts-service/internal/models"
-	"github.com/mirto/neowallet/accounts-service/internal/services"
+	"github.com/i0dk1/NeoWallet/accounts-service/internal/apperror"
+	"github.com/i0dk1/NeoWallet/accounts-service/internal/middleware"
+	"github.com/i0dk1/NeoWallet/accounts-service/internal/models"
+	"github.com/i0dk1/NeoWallet/accounts-service/internal/services"
 )
 
 type Handler struct {
