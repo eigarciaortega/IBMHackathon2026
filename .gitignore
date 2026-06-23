@@ -1,0 +1,40 @@
+# Binarios compilados
+/bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Entorno y secretos
+.env
+.env.*
+!.env.example
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+
+# Test coverage
+*.out
+coverage.html
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+docker-compose.override.yml
+
+# Worktrees (git)
+neowallet-worktrees/
+
+# Temp
+/tmp/
+*.tmp
