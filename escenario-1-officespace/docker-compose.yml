@@ -2,7 +2,6 @@ version: '3.8'
 
 services:
 
-  # Base de datos PostgreSQL
   db:
     image: postgres:15
     environment:
@@ -15,7 +14,6 @@ services:
       - ./shared-infra/init-db.sql:/docker-entrypoint-initdb.d/init.sql
       - postgres_data:/var/lib/postgresql/data
 
-  # Microservicio A - Catálogo de espacios
   catalog-service:
     build: ./catalog-service
     ports:
@@ -27,10 +25,10 @@ services:
       DB_NAME: officespace
       DB_PORT: 5432
       JWT_SECRET: clave_super_secreta_officespace_2026
+      TZ: America/Mexico_City
     depends_on:
       - db
 
-  # Microservicio B - Motor de reservas
   booking-service:
     build: ./booking-service
     ports:
@@ -42,10 +40,10 @@ services:
       DB_NAME: officespace
       DB_PORT: 5432
       JWT_SECRET: clave_super_secreta_officespace_2026
+      TZ: America/Mexico_City
     depends_on:
       - db
 
-  # Frontend - Aplicación React
   frontend:
     build: ./frontend
     ports:
