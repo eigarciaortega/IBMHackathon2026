@@ -1,17 +1,11 @@
 # ── Stage 1: Build ──────────────────────────────────────────────────
-# Cambiamos a una imagen que YA incluye Maven
 FROM maven:3.9.9-eclipse-temurin-21-noble AS build
 
 WORKDIR /app
 
-# Ya no necesitas instalar wget ni Maven manualmente
-# El comando mvn funcionará inmediatamente
-
-# Cache de dependencias
 COPY pom.xml .
 RUN mvn dependency:go-offline -B --no-transfer-progress
 
-# Compilar proyecto
 COPY src ./src
 RUN mvn clean package -DskipTests -B --no-transfer-progress
 
@@ -23,7 +17,8 @@ RUN rm -rf /usr/local/tomcat/webapps/*
 COPY --from=build /app/target/neowallet-frontend.war \
      /usr/local/tomcat/webapps/ROOT.war
 
-RUN addgroup -S neowallet && adduser -S neowallet -G neowallet \
+# Usuario no-root (sintaxis Ubuntu/Debian)
+RUN groupadd -r neowallet && useradd -r -g neowallet -d /usr/local/tomcat neowallet \
     && chown -R neowallet:neowallet /usr/local/tomcat
 
 USER neowallet
