@@ -26,6 +26,21 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     List<Booking> findByBookingDateBeforeAndStatus(LocalDate date, BookingStatus status);
 
+    // --- Analytics queries ---
+
+    @Query("SELECT b.spacePublicId, COUNT(b) FROM Booking b WHERE b.status <> 'CANCELLED' GROUP BY b.spacePublicId ORDER BY COUNT(b) DESC")
+    List<Object[]> countBookingsPerSpace();
+
+    @Query("SELECT b.startTime, COUNT(b) FROM Booking b WHERE b.status <> 'CANCELLED' GROUP BY b.startTime ORDER BY COUNT(b) DESC")
+    List<Object[]> countBookingsPerStartTime();
+
+    @Query("SELECT b.bookingDate, COUNT(b) FROM Booking b GROUP BY b.bookingDate ORDER BY b.bookingDate DESC")
+    List<Object[]> countBookingsPerDate();
+
+    long countByStatus(BookingStatus status);
+
+    // --- Overlap detection ---
+
     @Query("""
             SELECT b FROM Booking b
             WHERE b.spacePublicId = :spacePublicId
@@ -38,4 +53,15 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
                                   @Param("bookingDate") LocalDate bookingDate,
                                   @Param("startTime") LocalTime startTime,
                                   @Param("endTime") LocalTime endTime);
+
+    @Query("""
+            SELECT DISTINCT b.spacePublicId FROM Booking b
+            WHERE b.bookingDate = :bookingDate
+              AND b.status = 'ACTIVE'
+              AND b.startTime < :endTime
+              AND b.endTime > :startTime
+            """)
+    List<UUID> findOccupiedSpaceIds(@Param("bookingDate") LocalDate bookingDate,
+                                    @Param("startTime") LocalTime startTime,
+                                    @Param("endTime") LocalTime endTime);
 }

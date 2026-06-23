@@ -2,6 +2,7 @@ package org.portfolio.bookingservice.service;
 
 import lombok.RequiredArgsConstructor;
 import org.portfolio.bookingservice.client.CatalogClient;
+import org.portfolio.bookingservice.notification.NotificationService;
 import org.portfolio.bookingservice.dto.BookingRequest;
 import org.portfolio.bookingservice.dto.BookingResponse;
 import org.portfolio.bookingservice.dto.ResourceDto;
@@ -18,6 +19,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -26,9 +28,10 @@ public class BookingService {
 
     private final BookingRepository bookingRepository;
     private final CatalogClient catalogClient;
+    private final NotificationService notificationService;
 
     @Transactional
-    public BookingResponse create(BookingRequest request, Long userId) {
+    public BookingResponse create(BookingRequest request, Long userId, String userName, String userEmail) {
         if (request.getBookingDate().isBefore(LocalDate.now())) {
             throw new IllegalArgumentException("Booking date cannot be in the past");
         }
@@ -60,6 +63,8 @@ public class BookingService {
         Booking booking = Booking.builder()
                 .spacePublicId(request.getSpacePublicId())
                 .userId(userId)
+                .userName(userName)
+                .userEmail(userEmail)
                 .bookingDate(request.getBookingDate())
                 .startTime(request.getStartTime())
                 .endTime(request.getEndTime())
@@ -67,7 +72,9 @@ public class BookingService {
                 .notes(request.getNotes())
                 .build();
 
-        return toResponse(bookingRepository.save(booking));
+        BookingResponse response = toResponse(bookingRepository.save(booking));
+        notificationService.notifyUser(userId, "booking_confirmed", response);
+        return response;
     }
 
     public List<BookingResponse> findMyBookings(Long userId) {
@@ -123,6 +130,35 @@ public class BookingService {
         booking.setStatus(BookingStatus.CANCELLED);
         booking.setCancelledAt(LocalDateTime.now());
         bookingRepository.save(booking);
+
+        notificationService.notifyUser(userId, "booking_cancelled", booking.getPublicId());
+        notificationService.notifyAdmins("space_released", booking.getSpacePublicId());
+    }
+
+    @Transactional
+    public void adminCancel(UUID publicId) {
+        Booking booking = bookingRepository.findByPublicId(publicId)
+                .orElseThrow(() -> new BookingNotFoundException(publicId));
+
+        if (booking.getStatus() != BookingStatus.ACTIVE) {
+            throw new IllegalArgumentException("Only active bookings can be cancelled");
+        }
+
+        booking.setStatus(BookingStatus.CANCELLED);
+        booking.setCancelledAt(LocalDateTime.now());
+        bookingRepository.save(booking);
+
+        notificationService.notifyUser(booking.getUserId(), "booking_cancelled", booking.getPublicId());
+        notificationService.notifyAdmins("space_released", booking.getSpacePublicId());
+    }
+
+    public List<UUID> findOccupiedSpaceIds(LocalDate date, LocalTime startTime, LocalTime endTime) {
+        return bookingRepository.findByBookingDateAndStatus(date, BookingStatus.ACTIVE)
+                .stream()
+                .filter(b -> b.getStartTime().isBefore(endTime) && b.getEndTime().isAfter(startTime))
+                .map(Booking::getSpacePublicId)
+                .distinct()
+                .toList();
     }
 
     @Transactional
@@ -139,6 +175,8 @@ public class BookingService {
         return BookingResponse.builder()
                 .publicId(booking.getPublicId())
                 .spacePublicId(booking.getSpacePublicId())
+                .userName(booking.getUserName())
+                .userEmail(booking.getUserEmail())
                 .bookingDate(booking.getBookingDate())
                 .startTime(booking.getStartTime())
                 .endTime(booking.getEndTime())

@@ -19,6 +19,8 @@ public class BookingResponse {
 
     private UUID publicId;
     private UUID spacePublicId;
+    private String userName;
+    private String userEmail;
     private LocalDate bookingDate;
     private LocalTime startTime;
     private LocalTime endTime;

@@ -3,6 +3,21 @@
 {
   "compileOnSave": false,
   "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@core/*": ["src/app/core/*"],
+      "@shared/*": ["src/app/shared/*"],
+      "@features/*": ["src/app/features/*"],
+      "@auth/*": ["src/app/features/auth/*"],
+      "@catalog/*": ["src/app/features/catalog/*"],
+      "@booking/*": ["src/app/features/booking/*"],
+      "@booking-history/*": ["src/app/features/booking-history/*"],
+      "@booking-details/*": ["src/app/features/booking-details/*"],
+      "@notifications/*": ["src/app/features/notifications/*"],
+      "@profile/*": ["src/app/features/profile/*"],
+      "@admin/*": ["src/app/features/admin/*"],
+      "@pages/*": ["src/app/pages/*"],
+    },
     "strict": true,
     "noImplicitOverride": true,
     "noPropertyAccessFromIndexSignature": true,

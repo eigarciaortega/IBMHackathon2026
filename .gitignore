@@ -6,6 +6,7 @@
 **/.idea/
 **/*.iml
 **/.vscode/
+CLAUDE.md
 
 # OS
 .DS_Store
@@ -13,3 +14,8 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Secrets — use *.example counterparts as templates
+.env
+docker-compose.yml
+**/application.properties

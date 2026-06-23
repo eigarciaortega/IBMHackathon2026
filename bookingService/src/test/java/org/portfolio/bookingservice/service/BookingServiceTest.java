@@ -11,8 +11,10 @@ import org.portfolio.bookingservice.dto.BookingRequest;
 import org.portfolio.bookingservice.dto.BookingResponse;
 import org.portfolio.bookingservice.dto.ResourceDto;
 import org.portfolio.bookingservice.entity.Booking;
+import org.portfolio.bookingservice.enums.BookingStatus;
 import org.portfolio.bookingservice.exception.BookingConflictException;
 import org.portfolio.bookingservice.exception.BookingNotFoundException;
+import org.portfolio.bookingservice.notification.NotificationService;
 import org.portfolio.bookingservice.repository.BookingRepository;
 import org.springframework.security.access.AccessDeniedException;
 
@@ -36,6 +38,9 @@ class BookingServiceTest {
 
     @Mock
     private CatalogClient catalogClient;
+
+    @Mock
+    private NotificationService notificationService;
 
     @InjectMocks
     private BookingService bookingService;
@@ -65,7 +70,7 @@ class BookingServiceTest {
     void create_pastDate_throwsIllegalArgument() {
         validRequest.setBookingDate(LocalDate.now().minusDays(1));
 
-        assertThatThrownBy(() -> bookingService.create(validRequest, USER_ID))
+        assertThatThrownBy(() -> bookingService.create(validRequest, USER_ID, "Test User", "test@test.com"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("past");
     }
@@ -75,7 +80,7 @@ class BookingServiceTest {
         validRequest.setStartTime(LocalTime.of(11, 0));
         validRequest.setEndTime(LocalTime.of(9, 0));
 
-        assertThatThrownBy(() -> bookingService.create(validRequest, USER_ID))
+        assertThatThrownBy(() -> bookingService.create(validRequest, USER_ID, "Test User", "test@test.com"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("End time");
     }
@@ -85,7 +90,7 @@ class BookingServiceTest {
         validRequest.setStartTime(LocalTime.of(10, 0));
         validRequest.setEndTime(LocalTime.of(10, 0));
 
-        assertThatThrownBy(() -> bookingService.create(validRequest, USER_ID))
+        assertThatThrownBy(() -> bookingService.create(validRequest, USER_ID, "Test User", "test@test.com"))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -93,7 +98,7 @@ class BookingServiceTest {
     void create_spaceNotFound_throwsIllegalArgument() {
         when(catalogClient.findByPublicId(SPACE_ID)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> bookingService.create(validRequest, USER_ID))
+        assertThatThrownBy(() -> bookingService.create(validRequest, USER_ID, "Test User", "test@test.com"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Space not found");
     }
@@ -103,7 +108,7 @@ class BookingServiceTest {
         ResourceDto inactiveResource = new ResourceDto(SPACE_ID, 8, false);
         when(catalogClient.findByPublicId(SPACE_ID)).thenReturn(Optional.of(inactiveResource));
 
-        assertThatThrownBy(() -> bookingService.create(validRequest, USER_ID))
+        assertThatThrownBy(() -> bookingService.create(validRequest, USER_ID, "Test User", "test@test.com"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Space not found");
     }
@@ -113,7 +118,7 @@ class BookingServiceTest {
         validRequest.setAttendees(10);
         when(catalogClient.findByPublicId(SPACE_ID)).thenReturn(Optional.of(activeResource));
 
-        assertThatThrownBy(() -> bookingService.create(validRequest, USER_ID))
+        assertThatThrownBy(() -> bookingService.create(validRequest, USER_ID, "Test User", "test@test.com"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("capacity");
     }
@@ -124,7 +129,7 @@ class BookingServiceTest {
         when(bookingRepository.findOverlapping(any(), any(), any(), any()))
                 .thenReturn(List.of(new Booking()));
 
-        assertThatThrownBy(() -> bookingService.create(validRequest, USER_ID))
+        assertThatThrownBy(() -> bookingService.create(validRequest, USER_ID, "Test User", "test@test.com"))
                 .isInstanceOf(BookingConflictException.class);
     }
 
@@ -139,7 +144,7 @@ class BookingServiceTest {
             return b;
         });
 
-        BookingResponse result = bookingService.create(validRequest, USER_ID);
+        BookingResponse result = bookingService.create(validRequest, USER_ID, "Test User", "test@test.com");
 
         assertThat(result.getSpacePublicId()).isEqualTo(SPACE_ID);
         assertThat(result.getAttendees()).isEqualTo(5);
@@ -189,19 +194,25 @@ class BookingServiceTest {
     }
 
     @Test
-    void cancel_validFutureBooking_deletesBooking() {
+    void cancel_validFutureBooking_setsStatusCancelled() {
         UUID bookingId = UUID.randomUUID();
         Booking booking = Booking.builder()
                 .publicId(bookingId)
                 .userId(USER_ID)
+                .spacePublicId(SPACE_ID)
                 .bookingDate(TOMORROW)
                 .startTime(LocalTime.of(9, 0))
+                .status(BookingStatus.ACTIVE)
                 .build();
         when(bookingRepository.findByPublicId(bookingId)).thenReturn(Optional.of(booking));
+        when(bookingRepository.save(any())).thenReturn(booking);
 
         bookingService.cancel(bookingId, USER_ID);
 
-        verify(bookingRepository).delete(booking);
+        assertThat(booking.getStatus()).isEqualTo(BookingStatus.CANCELLED);
+        assertThat(booking.getCancelledAt()).isNotNull();
+        verify(bookingRepository).save(booking);
+        verify(bookingRepository, never()).delete(any());
     }
 
     // --- findMyBookings ---
