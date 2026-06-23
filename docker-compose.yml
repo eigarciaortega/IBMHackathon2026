@@ -1,0 +1,84 @@
+services:
+  accounts_db:
+    image: postgres:15-alpine
+    container_name: neowallet_accounts_db
+    environment:
+      POSTGRES_DB: accounts_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - '5432:5432'
+    volumes:
+      - accounts_db_data:/var/lib/postgresql/data
+      - ./init-scripts/accounts-seed.sql:/docker-entrypoint-initdb.d/seed.sql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d accounts_db']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  processor_db:
+    image: postgres:15-alpine
+    container_name: neowallet_processor_db
+    environment:
+      POSTGRES_DB: processor_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - '5433:5432'
+    volumes:
+      - processor_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d processor_db']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  accounts-service:
+    build:
+      context: .
+      dockerfile: apps/accounts-service/Dockerfile
+    container_name: neowallet_accounts_service
+    ports:
+      - '3000:3000'
+    environment:
+      DB_HOST: accounts_db
+      DB_PORT: 5432
+      DB_NAME: accounts_db
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      PORT: 3000
+      NODE_ENV: development
+    depends_on:
+      accounts_db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  processor-service:
+    build:
+      context: .
+      dockerfile: apps/processor-service/Dockerfile
+    container_name: neowallet_processor_service
+    ports:
+      - '3001:3001'
+    environment:
+      DB_HOST: processor_db
+      DB_PORT: 5432
+      DB_NAME: processor_db
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      PORT: 3001
+      ACCOUNTS_SERVICE_URL: http://accounts-service:3000
+      NODE_ENV: development
+    depends_on:
+      processor_db:
+        condition: service_healthy
+      accounts-service:
+        condition: service_started
+    restart: unless-stopped
+
+volumes:
+  accounts_db_data:
+  processor_db_data:
