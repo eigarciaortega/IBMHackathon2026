@@ -1,4 +1,3 @@
-# docker-compose.yml (updated)
 version: '3.8'
 
 services:
@@ -14,36 +13,33 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data/
 
-  catalog-service:
-    build: ./catalog-service # Indica que construya la imagen desde el Dockerfile del subdirectorio
-    container_name: catalog_service
-    ports:
-      # Expone el puerto del servicio
-      - "8081:8081"
-    depends_on:
-      # Asegura que la DB esté levantada antes que este servicio
-      - db
-    environment:
-      # Las propiedades de conexión a DB son las mismas que las de application.properties
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/officespace_db
-      SPRING_DATASOURCE_USERNAME: officespace_user
-      SPRING_DATASOURCE_PASSWORD: officespace_password
-      # Igual que en application.properties
-      SPRING_JPA_HIBERNATE_DDL_AUTO: update
-      # Igual que en application.properties      
-      SERVER_PORT: 8081
-  
   auth-service:
     build: ./auth-service
     container_name: auth_service
-    # Puerto distintivo para auth-service
     ports:
       - "8080:8080"
+    env_file:
+      - .env
     environment:
       SERVER_PORT: 8080
-      JWT_SECRET_KEY: pT1dKz0jY8vG6VbZYvR8WeO/AwD+Jm1Hk8M0xUeVh4U=
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
       JWT_EXPIRATION_MS: 3600000
       JWT_ISSUER: corporativoalpha.com
+
+  catalog-service:
+    build: ./catalog-service
+    container_name: catalog_service
+    ports:
+      - "8081:8081"
+    depends_on:
+      - db
+    environment:
+      SERVER_PORT: 8081
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/officespace_db
+      SPRING_DATASOURCE_USERNAME: officespace_user
+      SPRING_DATASOURCE_PASSWORD: officespace_password
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
 
 volumes:
   postgres_data:

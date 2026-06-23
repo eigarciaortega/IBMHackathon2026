@@ -3,16 +3,18 @@ package com.corporativoalpha.officespace.auth.model;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
+/**
+ * Usuario estático para el MVP (hardcoded). En producción iría a BD / LDAP.
+ */
 @Getter
-@RequiredArgsConstructor // Crea constructor solo para campos final
+@RequiredArgsConstructor
 public class User {
     private final String email;
-    private final String username; // Solo para efectos de logger o mensajes
-    private final String passwordHash; // En un sistema real, sería un hash seguro. Aquí usaremos texto plano.
-    private final String role; // ADMINISTRADOR, COLABORADOR
+    private final String username; // solo para logs
+    private final String password; // plaintext solo para demo
+    private final String role; // ADMINISTRADOR | COLABORADOR
 
-    // Simula la validación de contraseña para este MVP
-    public boolean checkPassword(String rawPassword) {
-        return this.passwordHash.equals(rawPassword);
+    public boolean matchesPassword(String raw) {
+        return this.password.equals(raw);
     }
 }

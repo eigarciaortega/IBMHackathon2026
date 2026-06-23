@@ -11,49 +11,44 @@ import java.util.Optional;
 @Service
 public class SpaceService {
 
-    private final SpaceRepository spaceRepository;
+    private final SpaceRepository repo;
 
-    public SpaceService(SpaceRepository spaceRepository) {
-        this.spaceRepository = spaceRepository;
+    public SpaceService(SpaceRepository repo) {
+        this.repo = repo;
     }
 
     @Transactional(readOnly = true)
-    public List<Space> getAllSpaces() {
-        return spaceRepository.findAll();
+    public List<Space> findAll() {
+        return repo.findAll();
     }
 
     @Transactional(readOnly = true)
-    public Optional<Space> getSpaceById(Long id) {
-        return spaceRepository.findById(id);
+    public Optional<Space> findById(Long id) {
+        return repo.findById(id);
     }
 
     @Transactional
-    public Space createSpace(Space space) {
-        // Validaciones básicas podrían ir aquí si fueran complejas,
-        // pero JpaRepository maneja la creación.
-        return spaceRepository.save(space);
+    public Space create(Space space) {
+        return repo.save(space);
     }
 
     @Transactional
-    public Optional<Space> updateSpace(Long id, Space spaceDetails) {
-        return spaceRepository.findById(id)
-                .map(existingSpace -> {
-                    existingSpace.setName(spaceDetails.getName());
-                    existingSpace.setType(spaceDetails.getType());
-                    existingSpace.setCapacity(spaceDetails.getCapacity());
-                    existingSpace.setResources(spaceDetails.getResources());
-                    existingSpace.setLocation(spaceDetails.getLocation());
-                    return spaceRepository.save(existingSpace);
-                });
+    public Optional<Space> update(Long id, Space newData) {
+        return repo.findById(id).map(existing -> {
+            existing.setName(newData.getName());
+            existing.setType(newData.getType());
+            existing.setCapacity(newData.getCapacity());
+            existing.setResources(newData.getResources());
+            existing.setLocation(newData.getLocation());
+            return repo.save(existing);
+        });
     }
 
     @Transactional
-    public boolean deleteSpace(Long id) {
-        return spaceRepository.findById(id)
-                .map(space -> {
-                    spaceRepository.delete(space);
-                    return true;
-                })
-                .orElse(false);
+    public boolean delete(Long id) {
+        return repo.findById(id).map(s -> {
+            repo.delete(s);
+            return true;
+        }).orElse(false);
     }
 }

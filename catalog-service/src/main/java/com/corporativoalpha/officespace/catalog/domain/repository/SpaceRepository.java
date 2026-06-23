@@ -6,6 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface SpaceRepository extends JpaRepository<Space, Long> {
-    // Métodos CRUD básicos de JpaRepository son suficientes por ahora
-    // Podemos añadir consultas personalizadas si we need them later
+    // Podemos añadir métodos de búsqueda por tipo / capacidad si se desea
 }

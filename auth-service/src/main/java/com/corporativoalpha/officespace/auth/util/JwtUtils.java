@@ -9,33 +9,33 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Genera JWT firmados con HS256 (clave de 256‑bits).
+ */
 public class JwtUtils {
 
-    // Helper para obtener la clave de la configuración
-    private static Key getSigningKey(String secretKey) {
-        // Para JJWT 0.11.x y superiores, se usa Keys.hmacShaKeyFor()
-        // Asegúrate que la clave en application.properties sea suficiente longitud para HS256 (al menos 256 bits)
-        return Keys.hmacShaKeyFor(secretKey.getBytes());
+    private static Key getSigningKey(String secret) {
+        return Keys.hmacShaKeyFor(secret.getBytes());
     }
 
-    public static String generateToken(String email, String role, String secretKey, String issuer, long expirationMs) {
-        long nowMillis = System.currentTimeMillis();
-        Date now = new Date(nowMillis);
-        Date validity = new Date(now.getTime() + expirationMs);
+    public static String generateToken(String email, String role,
+                                       String secretKey,
+                                       String issuer,
+                                       long expirationMs) {
+        long now = System.currentTimeMillis();
+        Date issuedAt = new Date(now);
+        Date expiresAt = new Date(now + expirationMs);
 
         Map<String, Object> claims = new HashMap<>();
-        claims.put("role", role); // Añadimos el rol como claim personalizado
+        claims.put("role", role);
 
         return Jwts.builder()
                 .setClaims(claims)
-                .setSubject(email) // El sujeto del token es el email del usuario
+                .setSubject(email)
                 .setIssuer(issuer)
-                .setIssuedAt(now)
-                .setExpiration(validity)
-                .signWith(getSigningKey(secretKey), SignatureAlgorithm.HS256) // Usamos HS256 como algoritmo
+                .setIssuedAt(issuedAt)
+                .setExpiration(expiresAt)
+                .signWith(getSigningKey(secretKey), SignatureAlgorithm.HS256)
                 .compact();
     }
-
-    // TODO: Añadir método para validar token si fuera necesario en otros servicios directamente,
-    // pero preferimos hacerlo con Spring Security Filter.
 }

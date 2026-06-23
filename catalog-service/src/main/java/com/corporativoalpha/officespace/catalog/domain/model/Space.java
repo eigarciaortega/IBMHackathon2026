@@ -7,23 +7,25 @@ import lombok.Setter;
 
 @Entity
 @Table(name = "spaces")
-@Getter
-@Setter
-@NoArgsConstructor
+@Getter @Setter @NoArgsConstructor
 public class Space {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false)
     private String name;
 
+    /** Sala de juntas, Escritorio, etc. */
     @Column(nullable = false)
-    private String type; // e.g., "SALA", "ESCRITORIO"
+    private String type;
 
     @Column(nullable = false)
     private Integer capacity;
 
-    private String resources; // e.g., "Proyector,Pizarra,AireAcondicionado" - puede ser un JSON o array en el futuro
-    private String location; // e.g., "Piso 3, Area A"
+    /** Recursos opcionales, separados por coma (ej: "Proyector,AC") */
+    private String resources;
+
+    /** Ejemplo: "Piso 3, Área A" */
+    private String location;
 }
