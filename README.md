@@ -46,7 +46,7 @@ y `go.mod`) más una SPA, sobre una única instancia de PostgreSQL.
 
 ```mermaid
 flowchart LR
-    FE["Frontend React (nginx)<br/>:8090"]
+    FE["Frontend React (nginx)<br/>:8080"]
 
     subgraph Servicios["Microservicios Go"]
         AUTH["auth-service :8081<br/>login + JWT"]
@@ -70,7 +70,7 @@ flowchart LR
 | `auth-service`    | 8081   | Login (bcrypt), emisión y contrato de JWT                  |
 | `catalog-service` | 8082   | CRUD de espacios y búsqueda con filtros (escritura ADMIN)  |
 | `booking-service` | 8083   | Motor de reservas, disponibilidad y ocupación del día      |
-| `frontend`        | 8090   | SPA React servida por nginx                                 |
+| `frontend`        | 8080   | SPA React servida por nginx (también puerta de enlace de la API) |
 | `postgres`        | 5432   | Base de datos compartida (esquema en `init-db.sql`)        |
 
 El diagrama de arquitectura completo y el ERD están en
@@ -86,30 +86,31 @@ El diagrama de arquitectura completo y el ERD están en
 
 ## Cómo levantarlo
 
-Requisitos: Docker y Docker Compose.
-
-Crea un archivo `.env` en la raíz del proyecto con tus propias variables de entorno
-(credenciales de PostgreSQL, `DATABASE_URL`, `JWT_SECRET`, `JWT_EXPIRA_HORAS`,
-`CORS_ALLOWED_ORIGINS`, `TZ` y los puertos de cada servicio). Los nombres de las
-variables que consume cada servicio están documentados en su propio README
-(`auth-service/`, `catalog-service/`, `booking-service/`, `frontend/`).
-
-Con el `.env` listo, levanta todo:
+Requisitos: Docker y Docker Compose. No hace falta ningún paso de configuración.
 
 ```bash
 docker compose up -d --wait
 ```
 
-Esto inicia PostgreSQL (que carga el esquema y la semilla desde
+`docker compose` trae valores por defecto de desarrollo incorporados (sintaxis
+`${VAR:-default}`), así que en una máquina recién clonada arranca sin crear ningún
+archivo. Esto inicia PostgreSQL (que carga el esquema y la semilla desde
 `shared-infra/init-db.sql`), los tres servicios Go y el frontend, encadenados con
 healthchecks. Cuando todos los contenedores están `healthy`:
 
-- **Frontend:** http://localhost:8090
+- **Frontend:** http://localhost:8080
 - **APIs:** http://localhost:8081, http://localhost:8082, http://localhost:8083
 
-`DATABASE_URL` usa el host interno `postgres` (nombre del servicio en la red de
-Docker). El frontend recibe las URLs públicas de los servicios como *build args*
-(por defecto `http://localhost:8081-8083`).
+### Personalizar puertos o credenciales (opcional)
+
+Los valores por defecto son **solo para desarrollo**. Para cambiar puertos o usar tus
+propias credenciales (y para producción), crea un archivo `.env` en la raíz y
+sobrescribe lo que necesites: `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`,
+`POSTGRES_PORT`, `DATABASE_URL`, `JWT_SECRET`, `JWT_EXPIRA_HORAS`,
+`CORS_ALLOWED_ORIGINS`, `TZ`, `AUTH_PORT`, `CATALOG_PORT`, `BOOKING_PORT`,
+`FRONTEND_PORT`. El `.env` no se versiona; tus valores tienen prioridad sobre los
+defaults. `DATABASE_URL` usa el host interno `postgres` (nombre del servicio en la
+red de Docker).
 
 Para detener todo: `docker compose down` (agrega `-v` para borrar también los datos).
 
@@ -132,11 +133,18 @@ semilla:
 
 ## Documentación de la API (Swagger)
 
-Cada servicio expone Swagger UI en `/api-docs`:
+Cada servicio expone Swagger UI en `/api-docs`. En local:
 
 - auth-service: http://localhost:8081/api-docs
 - catalog-service: http://localhost:8082/api-docs
 - booking-service: http://localhost:8083/api-docs
+
+A través de la demo en vivo (la puerta de enlace nginx reenvía `/api/<servicio>/` a
+cada servicio):
+
+- auth-service: https://officespace.spcter.cc/api/auth/api-docs/index.html
+- catalog-service: https://officespace.spcter.cc/api/catalog/api-docs/index.html
+- booking-service: https://officespace.spcter.cc/api/booking/api-docs/index.html
 
 El contrato completo (endpoints y códigos HTTP) está en
 [`docs/API_CONTRACT.md`](docs/API_CONTRACT.md). Todas las respuestas de error usan el
@@ -148,7 +156,7 @@ mismo sobre:
 
 ## Guía de uso
 
-1. **Iniciar sesión** en http://localhost:8090 con una cuenta de prueba. El sistema
+1. **Iniciar sesión** en http://localhost:8080 con una cuenta de prueba. El sistema
    redirige según el rol.
 2. **Buscar** (colaborador o admin): elige fecha y rango horario, filtra por tipo y
    capacidad mínima. Se muestran los espacios disponibles, con una pista que indica
@@ -212,10 +220,18 @@ cd auth-service && go test ./...
 cd catalog-service && go test ./...
 cd booking-service && go test ./...
 
-# Colección de contrato y QA (requiere el stack levantado)
+# Colección de contrato y QA contra el stack local (41 aserciones)
 cd qa/postman
 npx newman run OfficeSpace.postman_collection.json -e OfficeSpace.postman_environment.json
+
+# La misma colección contra la demo en vivo (a través del túnel)
+npx newman run OfficeSpace.postman_collection.json -e OfficeSpace.postman_environment.tunnel.json
 ```
+
+La colección es autocontenida (crea su propio espacio de prueba, ejerce el contrato
+y limpia lo que genera), así que se puede ejecutar tanto en local como contra la
+demo. Para explorar la API a mano, importa la colección y un entorno en la app de
+Postman, o usa Swagger UI (sección anterior).
 
 Los casos de prueba manuales (≥10) están en [`docs/TEST_CASES.md`](docs/TEST_CASES.md)
 y la cobertura de las clases de bug del brief en [`qa/README.md`](qa/README.md).

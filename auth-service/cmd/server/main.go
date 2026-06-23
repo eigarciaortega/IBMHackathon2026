@@ -126,7 +126,9 @@ func construirRouter(cfg *config.Config, authHandler *handlers.AuthHandler) http
 	r.Get("/api-docs", func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/api-docs/index.html", http.StatusMovedPermanently)
 	})
-	r.Get("/api-docs/*", httpSwagger.Handler(httpSwagger.URL("/api-docs/doc.json")))
+	// doc.json relativo: así Swagger UI funciona tanto en local (/api-docs/) como
+	// detrás del prefijo de la puerta de enlace en el túnel (/api/<servicio>/api-docs/).
+	r.Get("/api-docs/*", httpSwagger.Handler(httpSwagger.URL("doc.json")))
 
 	return r
 }

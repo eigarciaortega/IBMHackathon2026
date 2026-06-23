@@ -5,6 +5,12 @@
 # Las URLs VITE_* del frontend apuntan a localhost porque las consume el navegador
 # del usuario (fuera de la red de Docker). CATALOG_BASE_URL, en cambio, es interno
 # (booking → catalog) y usa el nombre de servicio.
+#
+# Arranque sin configuración: cada variable trae un valor por defecto de desarrollo
+# (sintaxis ${VAR:-default}), así que `docker compose up -d` funciona en una máquina
+# recién clonada sin crear ningún archivo. Para personalizar puertos o credenciales,
+# o para producción, crea un `.env` (no versionado) y sobrescribe lo que necesites.
+# Los valores por defecto son SOLO para desarrollo; nunca uses estas claves en producción.
 
 services:
   postgres:
@@ -12,9 +18,9 @@ services:
     container_name: officespace-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER:-officespace}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-officespace_dev_2026}
+      POSTGRES_DB: ${POSTGRES_DB:-officespace}
       TZ: ${TZ:-America/Mexico_City}
       PGTZ: ${TZ:-America/Mexico_City}
     ports:
@@ -25,7 +31,7 @@ services:
       # cuando el volumen de datos está vacío (primer arranque).
       - ./shared-infra/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-officespace} -d ${POSTGRES_DB:-officespace}"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -39,10 +45,10 @@ services:
     restart: unless-stopped
     environment:
       PORT: "8081"
-      DATABASE_URL: ${DATABASE_URL}
-      JWT_SECRET: ${JWT_SECRET}
+      DATABASE_URL: ${DATABASE_URL:-postgres://officespace:officespace_dev_2026@postgres:5432/officespace?sslmode=disable}
+      JWT_SECRET: ${JWT_SECRET:-secreto_local_de_desarrollo_no_usar_en_produccion_2026}
       JWT_EXPIRA_HORAS: ${JWT_EXPIRA_HORAS:-8}
-      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:8080,http://localhost:8090,http://localhost:5173}
       TZ: ${TZ:-America/Mexico_City}
     ports:
       - "${AUTH_PORT:-8081}:8081"
@@ -59,9 +65,9 @@ services:
     restart: unless-stopped
     environment:
       PORT: "8082"
-      DATABASE_URL: ${DATABASE_URL}
-      JWT_SECRET: ${JWT_SECRET}
-      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
+      DATABASE_URL: ${DATABASE_URL:-postgres://officespace:officespace_dev_2026@postgres:5432/officespace?sslmode=disable}
+      JWT_SECRET: ${JWT_SECRET:-secreto_local_de_desarrollo_no_usar_en_produccion_2026}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:8080,http://localhost:8090,http://localhost:5173}
       TZ: ${TZ:-America/Mexico_City}
     ports:
       - "${CATALOG_PORT:-8082}:8082"
@@ -78,11 +84,11 @@ services:
     restart: unless-stopped
     environment:
       PORT: "8083"
-      DATABASE_URL: ${DATABASE_URL}
-      JWT_SECRET: ${JWT_SECRET}
+      DATABASE_URL: ${DATABASE_URL:-postgres://officespace:officespace_dev_2026@postgres:5432/officespace?sslmode=disable}
+      JWT_SECRET: ${JWT_SECRET:-secreto_local_de_desarrollo_no_usar_en_produccion_2026}
       # Comunicación interna booking → catalog por HTTP (nombre de servicio).
       CATALOG_BASE_URL: http://catalog-service:8082
-      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:8080,http://localhost:8090,http://localhost:5173}
       TZ: ${TZ:-America/Mexico_City}
     ports:
       - "${BOOKING_PORT:-8083}:8083"
