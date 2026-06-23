@@ -1,5 +1,5 @@
 import { peticion, URLS } from '../lib/api'
-import type { Espacio, EspacioInput, TipoEspacio } from '../types'
+import type { Espacio, EspacioInput, Recurso, RecursoInput, TipoEspacio } from '../types'
 
 export interface FiltrosEspacio {
   tipo?: TipoEspacio | ''
@@ -27,5 +27,21 @@ export const catalogApi = {
   },
   eliminar(id: number) {
     return peticion<void>(URLS.catalog, `/spaces/${id}`, { method: 'DELETE' })
+  },
+}
+
+// Catálogo de recursos (proyector, aire, pizarrón...). Escritura solo ADMIN.
+export const recursosApi = {
+  listar() {
+    return peticion<Recurso[]>(URLS.catalog, '/resources')
+  },
+  crear(input: RecursoInput) {
+    return peticion<Recurso>(URLS.catalog, '/resources', { method: 'POST', body: input })
+  },
+  actualizar(id: number, input: RecursoInput) {
+    return peticion<Recurso>(URLS.catalog, `/resources/${id}`, { method: 'PUT', body: input })
+  },
+  eliminar(id: number) {
+    return peticion<void>(URLS.catalog, `/resources/${id}`, { method: 'DELETE' })
   },
 }

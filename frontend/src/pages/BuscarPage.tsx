@@ -11,7 +11,7 @@ import { useRefrescoAlEnfocar } from '../hooks/useAutoRefresh'
 import { CargandoBloque, EstadoVacio, Etiqueta, PillTipo } from '../components/ui'
 import { OccupancyTrack } from '../components/OccupancyTrack'
 import { ConfirmarReservaModal } from '../components/ConfirmarReservaModal'
-import { IconAire, IconBuscar, IconPiso, IconProyector, IconReloj, IconUsuarios } from '../components/icons'
+import { IconBuscar, IconPiso, IconReloj, IconUsuarios } from '../components/icons'
 
 interface EspacioConDisponibilidad extends Espacio {
   disponible: boolean
@@ -263,14 +263,11 @@ function TarjetaEspacio({
         )}
       </div>
 
-      {(espacio.tiene_proyector || espacio.tiene_aire) && (
+      {espacio.recursos.length > 0 && (
         <div className="mt-3 flex flex-wrap gap-2">
-          {espacio.tiene_proyector && (
-            <span className="pill bg-surface-muted text-body"><IconProyector className="size-3.5" /> Proyector</span>
-          )}
-          {espacio.tiene_aire && (
-            <span className="pill bg-surface-muted text-body"><IconAire className="size-3.5" /> Aire</span>
-          )}
+          {espacio.recursos.map((r) => (
+            <span key={r.id} className="pill bg-surface-muted text-body">{r.nombre}</span>
+          ))}
         </div>
       )}
 
