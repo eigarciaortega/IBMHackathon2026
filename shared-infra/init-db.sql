@@ -41,3 +41,5 @@ INSERT INTO spaces (name, type, capacity, resources, location) VALUES
 
 select * from users;
 select * from spaces;
+select * from bookings;
+
