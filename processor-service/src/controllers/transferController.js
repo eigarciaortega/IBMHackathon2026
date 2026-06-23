@@ -106,12 +106,7 @@ async function createTransfer(request, response, next) {
     });
 
     if (!credit.ok) {
-      await updateBalance({
-        userId: senderId,
-        amount,
-        operation: "credit"
-      });
-      await updateTransactionStatus(transaction.transaction_id, "ROLLED_BACK", credit.body.error || "credit_failed");
+      await updateTransactionStatus(transaction.transaction_id, "FAILED", credit.body.error || "credit_failed");
       throw new Error(`accounts-service returned ${credit.status} while crediting receiver`);
     }
 
@@ -133,4 +128,3 @@ async function createTransfer(request, response, next) {
 module.exports = {
   createTransfer
 };
-

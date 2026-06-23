@@ -22,13 +22,12 @@ FOR EACH ROW
 EXECUTE FUNCTION set_updated_at();
 
 INSERT INTO users (id, name, email, balance) VALUES
-    (1, 'Usuario A', 'usuario.a@neowallet.com', 1000.00),
-    (2, 'Usuario B', 'usuario.b@neowallet.com', 50.00),
-    (3, 'Usuario C', 'usuario.c@neowallet.com', 0.00)
+    (1, 'Usuario A (Rico)', 'usuario.a@neowallet.com', 1000.00),
+    (2, 'Usuario B (Pobre)', 'usuario.b@neowallet.com', 50.00),
+    (3, 'Usuario C (Nuevo)', 'usuario.c@neowallet.com', 0.00)
 ON CONFLICT (id) DO UPDATE SET
     name = EXCLUDED.name,
     email = EXCLUDED.email,
     balance = EXCLUDED.balance;
 
 SELECT setval('users_id_seq', (SELECT MAX(id) FROM users));
-

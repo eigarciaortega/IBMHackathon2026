@@ -56,7 +56,7 @@ const swaggerDocument = {
               "application/json": {
                 example: {
                   id: 1,
-                  name: "Usuario A",
+                  name: "Usuario A (Rico)",
                   email: "usuario.a@neowallet.com",
                   balance: "1000.00"
                 }
@@ -249,4 +249,3 @@ const swaggerDocument = {
 };
 
 module.exports = swaggerDocument;
-

@@ -85,9 +85,9 @@ docker compose config
 
 | id | name | email | balance |
 | --- | --- | --- | --- |
-| 1 | Usuario A | usuario.a@neowallet.com | 1000.00 |
-| 2 | Usuario B | usuario.b@neowallet.com | 50.00 |
-| 3 | Usuario C | usuario.c@neowallet.com | 0.00 |
+| 1 | Usuario A (Rico) | usuario.a@neowallet.com | 1000.00 |
+| 2 | Usuario B (Pobre) | usuario.b@neowallet.com | 50.00 |
+| 3 | Usuario C (Nuevo) | usuario.c@neowallet.com | 0.00 |
 
 ## Endpoints principales
 

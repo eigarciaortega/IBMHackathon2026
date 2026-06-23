@@ -3,8 +3,8 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 CREATE TABLE IF NOT EXISTS transactions (
     id SERIAL PRIMARY KEY,
     transaction_id UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),
-    sender_id INT,
-    receiver_id INT,
+    sender_id INT NOT NULL,
+    receiver_id INT NOT NULL,
     amount DECIMAL(10, 2) NOT NULL CHECK (amount > 0),
     status VARCHAR(30) NOT NULL,
     idempotency_key VARCHAR(255),
@@ -15,10 +15,6 @@ CREATE TABLE IF NOT EXISTS transactions (
         status IN ('PENDING', 'DEBITED', 'COMPLETED', 'FAILED', 'ROLLED_BACK')
     )
 );
-
-CREATE UNIQUE INDEX IF NOT EXISTS transactions_idempotency_key_unique
-ON transactions (idempotency_key)
-WHERE idempotency_key IS NOT NULL;
 
 CREATE OR REPLACE FUNCTION set_updated_at()
 RETURNS TRIGGER AS $$
@@ -33,4 +29,3 @@ CREATE TRIGGER transactions_set_updated_at
 BEFORE UPDATE ON transactions
 FOR EACH ROW
 EXECUTE FUNCTION set_updated_at();
-
