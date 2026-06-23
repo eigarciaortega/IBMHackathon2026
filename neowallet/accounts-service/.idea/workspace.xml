@@ -5,7 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f536743a-bf45-43d8-9688-dfb4ca5f2cca" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/../neowallet-frontend/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/../neowallet-frontend/Dockerfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../neowallet-frontend/target/classes/META-INF/beans.xml" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/../neowallet-frontend/target/classes/com/neowallet/frontend/bean/DashboardBean.class" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/../neowallet-frontend/target/classes/com/neowallet/frontend/bean/GlobalBean.class" beforeDir="false" />
@@ -73,6 +73,7 @@
       <change beforePath="$PROJECT_DIR$/../neowallet-frontend/target/neowallet-frontend/recharge.xhtml" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/../neowallet-frontend/target/neowallet-frontend/resources/css/custom.css" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/../neowallet-frontend/target/neowallet-frontend/transfer.xhtml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../processor-service/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../processor-service/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

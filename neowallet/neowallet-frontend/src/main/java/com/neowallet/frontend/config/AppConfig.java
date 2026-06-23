@@ -24,7 +24,7 @@ public class AppConfig {
                 .connectTimeout(Duration.ofSeconds(10))
                 .version(HttpClient.Version.HTTP_1_1)
                 .build();
-    }
+    } // <--- Closes httpClient()
 
     @Produces
     @ApplicationScoped
@@ -33,5 +33,6 @@ public class AppConfig {
                 .registerModule(new JavaTimeModule())
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
                 .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
-    }
-}
+    } // <--- Closes objectMapper() (Missing in your code)
+
+} // <--- Closes class AppConfig (Missing in your code)
