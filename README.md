@@ -249,5 +249,5 @@ Guia completa: [Demo Guide](docs/DEMO_GUIDE.md)
 
 ## Estado del proyecto
 
-NeoWallet es un MVP funcional API-first para hackathon. Demuestra pagos P2P con consistencia financiera, trazabilidad, idempotencia, compensacion y auditoria usando una arquitectura simple y defendible.
+NeoWallet es un MVP funcional API-first . Demuestra pagos P2P con consistencia financiera, trazabilidad, idempotencia, compensacion y auditoria usando una arquitectura simple y defendible.
 
