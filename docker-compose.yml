@@ -74,6 +74,7 @@ services:
     environment:
       PORT: 3003
       JWT_SECRET: ${JWT_SECRET}
+      OFFICE_TZ: ${OFFICE_TZ:-America/Mexico_City}
       DB_HOST: db
       DB_PORT: 3306
       DB_NAME: ${MYSQL_DATABASE:-officespace}
