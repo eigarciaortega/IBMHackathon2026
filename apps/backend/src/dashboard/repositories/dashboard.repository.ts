@@ -59,6 +59,44 @@ export class DashboardRepository {
     });
   }
 
+  /** Espacios con datos para el "estado de salas ahora". */
+  findSpacesForStatus() {
+    return this.prisma.space.findMany({
+      select: { id: true, name: true, capacity: true, status: true },
+      orderBy: { name: 'asc' },
+    });
+  }
+
+  /** Reservas CONFIRMED de una fecha (timeline / estado de salas / ocupación hoy). */
+  findConfirmedOnDate(date: Date) {
+    return this.prisma.booking.findMany({
+      where: { bookingDate: date, status: BookingStatus.CONFIRMED },
+      select: {
+        spaceId: true,
+        startTime: true,
+        endTime: true,
+        status: true,
+        space: { select: { name: true } },
+        user: { select: { firstName: true, lastName: true } },
+      },
+      orderBy: { startTime: 'asc' },
+    });
+  }
+
+  /** Reservas no canceladas en un rango (semana/mes), con espacio para uso. */
+  findNonCancelledInRange(from: Date, to: Date) {
+    return this.prisma.booking.findMany({
+      where: { bookingDate: { gte: from, lte: to }, status: { not: BookingStatus.CANCELLED } },
+      select: {
+        spaceId: true,
+        bookingDate: true,
+        startTime: true,
+        status: true,
+        space: { select: { name: true } },
+      },
+    });
+  }
+
   // ---- Colaborador ----
   findUserConfirmedFrom(userId: string, from: Date) {
     return this.prisma.booking.findMany({

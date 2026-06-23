@@ -56,6 +56,10 @@ export interface Booking {
   attendeesCount: number;
   purpose: string;
   status: BookingStatus;
+  isRecurring?: boolean;
+  recurrenceStartDate?: string | null;
+  recurrenceEndDate?: string | null;
+  recurrenceFrequency?: string | null;
   space?: Space;
   user?: { id: string; firstName: string; lastName: string; email: string };
 }
@@ -131,4 +135,26 @@ export interface Faq {
   question: string;
   answer: string;
   category: string;
+}
+
+export interface Occupancy {
+  today: { occupiedSpaces: number; availableSpaces: number; totalSpaces: number; occupancyRate: number; bookingsCount: number };
+  week: { bookingsCount: number; occupancyRate: number; dailyBreakdown: { day: string; bookings: number; occupancyRate: number }[] };
+  month: { bookingsCount: number; occupancyRate: number };
+  peakHours: { hour: string; bookings: number }[];
+  mostUsedSpaces: { spaceId: string; spaceName: string; bookings: number; occupancyRate: number }[];
+  todayTimeline: {
+    spaceId: string;
+    spaceName: string;
+    events: { startTime: string; endTime: string; status: string; userName: string }[];
+  }[];
+  spaceOccupancyStatus: {
+    spaceId: string;
+    spaceName: string;
+    capacity: number;
+    status: 'available' | 'occupied' | 'maintenance' | 'inactive';
+    currentBooking: { startTime: string; endTime: string; userName: string } | null;
+    nextAvailableAt: string | null;
+    nextBookingAt: string | null;
+  }[];
 }

@@ -1,8 +1,11 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
+  IsBoolean,
+  IsIn,
   IsInt,
   IsNotEmpty,
+  IsOptional,
   IsString,
   IsUUID,
   Matches,
@@ -44,4 +47,27 @@ export class CreateBookingDto {
   @IsNotEmpty()
   @MaxLength(255)
   purpose!: string;
+
+  @ApiPropertyOptional({
+    description: 'Si es true, la reserva se crea como solicitud recurrente PENDING_APPROVAL (requiere aprobación del administrador).',
+    default: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  isRecurring?: boolean;
+
+  @ApiPropertyOptional({ example: '2026-07-01', description: 'Inicio del rango recurrente (YYYY-MM-DD)' })
+  @IsOptional()
+  @Matches(DATE_REGEX, { message: 'recurrenceStartDate debe ser YYYY-MM-DD' })
+  recurrenceStartDate?: string;
+
+  @ApiPropertyOptional({ example: '2026-09-01', description: 'Fin del rango recurrente (YYYY-MM-DD)' })
+  @IsOptional()
+  @Matches(DATE_REGEX, { message: 'recurrenceEndDate debe ser YYYY-MM-DD' })
+  recurrenceEndDate?: string;
+
+  @ApiPropertyOptional({ enum: ['DAILY', 'WEEKLY', 'MONTHLY'], example: 'WEEKLY' })
+  @IsOptional()
+  @IsIn(['DAILY', 'WEEKLY', 'MONTHLY'])
+  recurrenceFrequency?: 'DAILY' | 'WEEKLY' | 'MONTHLY';
 }

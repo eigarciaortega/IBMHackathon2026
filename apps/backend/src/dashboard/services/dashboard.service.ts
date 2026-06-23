@@ -202,4 +202,161 @@ export class DashboardService {
 
     return { upcomingBookings, availableSpaces };
   }
+
+  // ---- Ocupación (centro de control) ----
+  async getOccupancy() {
+    const now = nowInOfficeTz();
+    const today = now.date;
+    const nowT = now.time; // HH:MM:SS
+    const r2 = (n: number) => Math.round(n);
+
+    const [spaces, confirmedToday] = await Promise.all([
+      this.dashboardRepository.findSpacesForStatus(),
+      this.dashboardRepository.findConfirmedOnDate(toDateOnly(today)),
+    ]);
+    const totalSpaces = spaces.length;
+    const operational = spaces.filter((s) => s.status !== 'INACTIVE').length;
+
+    const fullName = (u?: { firstName: string; lastName: string } | null) =>
+      u ? `${u.firstName} ${u.lastName}`.trim() : '—';
+
+    // Estado de salas AHORA + timeline del día
+    const todayBySpace = new Map<string, typeof confirmedToday>();
+    for (const b of confirmedToday) {
+      const arr = todayBySpace.get(b.spaceId) ?? [];
+      arr.push(b);
+      todayBySpace.set(b.spaceId, arr);
+    }
+
+    const spaceOccupancyStatus = spaces.map((s) => {
+      const evts = (todayBySpace.get(s.id) ?? []).slice().sort((a, b) =>
+        formatTime(a.startTime).localeCompare(formatTime(b.startTime)),
+      );
+      if (s.status === 'MAINTENANCE') {
+        return { spaceId: s.id, spaceName: s.name, capacity: s.capacity, status: 'maintenance', currentBooking: null, nextAvailableAt: null, nextBookingAt: null };
+      }
+      if (s.status === 'INACTIVE') {
+        return { spaceId: s.id, spaceName: s.name, capacity: s.capacity, status: 'inactive', currentBooking: null, nextAvailableAt: null, nextBookingAt: null };
+      }
+      const current = evts.find((e) => formatTime(e.startTime) <= nowT && formatTime(e.endTime) > nowT);
+      if (current) {
+        return {
+          spaceId: s.id,
+          spaceName: s.name,
+          capacity: s.capacity,
+          status: 'occupied',
+          currentBooking: {
+            startTime: formatTime(current.startTime).slice(0, 5),
+            endTime: formatTime(current.endTime).slice(0, 5),
+            userName: fullName(current.user),
+          },
+          nextAvailableAt: formatTime(current.endTime).slice(0, 5),
+          nextBookingAt: null,
+        };
+      }
+      const next = evts.find((e) => formatTime(e.startTime) > nowT);
+      return {
+        spaceId: s.id,
+        spaceName: s.name,
+        capacity: s.capacity,
+        status: 'available',
+        currentBooking: null,
+        nextAvailableAt: null,
+        nextBookingAt: next ? formatTime(next.startTime).slice(0, 5) : null,
+      };
+    });
+
+    const occupiedNow = spaceOccupancyStatus.filter((s) => s.status === 'occupied').length;
+    const spacesWithBookingToday = new Set(confirmedToday.map((b) => b.spaceId)).size;
+
+    const todayTimeline = spaces
+      .map((s) => ({
+        spaceId: s.id,
+        spaceName: s.name,
+        events: (todayBySpace.get(s.id) ?? [])
+          .slice()
+          .sort((a, b) => formatTime(a.startTime).localeCompare(formatTime(b.startTime)))
+          .map((e) => ({
+            startTime: formatTime(e.startTime).slice(0, 5),
+            endTime: formatTime(e.endTime).slice(0, 5),
+            status: e.status,
+            userName: fullName(e.user),
+          })),
+      }))
+      .filter((row) => row.events.length > 0);
+
+    // Semana (Lun–Dom)
+    const { from: weekFrom, to: weekTo } = this.computeWeekRange(today);
+    const weekBookings = await this.dashboardRepository.findNonCancelledInRange(weekFrom, weekTo);
+    const dayNames = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+    const dailyBreakdown = dayNames.map((day, i) => {
+      const d = new Date(weekFrom);
+      d.setUTCDate(weekFrom.getUTCDate() + i);
+      const dStr = d.toISOString().slice(0, 10);
+      const dayB = weekBookings.filter((b) => formatDate(b.bookingDate) === dStr);
+      const distinct = new Set(dayB.map((b) => b.spaceId)).size;
+      return { day, bookings: dayB.length, occupancyRate: operational ? r2((distinct / operational) * 100) : 0 };
+    });
+    const weeklyOccupancyRate = dailyBreakdown.length
+      ? r2(dailyBreakdown.reduce((a, b) => a + b.occupancyRate, 0) / dailyBreakdown.length)
+      : 0;
+
+    // Mes actual
+    const base = new Date(`${today}T00:00:00.000Z`);
+    const y = base.getUTCFullYear();
+    const m = base.getUTCMonth();
+    const monthFrom = new Date(Date.UTC(y, m, 1));
+    const monthTo = new Date(Date.UTC(y, m + 1, 0));
+    const daysInMonth = monthTo.getUTCDate();
+    const monthBookings = await this.dashboardRepository.findNonCancelledInRange(monthFrom, monthTo);
+    const monthSpaceDays = new Set(monthBookings.map((b) => `${b.spaceId}|${formatDate(b.bookingDate)}`)).size;
+    const monthlyOccupancyRate = operational ? r2((monthSpaceDays / (operational * daysInMonth)) * 100) : 0;
+
+    // Horas pico (del mes)
+    const hourMap = new Map<string, number>();
+    for (const b of monthBookings) {
+      const hh = `${formatTime(b.startTime).slice(0, 2)}:00`;
+      hourMap.set(hh, (hourMap.get(hh) ?? 0) + 1);
+    }
+    const peakHours = [...hourMap.entries()]
+      .map(([hour, bookings]) => ({ hour, bookings }))
+      .sort((a, b) => b.bookings - a.bookings)
+      .slice(0, 10);
+
+    // Salas más usadas (del mes)
+    const useMap = new Map<string, { name: string; count: number }>();
+    for (const b of monthBookings) {
+      const e = useMap.get(b.spaceId) ?? { name: b.space.name, count: 0 };
+      e.count += 1;
+      useMap.set(b.spaceId, e);
+    }
+    const maxUse = Math.max(1, ...[...useMap.values()].map((v) => v.count));
+    const mostUsedSpaces = [...useMap.entries()]
+      .map(([spaceId, v]) => ({ spaceId, spaceName: v.name, bookings: v.count, occupancyRate: r2((v.count / maxUse) * 100) }))
+      .sort((a, b) => b.bookings - a.bookings)
+      .slice(0, 6);
+
+    return {
+      today: {
+        occupiedSpaces: occupiedNow,
+        availableSpaces: Math.max(0, operational - occupiedNow),
+        totalSpaces,
+        occupancyRate: operational ? r2((spacesWithBookingToday / operational) * 100) : 0,
+        bookingsCount: confirmedToday.length,
+      },
+      week: {
+        bookingsCount: weekBookings.length,
+        occupancyRate: weeklyOccupancyRate,
+        dailyBreakdown,
+      },
+      month: {
+        bookingsCount: monthBookings.length,
+        occupancyRate: monthlyOccupancyRate,
+      },
+      peakHours,
+      mostUsedSpaces,
+      todayTimeline,
+      spaceOccupancyStatus,
+    };
+  }
 }

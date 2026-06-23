@@ -56,6 +56,15 @@ export class BookingsRepository {
     });
   }
 
+  /** Solicitudes recurrentes pendientes de aprobación (PENDING_APPROVAL). */
+  findAllPending() {
+    return this.prisma.booking.findMany({
+      where: { status: BookingStatus.PENDING_APPROVAL },
+      include: includeRefs,
+      orderBy: { createdAt: 'asc' },
+    });
+  }
+
   /** Candidatas para el límite: CONFIRMED de un usuario desde una fecha (inclusive). */
   findConfirmedByUserFrom(userId: string, fromDate: Date) {
     return this.prisma.booking.findMany({

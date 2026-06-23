@@ -1,6 +1,8 @@
 import { ReactNode } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
+import { notificationsService } from '../services';
 
 interface NavItem {
   to: string;
@@ -35,6 +37,13 @@ export function AppLayout() {
   const { user, isAdmin, logout } = useAuth();
   const navigate = useNavigate();
   const items = NAV.filter((i) => !i.adminOnly || isAdmin);
+
+  const { data: notif } = useQuery({
+    queryKey: ['notifications', 'unread'],
+    queryFn: () => notificationsService.list({ limit: 1 }),
+    refetchInterval: 30_000,
+  });
+  const unread = notif?.unread ?? 0;
 
   const handleLogout = async () => {
     await logout();
@@ -107,6 +116,20 @@ export function AppLayout() {
           </div>
           <div className="hidden text-sm text-graphite-400 md:block">Sistema inteligente de experiencia de espacios</div>
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate('/notifications')}
+              className="relative flex h-10 w-10 items-center justify-center rounded-full text-graphite-500 transition hover:bg-graphite-100 hover:text-graphite-800"
+              aria-label="Notificaciones"
+            >
+              <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.8 23.8 0 005.454-1.31A8.97 8.97 0 0118 9.75V9A6 6 0 006 9v.75a8.97 8.97 0 01-2.312 6.022 23.8 23.8 0 005.454 1.31m6.715 0a3 3 0 11-6.715 0" />
+              </svg>
+              {unread > 0 && (
+                <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white">
+                  {unread > 9 ? '9+' : unread}
+                </span>
+              )}
+            </button>
             <span className="hidden rounded-full bg-teal-50 px-2.5 py-1 text-xs font-medium text-teal-700 ring-1 ring-inset ring-teal-600/20 sm:inline">
               {user?.role}
             </span>
@@ -137,7 +160,7 @@ export function AppLayout() {
         </nav>
 
         <main className="flex-1 overflow-x-hidden">
-          <div className="mx-auto max-w-6xl animate-fade-in p-4 sm:p-6">
+          <div className="mx-auto w-full max-w-[1600px] animate-fade-in p-4 sm:p-6 lg:p-8 xl:p-10">
             <Outlet />
           </div>
         </main>

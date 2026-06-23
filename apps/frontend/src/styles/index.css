@@ -30,9 +30,9 @@
 
   /* ---- Botones ---- */
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition
+    @apply inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition
       duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 active:scale-[0.98]
-      disabled:pointer-events-none disabled:opacity-60;
+      disabled:pointer-events-none disabled:opacity-60 sm:px-5 sm:text-base;
   }
   .btn-primary {
     @apply bg-teal-600 text-white shadow-soft hover:bg-teal-700 hover:shadow-glow focus:ring-teal-400;
@@ -47,7 +47,7 @@
     @apply text-graphite-600 hover:bg-graphite-100 focus:ring-graphite-200;
   }
   .btn-sm {
-    @apply rounded-lg px-3 py-1.5 text-xs;
+    @apply min-h-0 rounded-lg px-3 py-1.5 text-xs sm:px-3 sm:text-xs;
   }
 
   /* ---- Formularios ---- */
@@ -56,8 +56,8 @@
   }
   .input,
   .select {
-    @apply w-full rounded-xl border border-graphite-200 bg-white px-3.5 py-2.5 text-sm text-graphite-800 shadow-sm
-      transition placeholder:text-graphite-400 focus:border-teal-400 focus:outline-none focus:ring-4 focus:ring-teal-500/10;
+    @apply min-h-[44px] w-full rounded-xl border border-graphite-200 bg-white px-3.5 py-2.5 text-sm text-graphite-800 shadow-sm
+      transition placeholder:text-graphite-400 focus:border-teal-400 focus:outline-none focus:ring-4 focus:ring-teal-500/10 sm:min-h-[48px] sm:text-base;
   }
   .field-error {
     @apply mt-1 text-xs text-rose-600;

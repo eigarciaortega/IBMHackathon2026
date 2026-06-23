@@ -232,9 +232,12 @@ model Booking {
   purpose     String        @db.VarChar(255)
   status      BookingStatus @default(CONFIRMED)
 
-  // Decisión H-03: reservas recurrentes fuera del MVP. Campos reservados.
-  isRecurring      Boolean @default(false) @map("is_recurring")
-  recurringGroupId String? @map("recurring_group_id") @db.Uuid
+  // Reservas recurrentes (solicitud aprobable por el administrador).
+  isRecurring         Boolean   @default(false) @map("is_recurring")
+  recurringGroupId    String?   @map("recurring_group_id") @db.Uuid
+  recurrenceStartDate DateTime? @map("recurrence_start_date") @db.Date
+  recurrenceEndDate   DateTime? @map("recurrence_end_date") @db.Date
+  recurrenceFrequency String?   @map("recurrence_frequency") @db.VarChar(20) // DAILY | WEEKLY | MONTHLY
 
   // Decisión H-09: se conserva created_by (futuras reservas creadas por admin).
   createdBy String   @map("created_by") @db.Uuid

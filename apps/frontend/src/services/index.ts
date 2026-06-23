@@ -6,6 +6,7 @@ import {
   CollaboratorDashboard,
   Faq,
   NotificationItem,
+  Occupancy,
   Paginated,
   Resource,
   Space,
@@ -79,10 +80,21 @@ export const bookingsService = {
   noShow: (id: string) => bookingApi.patch(`/bookings/${id}/no-show`).then((r) => r.data),
   attended: (id: string) => bookingApi.patch(`/bookings/${id}/attended`).then((r) => r.data),
   toVerify: () => bookingApi.get<Booking[]>('/bookings/to-verify').then((r) => r.data),
+  pending: () => bookingApi.get<Booking[]>('/bookings/pending').then((r) => r.data),
+  availability: (spaceId: string, date: string, durationMinutes = 60) =>
+    bookingApi
+      .get<{ startTime: string; endTime: string; available: boolean }[]>('/bookings/availability', {
+        params: { spaceId, date, durationMinutes },
+      })
+      .then((r) => r.data),
+  approve: (id: string) => bookingApi.patch(`/bookings/${id}/approve`).then((r) => r.data),
+  reject: (id: string) => bookingApi.patch(`/bookings/${id}/reject`).then((r) => r.data),
+  release: (id: string) => bookingApi.patch(`/bookings/${id}/release`).then((r) => r.data),
 };
 
 export const dashboardService = {
   admin: () => bookingApi.get<AdminDashboard>('/dashboard/admin').then((r) => r.data),
+  occupancy: () => bookingApi.get<Occupancy>('/dashboard/admin/occupancy').then((r) => r.data),
   collaborator: () => bookingApi.get<CollaboratorDashboard>('/dashboard/collaborator').then((r) => r.data),
 };
 

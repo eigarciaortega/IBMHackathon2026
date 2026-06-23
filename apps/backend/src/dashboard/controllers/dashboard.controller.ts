@@ -10,6 +10,7 @@ import {
   AnalyticsResponseDto,
   CollaboratorDashboardResponseDto,
 } from '../dto/dashboard-response.dto';
+import { OccupancyResponseDto } from '../dto/occupancy-response.dto';
 import { DashboardService } from '../services/dashboard.service';
 
 /**
@@ -40,6 +41,15 @@ export class DashboardController {
   @ApiOkResponse({ type: AnalyticsResponseDto })
   getAnalytics() {
     return this.dashboardService.getAnalytics();
+  }
+
+  @Get('admin/occupancy')
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiOperation({ summary: 'Centro de control de ocupación: hoy/semana/mes, timeline y estado de salas (ADMIN)' })
+  @ApiOkResponse({ type: OccupancyResponseDto })
+  getOccupancy() {
+    return this.dashboardService.getOccupancy();
   }
 
   @Get('collaborator')

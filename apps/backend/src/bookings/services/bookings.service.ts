@@ -5,13 +5,15 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Booking, BookingStatus, SpaceStatus, UserStatus } from '@prisma/client';
+import { Booking, BookingStatus, Prisma, SpaceStatus, UserStatus } from '@prisma/client';
+import { randomUUID } from 'node:crypto';
 import { AuditAction, AuditEntity } from '../../audit/constants/audit.constants';
 import { AuditService } from '../../audit/audit.service';
 import { NotificationsService } from '../../notifications/services/notifications.service';
 import { Role } from '../../common/constants/roles.constant';
 import { OwnershipResolver } from '../../common/decorators/ownership.decorator';
 import { AuthenticatedUser } from '../../common/interfaces/authenticated-user.interface';
+import { AvailabilityQueryDto } from '../dto/availability-query.dto';
 import { CreateBookingDto } from '../dto/create-booking.dto';
 import { QueryBookingsDto } from '../dto/query-bookings.dto';
 import { ValidateBookingDto } from '../dto/validate-booking.dto';
@@ -82,7 +84,11 @@ export class BookingsService implements OwnershipResolver {
    * Ejecuta todas las validaciones de negocio. Lanza la excepción HTTP
    * correspondiente. Devuelve el espacio cargado si todo es válido.
    */
-  private async runValidations(input: BookingInput, currentUser: AuthenticatedUser) {
+  private async runValidations(
+    input: BookingInput,
+    currentUser: AuthenticatedUser,
+    opts: { skipOverlap?: boolean; skipLimit?: boolean } = {},
+  ) {
     const start = normalizeTime(input.startTime);
     const end = normalizeTime(input.endTime);
 
@@ -115,8 +121,9 @@ export class BookingsService implements OwnershipResolver {
       throw new BadRequestException('La capacidad del espacio es insuficiente.');
     }
 
-    // Límite de 5 para COLLABORATOR (H-04)
-    if (currentUser.role !== Role.ADMIN) {
+    // Límite de 5 para COLLABORATOR (H-04). No aplica a solicitudes recurrentes
+    // (aún no son reservas activas; se cuentan al aprobarse).
+    if (currentUser.role !== Role.ADMIN && !opts.skipLimit) {
       const activeFuture = await this.countActiveFutureBookings(currentUser.id);
       if (activeFuture >= MAX_FUTURE_ACTIVE_BOOKINGS) {
         throw new ConflictException(LIMIT_MESSAGE);
@@ -124,18 +131,81 @@ export class BookingsService implements OwnershipResolver {
     }
 
     // Solapamiento a nivel aplicación (RN-045..RN-052). Consecutivas permitidas.
-    const sameDay = await this.bookingsRepository.findConfirmedBySpaceAndDate(
-      input.spaceId,
-      toDateOnly(input.date),
-    );
-    const conflict = sameDay.some((b) =>
-      timesOverlap(start, end, formatTime(b.startTime), formatTime(b.endTime)),
-    );
-    if (conflict) {
-      throw new ConflictException('El espacio ya se encuentra reservado para ese horario.');
+    // Las solicitudes recurrentes PENDING_APPROVAL no validan solapamiento aquí;
+    // se verifica al momento de la aprobación por el administrador.
+    if (!opts.skipOverlap) {
+      const sameDay = await this.bookingsRepository.findConfirmedBySpaceAndDate(
+        input.spaceId,
+        toDateOnly(input.date),
+      );
+      const conflict = sameDay.some((b) =>
+        timesOverlap(start, end, formatTime(b.startTime), formatTime(b.endTime)),
+      );
+      if (conflict) {
+        throw new ConflictException('El espacio ya se encuentra reservado para ese horario.');
+      }
     }
 
     return { space, start, end };
+  }
+
+  /** Valida los campos de un rango recurrente (PARTE 5). */
+  private validateRecurrence(dto: CreateBookingDto) {
+    const { recurrenceStartDate, recurrenceEndDate, recurrenceFrequency } = dto;
+    if (!recurrenceStartDate || !recurrenceEndDate || !recurrenceFrequency) {
+      throw new BadRequestException(
+        'Una reserva recurrente requiere fecha de inicio, fecha de fin y frecuencia.',
+      );
+    }
+    if (recurrenceEndDate < recurrenceStartDate) {
+      throw new BadRequestException('La fecha de fin debe ser igual o posterior a la de inicio.');
+    }
+    const today = nowInOfficeTz().date;
+    if (recurrenceStartDate < today) {
+      throw new BadRequestException('La recurrencia no puede iniciar en el pasado.');
+    }
+  }
+
+  /**
+   * Sugerencias de horarios disponibles para un espacio en una fecha (PARTE 4).
+   * Horario laboral 08:00–18:00, intervalos de 30 min, duración configurable.
+   * Considera solo reservas CONFIRMED y descarta horarios pasados/solapados.
+   */
+  async getAvailability(query: AvailabilityQueryDto) {
+    const duration = query.durationMinutes && query.durationMinutes > 0 ? query.durationMinutes : 60;
+    const WORK_START = 8 * 60; // 08:00
+    const WORK_END = 18 * 60; // 18:00
+    const STEP = 30;
+
+    const space = await this.bookingsRepository.findSpaceById(query.spaceId);
+    if (!space) {
+      throw new NotFoundException('Espacio no encontrado.');
+    }
+
+    const confirmed = await this.bookingsRepository.findConfirmedBySpaceAndDate(
+      query.spaceId,
+      toDateOnly(query.date),
+    );
+    const busy = confirmed.map((b) => ({
+      start: formatTime(b.startTime),
+      end: formatTime(b.endTime),
+    }));
+
+    const toHHMM = (mins: number) =>
+      `${String(Math.floor(mins / 60)).padStart(2, '0')}:${String(mins % 60).padStart(2, '0')}`;
+
+    const slots: { startTime: string; endTime: string; available: boolean }[] = [];
+    for (let s = WORK_START; s + duration <= WORK_END; s += STEP) {
+      const start = `${toHHMM(s)}:00`;
+      const end = `${toHHMM(s + duration)}:00`;
+      const past = isPast(query.date, start);
+      const overlap = busy.some((b) => timesOverlap(start, end, b.start, b.end));
+      const available = !past && !overlap;
+      if (!past) {
+        slots.push({ startTime: toHHMM(s), endTime: toHHMM(s + duration), available });
+      }
+    }
+    return slots;
   }
 
   /** Cuenta reservas CONFIRMED efectivamente futuras (no finalizadas) del usuario. */
@@ -158,21 +228,43 @@ export class BookingsService implements OwnershipResolver {
   // -------- Casos de uso --------
 
   async create(dto: CreateBookingDto, currentUser: AuthenticatedUser, ipAddress?: string) {
-    const { start, end } = await this.runValidations(dto, currentUser);
+    const isRecurring = dto.isRecurring === true;
+
+    if (isRecurring) {
+      this.validateRecurrence(dto);
+    }
+
+    // Solicitud recurrente → requiere aprobación del administrador (PENDING_APPROVAL).
+    const { start, end } = await this.runValidations(dto, currentUser, {
+      skipOverlap: isRecurring,
+      skipLimit: isRecurring,
+    });
+
+    const data: Prisma.BookingCreateInput = {
+      bookingDate: toDateOnly(dto.date),
+      startTime: toTimeOnly(start),
+      endTime: toTimeOnly(end),
+      attendeesCount: dto.attendeesCount,
+      purpose: dto.purpose,
+      status: isRecurring ? BookingStatus.PENDING_APPROVAL : BookingStatus.CONFIRMED,
+      isRecurring,
+      user: { connect: { id: currentUser.id } },
+      creator: { connect: { id: currentUser.id } }, // H-09: created_by
+      space: { connect: { id: dto.spaceId } },
+    };
+    if (isRecurring) {
+      // Campos de recurrencia (requieren `prisma generate` tras la migración).
+      Object.assign(data, {
+        recurringGroupId: randomUUID(),
+        recurrenceStartDate: toDateOnly(dto.recurrenceStartDate as string),
+        recurrenceEndDate: toDateOnly(dto.recurrenceEndDate as string),
+        recurrenceFrequency: dto.recurrenceFrequency,
+      });
+    }
 
     let booking;
     try {
-      booking = await this.bookingsRepository.create({
-        bookingDate: toDateOnly(dto.date),
-        startTime: toTimeOnly(start),
-        endTime: toTimeOnly(end),
-        attendeesCount: dto.attendeesCount,
-        purpose: dto.purpose,
-        status: BookingStatus.CONFIRMED,
-        user: { connect: { id: currentUser.id } },
-        creator: { connect: { id: currentUser.id } }, // H-09: created_by
-        space: { connect: { id: dto.spaceId } },
-      });
+      booking = await this.bookingsRepository.create(data);
     } catch (error) {
       // Doble protección (BD-01): si la Exclusion Constraint detecta el solape
       // en una condición de carrera, devolvemos 409.
@@ -188,17 +280,25 @@ export class BookingsService implements OwnershipResolver {
       entityType: AuditEntity.BOOKING,
       entityId: booking.id,
       success: true,
-      newValues: { spaceId: dto.spaceId, date: dto.date, start, end },
+      newValues: { spaceId: dto.spaceId, date: dto.date, start, end, isRecurring },
       ipAddress,
     });
 
-    // Notificación interna (H-07): reserva creada → al propietario.
-    await this.notificationsService.notifyBookingCreated(
-      currentUser.id,
-      booking.space?.name ?? 'Espacio',
-      dto.date,
-      start,
-    );
+    // Notificación interna (H-07) al propietario.
+    if (isRecurring) {
+      await this.notificationsService.create(
+        currentUser.id,
+        'Solicitud recurrente enviada',
+        `Tu solicitud de reserva recurrente de "${booking.space?.name ?? 'Espacio'}" se envió al administrador para aprobación.`,
+      );
+    } else {
+      await this.notificationsService.notifyBookingCreated(
+        currentUser.id,
+        booking.space?.name ?? 'Espacio',
+        dto.date,
+        start,
+      );
+    }
 
     return this.toResponse(booking);
   }
@@ -369,5 +469,138 @@ export class BookingsService implements OwnershipResolver {
     return confirmed
       .filter((b) => isPast(formatDate(b.bookingDate), formatTime(b.endTime)))
       .map((b) => this.toResponse(b));
+  }
+
+  // -------- Reservas recurrentes (aprobación del administrador) --------
+
+  /** Lista solicitudes recurrentes pendientes de aprobación (ADMIN). */
+  async listPending() {
+    const pending = await this.bookingsRepository.findAllPending();
+    return pending.map((b) => this.toResponse(b));
+  }
+
+  /**
+   * Aprobar una solicitud recurrente: valida disponibilidad AHORA y la confirma.
+   * Solo ADMIN. Si hay solapamiento, devuelve 409 y permanece pendiente.
+   */
+  async approve(id: string, adminUser: AuthenticatedUser, ipAddress?: string) {
+    const booking = await this.bookingsRepository.findById(id);
+    if (!booking) {
+      throw new NotFoundException('Reserva no encontrada.');
+    }
+    if (booking.status !== BookingStatus.PENDING_APPROVAL) {
+      throw new BadRequestException('La reserva no está pendiente de aprobación.');
+    }
+
+    // Validación de disponibilidad al momento de aprobar (incluye solapamiento).
+    await this.runValidations(
+      {
+        spaceId: booking.spaceId,
+        date: formatDate(booking.bookingDate),
+        startTime: formatTime(booking.startTime),
+        endTime: formatTime(booking.endTime),
+        attendeesCount: booking.attendeesCount,
+      },
+      { id: booking.userId, email: '', role: Role.COLLABORATOR },
+      { skipLimit: true },
+    );
+
+    let updated;
+    try {
+      updated = await this.bookingsRepository.updateStatus(id, BookingStatus.CONFIRMED);
+    } catch (error) {
+      if (this.isExclusionConstraintError(error)) {
+        throw new ConflictException('El espacio ya se encuentra reservado para ese horario.');
+      }
+      throw error;
+    }
+
+    await this.auditService.record({
+      userId: adminUser.id,
+      action: AuditAction.APPROVE_BOOKING,
+      entityType: AuditEntity.BOOKING,
+      entityId: id,
+      success: true,
+      newValues: { status: BookingStatus.CONFIRMED },
+      ipAddress,
+    });
+    await this.notificationsService.create(
+      booking.userId,
+      'Reserva recurrente aprobada',
+      `Tu reserva recurrente de "${booking.space?.name ?? 'Espacio'}" fue aprobada y confirmada.`,
+    );
+    return this.toResponse(updated);
+  }
+
+  /**
+   * Liberar un espacio anticipadamente (ADMIN): cancela una reserva futura
+   * CONFIRMED o PENDING_APPROVAL antes de que empiece, dejando el horario libre.
+   * Si la reserva ya empezó/terminó → 400 (usar NO_SHOW/ATTENDED).
+   */
+  async release(id: string, adminUser: AuthenticatedUser, ipAddress?: string) {
+    const booking = await this.bookingsRepository.findById(id);
+    if (!booking) {
+      throw new NotFoundException('Reserva no encontrada.');
+    }
+    if (booking.status === BookingStatus.CANCELLED) {
+      throw new BadRequestException('La reserva ya está cancelada.');
+    }
+    if (
+      booking.status !== BookingStatus.CONFIRMED &&
+      booking.status !== BookingStatus.PENDING_APPROVAL
+    ) {
+      throw new BadRequestException('Solo se pueden liberar reservas confirmadas o pendientes.');
+    }
+    if (isPast(formatDate(booking.bookingDate), formatTime(booking.startTime))) {
+      throw new BadRequestException(
+        'La reserva ya inició o finalizó; usa NO_SHOW o asistencia en lugar de liberar.',
+      );
+    }
+
+    const updated = await this.bookingsRepository.updateStatus(id, BookingStatus.CANCELLED);
+    await this.auditService.record({
+      userId: adminUser.id,
+      action: AuditAction.RELEASE_BOOKING,
+      entityType: AuditEntity.BOOKING,
+      entityId: id,
+      success: true,
+      oldValues: { status: booking.status },
+      newValues: { status: BookingStatus.CANCELLED, released: true },
+      ipAddress,
+    });
+    await this.notificationsService.create(
+      booking.userId,
+      'Espacio liberado',
+      `Tu reserva de "${booking.space?.name ?? 'Espacio'}" (${formatDate(booking.bookingDate)} ${formatTime(booking.startTime)}) fue cancelada por el administrador y el espacio quedó disponible.`,
+    );
+    return this.toResponse(updated);
+  }
+
+  /** Rechazar una solicitud recurrente (ADMIN): pasa a CANCELLED. */
+  async reject(id: string, adminUser: AuthenticatedUser, ipAddress?: string) {
+    const booking = await this.bookingsRepository.findById(id);
+    if (!booking) {
+      throw new NotFoundException('Reserva no encontrada.');
+    }
+    if (booking.status !== BookingStatus.PENDING_APPROVAL) {
+      throw new BadRequestException('La reserva no está pendiente de aprobación.');
+    }
+
+    const updated = await this.bookingsRepository.updateStatus(id, BookingStatus.CANCELLED);
+    await this.auditService.record({
+      userId: adminUser.id,
+      action: AuditAction.CANCEL_BOOKING,
+      entityType: AuditEntity.BOOKING,
+      entityId: id,
+      success: true,
+      newValues: { status: BookingStatus.CANCELLED, rejected: true },
+      ipAddress,
+    });
+    await this.notificationsService.create(
+      booking.userId,
+      'Reserva recurrente rechazada',
+      `Tu solicitud recurrente de "${booking.space?.name ?? 'Espacio'}" fue rechazada por el administrador.`,
+    );
+    return this.toResponse(updated);
   }
 }

@@ -40,7 +40,7 @@ export function SpacesPage() {
         <EmptyState message="No hay espacios que coincidan con los filtros. Ajusta la búsqueda." />
       )}
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
         {data?.items.map((s) => (
           <div key={s.id} className="card card-hover animate-fade-up flex flex-col p-5">
             <div className="flex items-start justify-between gap-2">

@@ -20,6 +20,7 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { OwnershipGuard } from '../../common/guards/ownership.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { AuthenticatedUser } from '../../common/interfaces/authenticated-user.interface';
+import { AvailabilityQueryDto } from '../dto/availability-query.dto';
 import { CreateBookingDto } from '../dto/create-booking.dto';
 import { QueryBookingsDto } from '../dto/query-bookings.dto';
 import { ValidateBookingDto } from '../dto/validate-booking.dto';
@@ -56,6 +57,12 @@ export class BookingsController {
     return this.bookingsService.validate(dto, user);
   }
 
+  @Get('availability')
+  @ApiOperation({ summary: 'Horarios disponibles de un espacio en una fecha (08:00–18:00, slots 30min)' })
+  availability(@Query() query: AvailabilityQueryDto) {
+    return this.bookingsService.getAvailability(query);
+  }
+
   @Get()
   @ApiOperation({ summary: 'Listar reservas (ADMIN todas; COLLABORATOR solo propias)' })
   findAll(@Query() query: QueryBookingsDto, @CurrentUser() user: AuthenticatedUser) {
@@ -86,6 +93,14 @@ export class BookingsController {
   @ApiOperation({ summary: 'Reservas por verificar (finalizadas y aún CONFIRMED) — ADMIN' })
   toVerify() {
     return this.bookingsService.listToVerify();
+  }
+
+  @Get('pending')
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiOperation({ summary: 'Solicitudes recurrentes pendientes de aprobación — ADMIN' })
+  pending() {
+    return this.bookingsService.listPending();
   }
 
   @Get(':id')
@@ -130,5 +145,41 @@ export class BookingsController {
     @Req() req: Request,
   ) {
     return this.bookingsService.markAttended(id, user, getIp(req));
+  }
+
+  @Patch(':id/approve')
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiOperation({ summary: 'Aprobar solicitud recurrente (solo ADMIN)' })
+  approve(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: AuthenticatedUser,
+    @Req() req: Request,
+  ) {
+    return this.bookingsService.approve(id, user, getIp(req));
+  }
+
+  @Patch(':id/reject')
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiOperation({ summary: 'Rechazar solicitud recurrente (solo ADMIN)' })
+  reject(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: AuthenticatedUser,
+    @Req() req: Request,
+  ) {
+    return this.bookingsService.reject(id, user, getIp(req));
+  }
+
+  @Patch(':id/release')
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiOperation({ summary: 'Liberar espacio: cancela una reserva futura y deja el horario disponible (ADMIN)' })
+  release(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: AuthenticatedUser,
+    @Req() req: Request,
+  ) {
+    return this.bookingsService.release(id, user, getIp(req));
   }
 }
