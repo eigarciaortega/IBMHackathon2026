@@ -1,0 +1,16 @@
+{
+  "name": "neowallet-processor-service",
+  "version": "0.1.0",
+  "description": "Processor Service for NeoWallet P2P Payments",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "pg": "^8.12.0",
+    "swagger-ui-express": "^5.0.1"
+  }
+}
+

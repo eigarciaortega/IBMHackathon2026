@@ -1,0 +1,82 @@
+services:
+  accounts-db:
+    image: postgres:16-alpine
+    container_name: neowallet-accounts-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: accounts_db
+      POSTGRES_USER: neowallet_user
+      POSTGRES_PASSWORD: neowallet_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - accounts-db-data:/var/lib/postgresql/data
+      - ./shared-infra/accounts-init.sql:/docker-entrypoint-initdb.d/01-accounts-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U neowallet_user -d accounts_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  processor-db:
+    image: postgres:16-alpine
+    container_name: neowallet-processor-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: processor_db
+      POSTGRES_USER: neowallet_user
+      POSTGRES_PASSWORD: neowallet_pass
+    ports:
+      - "5433:5432"
+    volumes:
+      - processor-db-data:/var/lib/postgresql/data
+      - ./shared-infra/processor-init.sql:/docker-entrypoint-initdb.d/01-processor-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U neowallet_user -d processor_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  accounts-service:
+    build:
+      context: ./accounts-service
+    container_name: neowallet-accounts-service
+    restart: unless-stopped
+    environment:
+      PORT: 3000
+      DB_HOST: accounts-db
+      DB_PORT: 5432
+      DB_NAME: accounts_db
+      DB_USER: neowallet_user
+      DB_PASSWORD: neowallet_pass
+    ports:
+      - "3000:3000"
+    depends_on:
+      accounts-db:
+        condition: service_healthy
+
+  processor-service:
+    build:
+      context: ./processor-service
+    container_name: neowallet-processor-service
+    restart: unless-stopped
+    environment:
+      PORT: 3001
+      PROCESSOR_DB_HOST: processor-db
+      PROCESSOR_DB_PORT: 5432
+      PROCESSOR_DB_NAME: processor_db
+      PROCESSOR_DB_USER: neowallet_user
+      PROCESSOR_DB_PASSWORD: neowallet_pass
+      ACCOUNTS_SERVICE_URL: http://accounts-service:3000
+    ports:
+      - "3001:3001"
+    depends_on:
+      processor-db:
+        condition: service_healthy
+      accounts-service:
+        condition: service_started
+
+volumes:
+  accounts-db-data:
+  processor-db-data:
+
