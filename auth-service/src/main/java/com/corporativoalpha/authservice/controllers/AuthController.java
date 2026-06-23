@@ -17,6 +17,7 @@ import java.security.Key;
 import java.util.Date;
 import java.util.Optional;
 
+@CrossOrigin(origins = "*") // Permite peticiones desde cualquier origen (Frontend)
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
