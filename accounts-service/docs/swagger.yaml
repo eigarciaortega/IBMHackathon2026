@@ -1,0 +1,154 @@
+basePath: /
+definitions:
+  apperror.AppError:
+    properties:
+      error:
+        type: string
+      mensaje:
+        type: string
+      transaction_id:
+        type: string
+    type: object
+  models.RechargeRequest:
+    properties:
+      amount:
+        type: number
+      payment_method:
+        type: string
+      user_id:
+        type: integer
+    type: object
+  models.RechargeResponse:
+    properties:
+      new_balance:
+        type: number
+    type: object
+  models.UpdateBalanceRequest:
+    properties:
+      amount:
+        type: number
+      idempotency_key:
+        type: string
+      operation:
+        type: string
+      user_id:
+        type: integer
+    type: object
+  models.UpdateBalanceResponse:
+    properties:
+      new_balance:
+        type: number
+      previous_balance:
+        type: number
+    type: object
+  models.User:
+    properties:
+      balance:
+        type: number
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      updated_at:
+        type: string
+    type: object
+host: localhost:3000
+info:
+  contact: {}
+  description: 'Servicio de cuentas de NeoWallet: consulta de saldo, recarga y actualización
+    de balance con idempotencia.'
+  title: NeoWallet - Accounts Service
+  version: "1.0"
+paths:
+  /accounts/{user_id}:
+    get:
+      description: Obtiene los datos de un usuario incluyendo su saldo actual
+      parameters:
+      - description: ID del usuario
+        in: path
+        name: user_id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.User'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.AppError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/apperror.AppError'
+      summary: Consultar saldo
+      tags:
+      - accounts
+  /accounts/update-balance:
+    post:
+      description: Débito o crédito atómico con idempotencia. Requiere X-Internal-Key.
+      parameters:
+      - description: Clave secreta interna
+        in: header
+        name: X-Internal-Key
+        required: true
+        type: string
+      - description: Datos de la operación
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.UpdateBalanceRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.UpdateBalanceResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.AppError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/apperror.AppError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/apperror.AppError'
+      summary: Actualizar balance (interno)
+      tags:
+      - internal
+  /api/recharge:
+    post:
+      description: Incrementa el saldo de un usuario de forma atómica (simula recarga
+        externa)
+      parameters:
+      - description: Datos de recarga
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.RechargeRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.RechargeResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.AppError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/apperror.AppError'
+      summary: Recargar saldo
+      tags:
+      - accounts
+swagger: "2.0"
