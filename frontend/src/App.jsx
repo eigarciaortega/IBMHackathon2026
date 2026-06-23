@@ -1,57 +1,51 @@
-import React, { Suspense, useEffect } from 'react'
-import { HashRouter, Route, Routes } from 'react-router-dom'
-import { useSelector } from 'react-redux'
-import { CSpinner, useColorModes } from '@coreui/react'
-import './scss/style.scss'
+/**
+ * App raíz: provee sesión (Auth) y toasts (App). Sin sesión → pantalla de
+ * acceso; con sesión → app bancaria con navegación lateral.
+ */
+import { useState } from 'react'
+import { AuthProvider, useAuth } from './context/AuthContext'
+import { AppProvider } from './context/AppContext'
+import Toaster from './components/Toaster'
+import Layout from './components/Layout'
+import { Loading } from './components/ui'
+import Auth from './views/Auth'
+import Dashboard from './views/Dashboard'
+import Transfer from './views/Transfer'
+import Recharge from './views/Recharge'
+import Activity from './views/Activity'
+import Notifications from './views/Notifications'
+import Statements from './views/Statements'
 
-import { ProtectedRoute } from './components/ProtectedRoute'
+function Shell() {
+  const { user, ready } = useAuth()
+  const [view, setView] = useState('dashboard')
 
-const DefaultLayout = React.lazy(() => import('./layout/DefaultLayout'))
-const Landing = React.lazy(() => import('./views/landing/Landing'))
-const Login = React.lazy(() => import('./views/pages/login/Login'))
-const Page404 = React.lazy(() => import('./views/pages/page404/Page404'))
-const Page500 = React.lazy(() => import('./views/pages/page500/Page500'))
+  if (!ready) return <Loading />
+  if (!user) return <Auth />
 
-const App = () => {
-  const { isColorModeSet, setColorMode } = useColorModes('coreui-free-react-admin-template-theme')
-  const storedTheme = useSelector((state) => state.theme)
-
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.href.split('?')[1])
-    const theme = urlParams.get('theme') && urlParams.get('theme').match(/^[A-Za-z0-9\s]+/)[0]
-    if (theme) setColorMode(theme)
-    if (isColorModeSet()) return
-    setColorMode(storedTheme)
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  const views = {
+    dashboard: <Dashboard setView={setView} />,
+    transfer: <Transfer />,
+    recharge: <Recharge />,
+    activity: <Activity />,
+    notifications: <Notifications />,
+    statements: <Statements />,
+  }
 
   return (
-    <HashRouter>
-      <Suspense
-        fallback={
-          <div className="d-flex justify-content-center align-items-center min-vh-100">
-            <CSpinner color="primary" variant="grow" />
-          </div>
-        }
-      >
-        <Routes>
-          {/* Página de inicio pública (antes del login) */}
-          <Route path="/" name="Inicio" element={<Landing />} />
-          <Route path="/login" name="Login" element={<Login />} />
-          <Route path="/404" name="Page 404" element={<Page404 />} />
-          <Route path="/500" name="Page 500" element={<Page500 />} />
-          <Route
-            path="*"
-            name="Home"
-            element={
-              <ProtectedRoute>
-                <DefaultLayout />
-              </ProtectedRoute>
-            }
-          />
-        </Routes>
-      </Suspense>
-    </HashRouter>
+    <Layout view={view} setView={setView}>
+      <div key={view} className="fade">{views[view] || views.dashboard}</div>
+    </Layout>
   )
 }
 
-export default App
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppProvider>
+        <Shell />
+        <Toaster />
+      </AppProvider>
+    </AuthProvider>
+  )
+}

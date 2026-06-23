@@ -1,0 +1,25 @@
+/* NeoWallet — tokens de diseño bancario (claro corporativo) */
+:root{
+  --navy:#0C2340;
+  --navy-600:#163457;
+  --navy-800:#0a1d36;
+  --ink:#16202B;
+  --muted:#5C6776;
+  --faint:#8A93A1;
+  --gold:#9C7C46;
+  --gold-soft:#C2A878;
+  --line:#E6E3DC;
+  --line-cool:#E7EAEF;
+  --bg:#F6F4EF;
+  --bg-cool:#F3F5F8;
+  --surface:#FFFFFF;
+  --positive:#1F6B4A;
+  --negative:#9E2B25;
+  --pending:#8A6D2F;
+  --r-card:10px;
+  --r-ctl:7px;
+  --sh:0 1px 2px rgba(12,35,64,.05);
+  --sh-md:0 10px 30px rgba(12,35,64,.10);
+  --serif:"Source Serif 4",Georgia,serif;
+  --sans:"Inter",system-ui,-apple-system,sans-serif;
+}

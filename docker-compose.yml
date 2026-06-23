@@ -1,144 +1,233 @@
 # =====================================================================
-# IBM OfficeSpace — Orquestación de Microservicios
+# NeoWallet — Orquestación de Microservicios P2P (FastPay)
 # =====================================================================
-# Arquitectura: Microservicios con Base de Datos Compartida (PostgreSQL).
-# Cada servicio tiene su propio proceso, puerto y Dockerfile, y se
-# comunica vía HTTP/REST. Levantar todo con:  docker compose up --build
+# Arquitectura: Microservicios con BASE DE DATOS POR SERVICIO.
+#   · accounts-service     :8000  ->  accounts-db      :5432
+#   · processor-service    :3001  ->  processor-db     :5433
+#   · notification-service :3002  ->  notifications-db :5434
+#
+# Cada servicio tiene su propio proceso, puerto, Dockerfile y BD, y se
+# comunica EXCLUSIVAMENTE vía HTTP/REST. Levantar todo con:
+#   docker compose up --build
+#
+# Variables sensibles (SMTP/Twilio) son OPCIONALES: el sistema funciona
+# 100% sin ellas (correos a buzón Ethereal + SMS simulados consultables).
+# Para envíos reales, copia .env.example a .env y rellena tus credenciales.
 # =====================================================================
 services:
-  postgres:
+  # -------------------------------------------------------------------
+  # Bases de datos (una por servicio — patrón "Database per Service")
+  # -------------------------------------------------------------------
+  accounts-db:
     image: postgres:15-alpine
-    container_name: officespace-db
+    container_name: neowallet-accounts-db
     restart: unless-stopped
     environment:
-      POSTGRES_USER: officespace
-      POSTGRES_PASSWORD: officespace
-      POSTGRES_DB: officespace
+      POSTGRES_USER: neowallet
+      POSTGRES_PASSWORD: neowallet
+      POSTGRES_DB: accounts_db
     ports:
       - "5432:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
-      - ./shared-infra/init-db.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - accounts_pgdata:/var/lib/postgresql/data
+      - ./shared-infra/accounts-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U officespace -d officespace"]
+      test: ["CMD-SHELL", "pg_isready -U neowallet -d accounts_db"]
       interval: 5s
       timeout: 5s
       retries: 10
 
-  auth-service:
-    build: ./auth-service
-    container_name: officespace-auth
+  processor-db:
+    image: postgres:15-alpine
+    container_name: neowallet-processor-db
     restart: unless-stopped
     environment:
-      PORT: 4001
-      PGHOST: postgres
+      POSTGRES_USER: neowallet
+      POSTGRES_PASSWORD: neowallet
+      POSTGRES_DB: processor_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - processor_pgdata:/var/lib/postgresql/data
+      - ./shared-infra/processor-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U neowallet -d processor_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  notifications-db:
+    image: postgres:15-alpine
+    container_name: neowallet-notifications-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: neowallet
+      POSTGRES_PASSWORD: neowallet
+      POSTGRES_DB: notifications_db
+    ports:
+      - "5434:5432"
+    volumes:
+      - notifications_pgdata:/var/lib/postgresql/data
+      - ./shared-infra/notifications-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U neowallet -d notifications_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # -------------------------------------------------------------------
+  # Microservicios
+  # -------------------------------------------------------------------
+  notification-service:
+    build: ./notification-service
+    container_name: neowallet-notification
+    restart: unless-stopped
+    environment:
+      SERVICE_NAME: notification-service
+      PORT: 3002
+      PGHOST: notifications-db
       PGPORT: 5432
-      PGUSER: officespace
-      PGPASSWORD: officespace
-      PGDATABASE: officespace
+      PGUSER: neowallet
+      PGPASSWORD: neowallet
+      PGDATABASE: notifications_db
+      PGPOOL_MAX: 20
+      PG_CONNECTION_TIMEOUT_MS: 3000
+      JSON_BODY_LIMIT: 1mb
+      REQUEST_TIMEOUT_MS: 30000
+      # --- Envíos reales OPCIONALES (vacío = modo simulado/Ethereal) ---
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      EMAIL_FROM: ${EMAIL_FROM:-NeoWallet <no-reply@neowallet.com>}
+      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID:-}
+      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN:-}
+      TWILIO_FROM: ${TWILIO_FROM:-}
+      JWT_SECRET: ${JWT_SECRET:-neowallet-shared-jwt-secret-change-me}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:-neowallet-internal-key-change-me}
+    ports:
+      - "3002:3002"
+    depends_on:
+      notifications-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:3002/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  accounts-service:
+    build: ./accounts-service
+    container_name: neowallet-accounts
+    restart: unless-stopped
+    environment:
+      SERVICE_NAME: accounts-service
+      PORT: 8000
+      PGHOST: accounts-db
+      PGPORT: 5432
+      PGUSER: neowallet
+      PGPASSWORD: neowallet
+      PGDATABASE: accounts_db
       PGPOOL_MAX: 20
       PG_CONNECTION_TIMEOUT_MS: 3000
       PG_QUERY_TIMEOUT_MS: 10000
       PG_STATEMENT_TIMEOUT_MS: 10000
       JSON_BODY_LIMIT: 1mb
       REQUEST_TIMEOUT_MS: 30000
-      JWT_SECRET: ${JWT_SECRET:-ibm-officespace-shared-secret-change-me}
+      NOTIFICATION_SERVICE_URL: http://notification-service:3002
+      NOTIFICATION_TIMEOUT_MS: 2500
+      JWT_SECRET: ${JWT_SECRET:-neowallet-shared-jwt-secret-change-me}
       JWT_EXPIRES_IN: 8h
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:-neowallet-internal-key-change-me}
     ports:
-      - "4001:4001"
+      - "8000:8000"
     depends_on:
-      postgres:
+      accounts-db:
         condition: service_healthy
+      notification-service:
+        condition: service_started
     healthcheck:
-      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:4001/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:8000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
       interval: 10s
       timeout: 5s
       retries: 3
       start_period: 10s
 
-  catalog-service:
-    build: ./catalog-service
-    container_name: officespace-catalog
+  processor-service:
+    build: ./processor-service
+    container_name: neowallet-processor
     restart: unless-stopped
     environment:
-      PORT: 4002
-      PGHOST: postgres
+      SERVICE_NAME: processor-service
+      PORT: 3001
+      PGHOST: processor-db
       PGPORT: 5432
-      PGUSER: officespace
-      PGPASSWORD: officespace
-      PGDATABASE: officespace
+      PGUSER: neowallet
+      PGPASSWORD: neowallet
+      PGDATABASE: processor_db
       PGPOOL_MAX: 20
       PG_CONNECTION_TIMEOUT_MS: 3000
       PG_QUERY_TIMEOUT_MS: 10000
       PG_STATEMENT_TIMEOUT_MS: 10000
       JSON_BODY_LIMIT: 1mb
       REQUEST_TIMEOUT_MS: 30000
-      JWT_SECRET: ${JWT_SECRET:-ibm-officespace-shared-secret-change-me}
+      ACCOUNTS_SERVICE_URL: http://accounts-service:8000
+      ACCOUNTS_TIMEOUT_MS: 3000
+      NOTIFICATION_SERVICE_URL: http://notification-service:3002
+      # El estado de cuenta por correo se espera de forma síncrona (envío SMTP
+      # real por Ethereal puede tardar varios segundos); las confirmaciones de
+      # transferencia/recarga son fire-and-forget, así que un timeout amplio
+      # no afecta la latencia de esas operaciones.
+      NOTIFICATION_TIMEOUT_MS: 9000
+      # Reconciliación automática (job de resiliencia)
+      RECONCILE_ENABLED: "true"
+      RECONCILE_INTERVAL_MS: 15000
+      RECONCILE_STUCK_SECONDS: 30
+      JWT_SECRET: ${JWT_SECRET:-neowallet-shared-jwt-secret-change-me}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:-neowallet-internal-key-change-me}
     ports:
-      - "4002:4002"
+      - "3001:3001"
     depends_on:
-      postgres:
+      processor-db:
         condition: service_healthy
+      accounts-service:
+        condition: service_started
     healthcheck:
-      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:4002/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:3001/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
       interval: 10s
       timeout: 5s
       retries: 3
       start_period: 10s
 
-  booking-service:
-    build: ./booking-service
-    container_name: officespace-booking
-    restart: unless-stopped
-    environment:
-      PORT: 4003
-      PGHOST: postgres
-      PGPORT: 5432
-      PGUSER: officespace
-      PGPASSWORD: officespace
-      PGDATABASE: officespace
-      PGPOOL_MAX: 20
-      PG_CONNECTION_TIMEOUT_MS: 3000
-      PG_QUERY_TIMEOUT_MS: 10000
-      PG_STATEMENT_TIMEOUT_MS: 10000
-      JSON_BODY_LIMIT: 1mb
-      REQUEST_TIMEOUT_MS: 30000
-      JWT_SECRET: ${JWT_SECRET:-ibm-officespace-shared-secret-change-me}
-      CATALOG_SERVICE_URL: http://catalog-service:4002
-      CATALOG_TIMEOUT_MS: 1500
-      # Google Calendar (opcional). Definir en officespace-ibm/.env.
-      # Sin estas variables, el calendario se muestra como "no configurado"
-      # y las reservas siguen funcionando con normalidad.
-      GOOGLE_CALENDAR_ID: ${GOOGLE_CALENDAR_ID:-}
-      GOOGLE_SERVICE_ACCOUNT_KEY: ${GOOGLE_SERVICE_ACCOUNT_KEY:-}
-      GOOGLE_CALENDAR_EMBED_URL: ${GOOGLE_CALENDAR_EMBED_URL:-}
-      GOOGLE_CALENDAR_TIMEZONE: ${GOOGLE_CALENDAR_TIMEZONE:-America/Mexico_City}
-      GOOGLE_EVENT_COLOR_ADMIN: ${GOOGLE_EVENT_COLOR_ADMIN:-11}
-      GOOGLE_EVENT_COLOR_COLLABORATOR: ${GOOGLE_EVENT_COLOR_COLLABORATOR:-9}
-    ports:
-      - "4003:4003"
-    depends_on:
-      postgres:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:4003/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
-
+  # -------------------------------------------------------------------
+  # Frontend (SPA React + Vite, servida por nginx)
+  # -------------------------------------------------------------------
   frontend:
-    build: ./frontend
-    container_name: officespace-frontend
+    build:
+      context: ./frontend
+      args:
+        # El navegador llama a los puertos PUBLICADOS en el host.
+        VITE_ACCOUNTS_URL: http://localhost:8000
+        VITE_PROCESSOR_URL: http://localhost:3001
+        VITE_NOTIFICATIONS_URL: http://localhost:3002
+    container_name: neowallet-frontend
     restart: unless-stopped
     ports:
-      - "3000:80"
+      - "8080:80"
+    depends_on:
+      - accounts-service
+      - processor-service
+      - notification-service
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/health >/dev/null || exit 1"]
+      # 127.0.0.1 (no 'localhost') para evitar que busybox-wget intente IPv6.
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:80/health >/dev/null || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 3
       start_period: 10s
 
 volumes:
-  pgdata:
+  accounts_pgdata:
+  processor_pgdata:
+  notifications_pgdata:

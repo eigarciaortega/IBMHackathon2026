@@ -3,21 +3,7 @@ node_modules/
 build/
 dist/
 .env
-.env.*
-!.env.example
-!*/.env.example
-
-# Claves de cuenta de servicio de Google (NUNCA se commitean)
-**/google-key*.json
-**/google-service-account*.json
-**/*-service-account*.json
+*/.env
 .DS_Store
 *.log
 .fuse_hidden*
-.impeccable/
-coverage/
-.cache/
-.vite/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*

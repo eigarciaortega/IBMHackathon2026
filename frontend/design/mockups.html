@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>NeoWallet · Banca digital — Mockups</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --navy:#0C2340;        /* marca / sidebar / acción */
+    --navy-800:#0a1d36;
+    --navy-600:#163457;
+    --ink:#16202B;         /* texto principal */
+    --muted:#5C6776;       /* texto secundario */
+    --faint:#8A93A1;       /* captions */
+    --line:#E6E3DC;        /* hairline cálida */
+    --line-cool:#E7EAEF;
+    --bg:#F6F4EF;          /* fondo marfil */
+    --bg-cool:#F3F5F8;
+    --surface:#FFFFFF;
+    --gold:#9C7C46;        /* acento bronce/dorado, uso mínimo */
+    --gold-soft:#C2A878;
+    --positive:#1F6B4A;
+    --negative:#9E2B25;
+    --pending:#8A6D2F;
+    --r-card:10px; --r-ctl:7px;
+    --sh:0 1px 2px rgba(12,35,64,.05);
+    --serif:"Source Serif 4",Georgia,serif;
+    --sans:"Inter",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:#e8e6df;color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+  .num{font-variant-numeric:tabular-nums}
+  .serif{font-family:var(--serif)}
+  .page{max-width:1180px;margin:0 auto;padding:44px 24px 90px}
+  .doc-h{font-family:var(--serif);margin:0 0 6px;font-size:30px;font-weight:600;color:var(--navy);letter-spacing:-.01em}
+  .doc-p{margin:0 0 30px;color:#4c5667;max-width:680px;line-height:1.6}
+  .label{font-size:11px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin:38px 0 12px}
+
+  /* window frame — monochrome, sober */
+  .mock{background:var(--surface);border:1px solid #d6d2c8;border-radius:12px;overflow:hidden;box-shadow:0 24px 60px rgba(12,35,64,.14);margin-bottom:14px}
+  .mock__bar{display:flex;align-items:center;gap:8px;padding:11px 16px;background:#efece5;border-bottom:1px solid var(--line)}
+  .mock__dots{display:flex;gap:7px}
+  .mock__dots i{width:10px;height:10px;border-radius:50%;background:#cbc8bf;display:block}
+  .mock__url{margin-left:8px;font-size:12px;color:var(--faint);letter-spacing:.02em}
+
+  svg.ic{width:19px;height:19px;stroke:currentColor;stroke-width:1.6;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  svg.ic.sm{width:15px;height:15px}
+
+  /* app shell */
+  .app{display:grid;grid-template-columns:256px 1fr;min-height:640px;background:var(--bg)}
+  .side{background:var(--navy);color:#b9c4d4;display:flex;flex-direction:column;padding:26px 16px}
+  .brandrow{display:flex;align-items:center;gap:11px;color:#fff;padding:2px 10px 26px}
+  .brandrow .mark{width:32px;height:32px;border:1px solid var(--gold-soft);border-radius:7px;display:grid;place-items:center;color:var(--gold-soft)}
+  .brandrow .wm{font-family:var(--serif);font-weight:600;font-size:20px;letter-spacing:.01em}
+  .brandrow .wm small{display:block;font-family:var(--sans);font-size:9.5px;letter-spacing:.22em;color:#8aa0bd;font-weight:600;margin-top:1px}
+  .nav a{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:7px;color:#9fadc0;text-decoration:none;font-weight:500;font-size:14px;margin-bottom:2px;border-left:2px solid transparent}
+  .nav a.active{background:rgba(255,255,255,.06);color:#fff;border-left-color:var(--gold-soft)}
+  .nav a.active svg{color:var(--gold-soft)}
+  .side .foot{margin-top:auto;border-top:1px solid rgba(255,255,255,.09);padding-top:14px}
+  .uchip{display:flex;align-items:center;gap:11px;padding:6px 8px}
+  .av{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:600;background:var(--navy-600);border:1px solid rgba(194,168,120,.5);font-size:13px;font-family:var(--serif)}
+  .uchip small{color:#8aa0bd;font-size:12px}
+
+  .content{display:flex;flex-direction:column;min-width:0}
+  .topbar{display:flex;align-items:center;gap:16px;padding:15px 30px;background:#fff;border-bottom:1px solid var(--line-cool)}
+  .search{flex:1;max-width:380px;display:flex;align-items:center;gap:10px;color:#97a0ad;font-size:13.5px;border-bottom:1px solid var(--line-cool);padding:7px 2px}
+  .tb-icon{margin-left:auto;width:38px;height:38px;border:1px solid var(--line-cool);border-radius:7px;display:grid;place-items:center;color:#4c5667;position:relative;background:#fff}
+  .tb-icon .dot{position:absolute;top:9px;right:10px;width:6px;height:6px;border-radius:50%;background:var(--gold);border:2px solid #fff}
+  .main{padding:30px;overflow:auto}
+  .eyebrow{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);font-weight:600;margin:0 0 6px}
+  .h1{font-family:var(--serif);font-size:25px;font-weight:600;margin:0 0 3px;letter-spacing:-.01em}
+  .sub{color:var(--muted);margin:0 0 24px;font-size:14px}
+
+  .grid{display:grid;gap:20px}
+  .g-2{grid-template-columns:1.5fr 1fr}
+  .g-3{grid-template-columns:repeat(3,1fr)}
+  .card{background:var(--surface);border:1px solid var(--line-cool);border-radius:var(--r-card);box-shadow:var(--sh);padding:24px}
+  .card h3{font-family:var(--serif);margin:0 0 16px;font-size:17px;font-weight:600}
+
+  /* account card — deep navy, gold hairline, restrained */
+  .acct{background:var(--navy);color:#fff;border:none;position:relative;overflow:hidden;padding:26px}
+  .acct::before{content:"";position:absolute;left:0;top:0;right:0;height:2px;background:linear-gradient(90deg,var(--gold),var(--gold-soft) 50%,transparent)}
+  .acct .k{color:#9fb0c6;font-size:11px;letter-spacing:.16em;text-transform:uppercase}
+  .acct .bal{font-family:var(--sans);font-size:46px;font-weight:300;letter-spacing:-.02em;margin:10px 0 8px}
+  .acct .bal span{font-size:24px;font-weight:400;color:#c7d2e0;margin-right:4px}
+  .acct .meta{color:#9fb0c6;font-size:13px;display:flex;gap:14px;align-items:center}
+  .acct .meta b{color:#dce4ee;font-weight:500;letter-spacing:.08em}
+  .acct .actions{display:flex;gap:10px;margin-top:24px}
+
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-family:inherit;font-weight:600;font-size:13.5px;letter-spacing:.01em;border-radius:var(--r-ctl);padding:11px 17px;border:1px solid transparent;cursor:pointer}
+  .btn.primary{background:var(--navy);color:#fff}
+  .btn.gold{background:var(--gold);color:#fff}
+  .btn.onnavy{background:transparent;color:#e7edf4;border-color:rgba(194,168,120,.45)}
+  .btn.secondary{background:#fff;color:var(--navy);border-color:#d8dde4}
+  .btn.block{width:100%}
+  .btn.lg{padding:13px 18px;font-size:14.5px}
+
+  .stat{display:flex;flex-direction:column;gap:3px}
+  .stat .v{font-family:var(--serif);font-size:23px;font-weight:600}
+  .stat .k{color:var(--muted);font-size:12.5px}
+
+  /* status: dot + label (no loud pills) */
+  .st{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;color:var(--muted)}
+  .st i{width:7px;height:7px;border-radius:50%;background:var(--faint)}
+  .st.ok i{background:var(--positive)} .st.bad i{background:var(--negative)} .st.warn i{background:var(--pending)}
+
+  /* rows */
+  .row{display:flex;align-items:center;gap:15px;padding:15px 0;border-top:1px solid var(--line-cool)}
+  .row:first-of-type{border-top:none}
+  .row .grow{flex:1;min-width:0}
+  .row .t{font-weight:600;font-size:14.5px}
+  .row .s{color:var(--muted);font-size:12.5px;margin-top:2px}
+  .row .amt{font-weight:600;font-size:15px}
+  .amt.pos{color:var(--positive)} .amt.neg{color:var(--ink)}
+  .tico{width:38px;height:38px;border-radius:8px;display:grid;place-items:center;background:#f1f0eb;color:#5c6776;border:1px solid var(--line)}
+
+  /* table */
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th{text-align:left;color:var(--faint);font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:0 12px 14px}
+  td{padding:15px 12px;border-top:1px solid var(--line-cool)}
+  .seg{display:inline-flex;border:1px solid #d8dde4;border-radius:7px;overflow:hidden;background:#fff}
+  .seg button{border:none;background:#fff;padding:9px 16px;font:inherit;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;border-right:1px solid #e7eaef}
+  .seg button:last-child{border-right:none}
+  .seg button.on{background:var(--navy);color:#fff}
+
+  /* fields */
+  .field{margin-bottom:18px}
+  .field label{display:block;font-size:11px;font-weight:600;color:var(--muted);margin-bottom:8px;letter-spacing:.1em;text-transform:uppercase}
+  .inp{width:100%;border:1px solid #d8dde4;border-radius:7px;padding:13px 14px;font:inherit;font-size:15px;color:var(--ink);background:#fff}
+  .inp.amount{font-size:30px;font-weight:300;letter-spacing:-.01em}
+  .inp.focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(12,35,64,.10)}
+  .hint{color:var(--faint);font-size:12px;margin-top:7px}
+
+  /* login */
+  .login{display:grid;grid-template-columns:1.05fr 1fr;min-height:580px}
+  .login .brandside{background:var(--navy);color:#fff;padding:48px;display:flex;flex-direction:column;position:relative;overflow:hidden}
+  .login .brandside::before{content:"";position:absolute;left:0;top:0;width:100%;height:3px;background:linear-gradient(90deg,var(--gold),var(--gold-soft),transparent)}
+  .login .brandside .mark{width:48px;height:48px;border:1px solid var(--gold-soft);border-radius:9px;display:grid;place-items:center;color:var(--gold-soft)}
+  .login .brandside h2{font-family:var(--serif);font-size:31px;font-weight:500;line-height:1.25;margin:auto 0 16px;max-width:380px;letter-spacing:-.01em}
+  .login .brandside p{color:#aebccd;max-width:370px;margin:0 0 30px;line-height:1.65;font-size:14.5px}
+  .login .trust{display:flex;gap:9px;align-items:center;color:#8aa0bd;font-size:12.5px;letter-spacing:.02em}
+  .login .formside{padding:54px 56px;display:flex;flex-direction:column;justify-content:center;background:#fff}
+  .login .formside .eyebrow{margin-bottom:8px}
+  .login .formside h3{font-family:var(--serif);font-size:24px;font-weight:600;margin:0 0 6px}
+  .login .formside .muted{color:var(--muted);margin:0 0 30px;font-size:14px}
+  .demo{margin-top:22px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:13px 15px;color:var(--muted);font-size:12.5px}
+  .demo b{color:var(--navy)}
+
+  /* steps / receipt */
+  .step{display:flex;align-items:center;gap:9px;color:var(--faint);font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;margin-bottom:18px}
+  .step .n{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:#eef0f3;font-size:11px;color:var(--muted)}
+  .step .n.on{background:var(--navy);color:#fff}
+  .kv{display:flex;justify-content:space-between;padding:11px 0;border-top:1px solid var(--line-cool);font-size:14px}
+  .kv:first-of-type{border-top:none}
+  .kv .k{color:var(--muted)}
+  .receipt .top{display:flex;align-items:center;gap:10px;padding:0 0 16px;font-family:var(--serif);font-weight:600;font-size:17px;color:var(--navy)}
+  .receipt .top .seal{width:30px;height:30px;border-radius:50%;background:#eef3ef;color:var(--positive);display:grid;place-items:center;border:1px solid #cfe2d6}
+
+  /* email */
+  .email{max-width:600px;margin:0 auto;background:#fff;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .email .eh{background:var(--navy);color:#fff;padding:22px 26px;display:flex;align-items:center;gap:11px;position:relative}
+  .email .eh::before{content:"";position:absolute;left:0;top:0;width:100%;height:2px;background:linear-gradient(90deg,var(--gold),var(--gold-soft),transparent)}
+  .email .eh .wm{font-family:var(--serif);font-weight:600;font-size:18px}
+  .email .eb{padding:26px}
+  .email .stamp{font-size:12.5px;color:var(--muted)}
+  .email table td{font-size:13px;padding:11px 8px}
+  @media(max-width:720px){.app,.login{grid-template-columns:1fr}.g-2,.g-3{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<svg style="display:none">
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 10.5 12 4l9 6.5"/><path d="M5 9.5V20h14V9.5"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-activity" viewBox="0 0 24 24"><path d="M3 12h4l3 8 4-16 3 8h4"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 9a6 6 0 1 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 20a2 2 0 0 0 4 0"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 4.5 3 7.5 7 9 4-1.5 7-4.5 7-9V6z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="M7 7 17 17"/><path d="M17 8v9H8"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></symbol>
+  <symbol id="i-logout" viewBox="0 0 24 24"><path d="M15 4h4v16h-4"/><path d="M10 8l-4 4 4 4M6 12h9"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4.5 4.5L19 7"/></symbol>
+</svg>
+
+<div class="page">
+  <h1 class="doc-h">NeoWallet — Banca digital</h1>
+  <p class="doc-p">Dirección de diseño elegante, formal y empresarial: azul marino profundo, neutros cálidos y un acento bronce discreto. Tipografía serif institucional para jerarquía, Inter para la interfaz, cifras tabulares. Sin emojis, sin efectos lúdicos.</p>
+
+  <!-- 1 · ACCESO -->
+  <div class="label">01 — Acceso</div>
+  <div class="mock">
+    <div class="mock__bar"><div class="mock__dots"><i></i><i></i><i></i></div><span class="mock__url">neowallet.com/acceso</span></div>
+    <div class="login">
+      <div class="brandside">
+        <div class="mark"><svg class="ic"><use href="#i-shield"/></svg></div>
+        <h2>Banca digital, con la confianza de siempre.</h2>
+        <p>Gestiona tus fondos y transferencias con seguridad de nivel institucional y disponibilidad permanente.</p>
+        <div class="trust"><svg class="ic sm" style="stroke:var(--gold-soft)"><use href="#i-shield"/></svg> Cifrado de extremo a extremo · Fondos protegidos</div>
+      </div>
+      <div class="formside">
+        <div class="eyebrow">NeoWallet · FastPay</div>
+        <h3>Iniciar sesión</h3>
+        <p class="muted">Bienvenido de nuevo.</p>
+        <div class="field"><label>Correo electrónico</label><div class="inp">usuario.a@neowallet.com</div></div>
+        <div class="field"><label>Contraseña</label><div class="inp focus">••••••••••</div></div>
+        <button class="btn primary block lg">Iniciar sesión</button>
+        <div style="text-align:center;margin-top:16px;font-size:13.5px;color:var(--muted)">¿No tienes cuenta? <b style="color:var(--navy)">Crear cuenta</b></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2 · RESUMEN -->
+  <div class="label">02 — Resumen</div>
+  <div class="mock">
+    <div class="mock__bar"><div class="mock__dots"><i></i><i></i><i></i></div><span class="mock__url">neowallet.com/resumen</span></div>
+    <div class="app">
+      <aside class="side">
+        <div class="brandrow"><span class="mark"><svg class="ic"><use href="#i-shield"/></svg></span><span class="wm">NeoWallet<small>BANCA DIGITAL</small></span></div>
+        <nav class="nav">
+          <a class="active"><svg class="ic"><use href="#i-home"/></svg> Resumen</a>
+          <a><svg class="ic"><use href="#i-send"/></svg> Enviar dinero</a>
+          <a><svg class="ic"><use href="#i-plus"/></svg> Agregar fondos</a>
+          <a><svg class="ic"><use href="#i-activity"/></svg> Actividad</a>
+          <a><svg class="ic"><use href="#i-bell"/></svg> Notificaciones</a>
+          <a><svg class="ic"><use href="#i-file"/></svg> Estados de cuenta</a>
+        </nav>
+        <div class="foot">
+          <div class="uchip"><span class="av">A</span><div><div style="color:#fff;font-weight:600;font-size:13px">Usuario A</div><small>Cuenta ···· 4291</small></div></div>
+          <a class="nav" style="display:flex;align-items:center;gap:12px;padding:10px 12px;color:#9fadc0;text-decoration:none;font-size:13.5px"><svg class="ic"><use href="#i-logout"/></svg> Cerrar sesión</a>
+        </div>
+      </aside>
+      <div class="content">
+        <div class="topbar">
+          <div class="search"><svg class="ic sm"><use href="#i-search"/></svg> Buscar movimiento o beneficiario</div>
+          <div class="tb-icon"><svg class="ic sm"><use href="#i-bell"/></svg><span class="dot"></span></div>
+          <div class="tb-icon" style="width:auto;padding:0 12px;gap:9px;display:flex;align-items:center"><span class="av" style="width:26px;height:26px;font-size:11px">A</span><span style="font-size:13px;font-weight:600">Usuario A</span></div>
+        </div>
+        <div class="main">
+          <div class="eyebrow">Resumen de cuenta</div>
+          <h2 class="h1">Buenos días, Usuario A</h2>
+          <p class="sub">Este es el estado actual de tu cuenta.</p>
+          <div class="grid g-2">
+            <div class="card acct">
+              <div class="k">Saldo disponible</div>
+              <div class="bal num"><span>$</span>875.00</div>
+              <div class="meta"><span>Cuenta corriente</span><span>·</span><b class="num">···· 4291</b><span>·</span><span>USD</span></div>
+              <div class="actions">
+                <button class="btn gold"><svg class="ic sm" style="stroke:#fff"><use href="#i-send"/></svg> Enviar</button>
+                <button class="btn onnavy"><svg class="ic sm" style="stroke:#e7edf4"><use href="#i-plus"/></svg> Agregar fondos</button>
+                <button class="btn onnavy"><svg class="ic sm" style="stroke:#e7edf4"><use href="#i-file"/></svg> Estados</button>
+              </div>
+            </div>
+            <div class="card">
+              <h3>Este mes</h3>
+              <div class="grid g-2" style="gap:18px">
+                <div class="stat"><span class="v num" style="color:var(--positive)">$1,000.00</span><span class="k">Recibido</span></div>
+                <div class="stat"><span class="v num">$125.00</span><span class="k">Enviado</span></div>
+                <div class="stat"><span class="v num">3</span><span class="k">Movimientos</span></div>
+                <div class="stat"><span class="v num">$200.00</span><span class="k">Recargas</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="card" style="margin-top:20px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><h3 style="margin:0">Actividad reciente</h3><a style="color:var(--navy);font-weight:600;font-size:13px;text-decoration:none">Ver toda →</a></div>
+            <div class="row"><span class="tico"><svg class="ic sm"><use href="#i-up"/></svg></span><div class="grow"><div class="t">Enviado a Usuario B</div><div class="s">23 jun 2026, 14:02 · folio #0003</div></div><span class="st ok"><i></i>Completado</span><span class="amt neg num" style="margin-left:18px">−$25.00</span></div>
+            <div class="row"><span class="tico"><svg class="ic sm"><use href="#i-down"/></svg></span><div class="grow"><div class="t">Recibido de Usuario C</div><div class="s">23 jun 2026, 13:40 · folio #0002</div></div><span class="st bad"><i></i>Fallido</span><span class="amt num" style="margin-left:18px">$0.00</span></div>
+            <div class="row"><span class="tico"><svg class="ic sm"><use href="#i-up"/></svg></span><div class="grow"><div class="t">Enviado a Usuario B</div><div class="s">23 jun 2026, 13:11 · folio #0001</div></div><span class="st ok"><i></i>Completado</span><span class="amt neg num" style="margin-left:18px">−$100.00</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3 · ENVIAR -->
+  <div class="label">03 — Enviar dinero · datos → revisar → comprobante</div>
+  <div class="mock">
+    <div class="mock__bar"><div class="mock__dots"><i></i><i></i><i></i></div><span class="mock__url">neowallet.com/enviar</span></div>
+    <div style="background:var(--bg);padding:30px">
+      <div class="eyebrow">Transferencia</div>
+      <h2 class="h1">Enviar dinero</h2>
+      <p class="sub">Transferencia entre cuentas NeoWallet, sin comisiones.</p>
+      <div class="grid g-3">
+        <div class="card">
+          <div class="step"><span class="n on">1</span> Datos</div>
+          <div class="field"><label>Beneficiario</label><div class="inp">Usuario B — usuario.b@neowallet.com</div></div>
+          <div class="field"><label>Monto</label><div class="inp amount focus num">$120.00</div><div class="hint">Saldo disponible: $875.00</div></div>
+          <button class="btn primary block lg">Continuar</button>
+        </div>
+        <div class="card">
+          <div class="step"><span class="n on">2</span> Revisar</div>
+          <div class="kv"><span class="k">Beneficiario</span><span><b>Usuario B</b></span></div>
+          <div class="kv"><span class="k">Cuenta</span><span class="num">···· 5120</span></div>
+          <div class="kv"><span class="k">Monto</span><span class="num"><b>$120.00</b></span></div>
+          <div class="kv"><span class="k">Comisión</span><span class="num">$0.00</span></div>
+          <div class="kv"><span class="k">Saldo posterior</span><span class="num">$755.00</span></div>
+          <button class="btn primary block lg" style="margin-top:18px">Confirmar y enviar</button>
+          <button class="btn secondary block" style="margin-top:9px">Volver</button>
+        </div>
+        <div class="card">
+          <div class="receipt">
+            <div class="top"><span class="seal"><svg class="ic sm" style="stroke:var(--positive)"><use href="#i-check"/></svg></span> Transferencia realizada</div>
+            <div class="kv"><span class="k">Folio</span><span class="num">#0042</span></div>
+            <div class="kv"><span class="k">Beneficiario</span><span>Usuario B</span></div>
+            <div class="kv"><span class="k">Monto</span><span class="num"><b>$120.00</b></span></div>
+            <div class="kv"><span class="k">Fecha</span><span class="num">23 jun 2026, 14:25</span></div>
+            <div class="kv"><span class="k">Saldo actual</span><span class="num"><b>$755.00</b></span></div>
+            <button class="btn secondary block" style="margin-top:18px"><svg class="ic sm"><use href="#i-file"/></svg> Descargar comprobante</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4 · ACTIVIDAD -->
+  <div class="label">04 — Actividad</div>
+  <div class="mock">
+    <div class="mock__bar"><div class="mock__dots"><i></i><i></i><i></i></div><span class="mock__url">neowallet.com/actividad</span></div>
+    <div style="background:var(--bg);padding:30px">
+      <div style="display:flex;justify-content:space-between;align-items:end;flex-wrap:wrap;gap:12px">
+        <div><div class="eyebrow">Historial</div><h2 class="h1">Actividad</h2></div>
+        <button class="btn secondary"><svg class="ic sm"><use href="#i-file"/></svg> Enviar estado de cuenta</button>
+      </div>
+      <div style="display:flex;gap:14px;align-items:center;margin:20px 0">
+        <div class="seg"><button class="on">Todos</button><button>Enviadas</button><button>Recibidas</button><button>Recargas</button></div>
+        <div class="search" style="max-width:260px;border-bottom:1px solid #d8dde4"><svg class="ic sm"><use href="#i-search"/></svg> Buscar</div>
+      </div>
+      <div class="card" style="padding:10px 22px">
+        <table>
+          <thead><tr><th>Concepto</th><th>Beneficiario / Origen</th><th>Fecha</th><th>Estado</th><th style="text-align:right">Monto</th></tr></thead>
+          <tbody>
+            <tr><td>Transferencia enviada</td><td>Usuario B</td><td class="num">23 jun, 14:25</td><td><span class="st ok"><i></i>Completado</span></td><td style="text-align:right" class="num">−$120.00</td></tr>
+            <tr><td>Recarga · tarjeta de crédito</td><td>—</td><td class="num">23 jun, 12:10</td><td><span class="st ok"><i></i>Completado</span></td><td style="text-align:right;color:var(--positive)" class="num">+$200.00</td></tr>
+            <tr><td>Transferencia enviada</td><td>Usuario B</td><td class="num">23 jun, 13:11</td><td><span class="st warn"><i></i>Revertido</span></td><td style="text-align:right" class="num">$0.00</td></tr>
+            <tr><td>Transferencia recibida</td><td>Usuario C</td><td class="num">22 jun, 18:55</td><td><span class="st bad"><i></i>Fallido</span></td><td style="text-align:right" class="num">$0.00</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5 · NOTIFICACIONES -->
+  <div class="label">05 — Notificaciones</div>
+  <div class="mock">
+    <div class="mock__bar"><div class="mock__dots"><i></i><i></i><i></i></div><span class="mock__url">neowallet.com/notificaciones</span></div>
+    <div style="background:var(--bg);padding:30px">
+      <div class="eyebrow">Avisos y seguridad</div>
+      <h2 class="h1">Notificaciones</h2>
+      <p class="sub">Confirmaciones y alertas de tu cuenta.</p>
+      <div class="card">
+        <div class="row"><span class="tico"><svg class="ic sm"><use href="#i-send"/></svg></span><div class="grow"><div class="t">Transferencia enviada</div><div class="s">Enviaste $120.00 a Usuario B · Folio #0042</div></div><span class="s num">14:25</span></div>
+        <div class="row"><span class="tico"><svg class="ic sm"><use href="#i-down"/></svg></span><div class="grow"><div class="t">Recarga aplicada</div><div class="s">Se acreditaron $200.00 vía tarjeta de crédito</div></div><span class="s num">12:10</span></div>
+        <div class="row"><span class="tico"><svg class="ic sm"><use href="#i-shield"/></svg></span><div class="grow"><div class="t">Nuevo inicio de sesión</div><div class="s">Acceso a tu cuenta desde este dispositivo</div></div><span class="s num">09:02</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6 · ESTADO DE CUENTA -->
+  <div class="label">06 — Estado de cuenta por correo</div>
+  <div class="mock">
+    <div class="mock__bar"><div class="mock__dots"><i></i><i></i><i></i></div><span class="mock__url">correo · NeoWallet</span></div>
+    <div style="background:#eceae3;padding:32px">
+      <div class="email">
+        <div class="eh"><span style="width:32px;height:32px;border:1px solid var(--gold-soft);border-radius:7px;display:grid;place-items:center;color:var(--gold-soft)"><svg class="ic sm"><use href="#i-shield"/></svg></span><span class="wm">NeoWallet</span></div>
+        <div class="eb">
+          <div class="serif" style="font-weight:600;font-size:18px;margin-bottom:4px">Estado de cuenta</div>
+          <div class="stamp">Usuario A · Cuenta ···· 4291 · 23 jun 2026</div>
+          <div style="background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:18px;margin:18px 0;display:flex;justify-content:space-between;align-items:center">
+            <span class="stamp" style="text-transform:uppercase;letter-spacing:.1em;font-size:11px">Saldo disponible</span><span class="num serif" style="font-size:25px;font-weight:600;color:var(--navy)">$875.00</span>
+          </div>
+          <table>
+            <thead><tr><th>Concepto</th><th>Fecha</th><th style="text-align:right">Monto</th></tr></thead>
+            <tbody>
+              <tr><td>Enviado a Usuario B</td><td class="num">23 jun</td><td style="text-align:right;color:var(--negative)" class="num">−$25.00</td></tr>
+              <tr><td>Recarga · tarjeta</td><td class="num">23 jun</td><td style="text-align:right;color:var(--positive)" class="num">+$200.00</td></tr>
+              <tr><td>Enviado a Usuario B</td><td class="num">23 jun</td><td style="text-align:right;color:var(--negative)" class="num">−$100.00</td></tr>
+            </tbody>
+          </table>
+          <div class="stamp" style="margin-top:20px;border-top:1px solid var(--line);padding-top:16px">Mensaje automático de NeoWallet · No respondas a este correo.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
