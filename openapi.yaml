@@ -1,0 +1,785 @@
+openapi: 3.0.3
+
+info:
+  title: OfficeSpace API
+  description: |
+    API REST para el sistema de gestión de espacios híbridos **OfficeSpace**.
+    Desarrollado para el Hackathon IBM 2026.
+
+    ## Autenticación
+    Todos los endpoints protegidos requieren un token JWT en el header:
+    ```
+    Authorization: Bearer <token>
+    ```
+    Obtén el token haciendo POST a `/login.php` con tus credenciales.
+
+    ## Usuarios de prueba
+    | Rol | Email | Password |
+    |-----|-------|----------|
+    | ADMINISTRADOR | admin@corporativoalpha.com | Admin123 |
+    | COLABORADOR | carlos.mendez@corporativoalpha.com | User123 |
+    | COLABORADOR | ana.torres@corporativoalpha.com | User123 |
+
+  version: 1.0.0
+  contact:
+    name: Equipo OfficeSpace
+    email: hackathon-support@corporativoalpha.com
+
+servers:
+  - url: http://localhost:8003
+    description: Auth Service
+  - url: http://localhost:8001
+    description: Catalog Service
+  - url: http://localhost:8002
+    description: Booking Service
+
+tags:
+  - name: Auth
+    description: Autenticación y emisión de tokens JWT
+  - name: Spaces
+    description: Gestión del catálogo de espacios de trabajo
+  - name: Bookings
+    description: Motor de reservas y validaciones de negocio
+
+paths:
+
+  # ─── AUTH SERVICE ────────────────────────────────────────────────────────────
+
+  /login.php:
+    post:
+      tags: [Auth]
+      summary: Iniciar sesión
+      description: |
+        Valida credenciales contra la base de datos y emite un token JWT con 24 horas de vigencia.
+        El token contiene: `id_usuario`, `email`, `rol` y `exp`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            examples:
+              admin:
+                summary: Login como administrador
+                value:
+                  email: admin@corporativoalpha.com
+                  password: Admin123
+              colaborador:
+                summary: Login como colaborador
+                value:
+                  email: carlos.mendez@corporativoalpha.com
+                  password: User123
+      responses:
+        '200':
+          description: Login exitoso — devuelve token JWT y datos del usuario
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          description: Faltan campos obligatorios (email o password)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Credenciales incorrectas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: error
+                message: Credenciales incorrectas
+
+  # ─── CATALOG SERVICE ─────────────────────────────────────────────────────────
+
+  /get_spaces.php:
+    get:
+      tags: [Spaces]
+      summary: Listar espacios disponibles
+      description: |
+        Devuelve los espacios activos. Si se proporcionan `fecha`, `hora_inicio` y `hora_fin`,
+        excluye automáticamente los espacios con reservas que solapen ese intervalo.
+        El parámetro `mostrar_inactivos=1` requiere rol ADMINISTRADOR.
+      parameters:
+        - name: fecha
+          in: query
+          schema:
+            type: string
+            format: date
+            example: "2026-06-25"
+          description: Fecha para verificar disponibilidad (YYYY-MM-DD)
+        - name: hora_inicio
+          in: query
+          schema:
+            type: string
+            example: "09:00"
+          description: Hora de inicio del intervalo (HH:MM)
+        - name: hora_fin
+          in: query
+          schema:
+            type: string
+            example: "11:00"
+          description: Hora de fin del intervalo (HH:MM)
+        - name: tipo
+          in: query
+          schema:
+            type: string
+            enum: [SALA, DESK]
+          description: Filtrar por tipo de espacio
+        - name: capacidad
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            example: 4
+          description: Capacidad mínima requerida
+        - name: mostrar_inactivos
+          in: query
+          schema:
+            type: integer
+            enum: [0, 1]
+            default: 0
+          description: Incluir espacios inactivos (solo ADMINISTRADOR)
+      responses:
+        '200':
+          description: Lista de espacios
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpacesListResponse'
+
+  /create_space.php:
+    post:
+      tags: [Spaces]
+      summary: Crear espacio
+      description: Crea un nuevo espacio. Requiere rol **ADMINISTRADOR**.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SpaceRequest'
+            example:
+              nombre: Sala de Innovación Sur
+              tipo: SALA
+              capacidad: 12
+              piso: Piso 3
+              recursos: Proyector 4K, Pizarrón, AC
+              activo: 1
+      responses:
+        '201':
+          description: Espacio creado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateSpaceResponse'
+        '400':
+          description: Faltan campos obligatorios
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Token ausente o inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: El usuario no tiene rol ADMINISTRADOR
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /update_space.php:
+    post:
+      tags: [Spaces]
+      summary: Actualizar espacio
+      description: Edita un espacio existente. Requiere rol **ADMINISTRADOR**.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/SpaceRequest'
+                - type: object
+                  required: [id_espacio]
+                  properties:
+                    id_espacio:
+                      type: integer
+                      example: 1
+            example:
+              id_espacio: 1
+              nombre: Sala Creativa Plus
+              tipo: SALA
+              capacidad: 10
+              piso: Piso 2
+              recursos: Proyector, Pantalla 65, AC
+              activo: 1
+      responses:
+        '200':
+          description: Espacio actualizado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /delete_space.php:
+    post:
+      tags: [Spaces]
+      summary: Eliminar espacio
+      description: |
+        Elimina físicamente un espacio. Requiere rol **ADMINISTRADOR**.
+        Falla con **409 Conflict** si el espacio tiene reservas activas futuras.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id_espacio]
+              properties:
+                id_espacio:
+                  type: integer
+                  example: 3
+      responses:
+        '200':
+          description: Espacio eliminado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: El espacio tiene reservas activas futuras
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: error
+                message: No puedes eliminar este espacio, tiene reservas activas futuras.
+
+  # ─── BOOKING SERVICE ─────────────────────────────────────────────────────────
+
+  /create_booking.php:
+    post:
+      tags: [Bookings]
+      summary: Crear reserva
+      description: |
+        Crea una reserva aplicando todas las validaciones de negocio en orden:
+        1. Consistencia temporal (hora_fin > hora_inicio)
+        2. No fechas pasadas
+        3. No horas pasadas (si la fecha es hoy)
+        4. Horario de oficina (07:00 – 21:00)
+        5. Capacidad del espacio
+        6. **Algoritmo de no-solapamiento** — detecta conflictos con reservas existentes
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookingRequest'
+            examples:
+              valida:
+                summary: Reserva válida
+                value:
+                  id_espacio: 1
+                  id_usuario: 2
+                  fecha: "2026-06-25"
+                  hora_inicio: "09:00"
+                  hora_fin: "11:00"
+                  asistentes: 5
+                  notas: Revisión de avances Q2 con el equipo de ventas
+              sin_notas:
+                summary: Reserva sin notas
+                value:
+                  id_espacio: 2
+                  id_usuario: 3
+                  fecha: "2026-06-25"
+                  hora_inicio: "14:00"
+                  hora_fin: "15:30"
+                  asistentes: 3
+                  notas: ""
+      responses:
+        '201':
+          description: Reserva creada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+              example:
+                status: success
+                message: Reserva confirmada exitosamente.
+        '400':
+          description: Validación fallida (fecha pasada, hora pasada, fuera de horario, capacidad excedida)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                fecha_pasada:
+                  summary: Fecha en el pasado
+                  value:
+                    status: error
+                    message: No puedes crear reservas en fechas pasadas.
+                hora_pasada:
+                  summary: Hora ya transcurrida
+                  value:
+                    status: error
+                    message: "La hora de inicio ya pasó. Son las 23:10, elige un horario futuro."
+                fuera_horario:
+                  summary: Fuera de horario de oficina
+                  value:
+                    status: error
+                    message: Las reservas solo están permitidas en horario de oficina (07:00 - 21:00).
+                capacidad:
+                  summary: Capacidad excedida
+                  value:
+                    status: error
+                    message: El número de asistentes excede la capacidad del espacio (8).
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: Conflicto de horario — el espacio ya está reservado en ese intervalo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: error
+                message: El espacio ya está ocupado en ese horario.
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /get_user_bookings.php:
+    get:
+      tags: [Bookings]
+      summary: Mis reservas activas
+      description: Devuelve las reservas con estatus **Activa** del usuario autenticado, ordenadas por fecha ascendente.
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Lista de reservas activas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingsListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /get_all_user_bookings.php:
+    get:
+      tags: [Bookings]
+      summary: Historial completo de reservas
+      description: Devuelve todo el historial del usuario autenticado (activas + canceladas), ordenado por fecha descendente. Usado en la pantalla de perfil.
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Historial completo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingsListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /cancel_booking.php:
+    post:
+      tags: [Bookings]
+      summary: Cancelar reserva
+      description: |
+        Cambia el estatus de una reserva a **Cancelada**.
+        - Un colaborador solo puede cancelar sus propias reservas
+        - Un administrador puede cancelar cualquier reserva
+        - No se pueden cancelar reservas que ya comenzaron o ya pasaron
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id_reserva]
+              properties:
+                id_reserva:
+                  type: integer
+                  example: 5
+      responses:
+        '200':
+          description: Reserva cancelada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: La reserva ya está cancelada o ya comenzó
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: No tienes permiso para cancelar esta reserva
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /get_reservas_hoy.php:
+    get:
+      tags: [Bookings]
+      summary: Dashboard de ocupación del día
+      description: |
+        Devuelve todas las reservas activas del día actual con datos de espacio y usuario.
+        También incluye el total de espacios activos para calcular disponibilidad.
+        Requiere rol **ADMINISTRADOR**.
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Reservas de hoy y total de espacios
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+# ─── COMPONENTS ──────────────────────────────────────────────────────────────
+
+components:
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Token JWT obtenido desde POST /login.php
+
+  responses:
+    Unauthorized:
+      description: Token ausente o inválido
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: error
+            message: No autorizado. Token requerido.
+    Forbidden:
+      description: Rol insuficiente
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: error
+            message: Solo administradores pueden realizar esta acción.
+    NotFound:
+      description: Recurso no encontrado
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: error
+            message: Espacio no encontrado.
+    InternalError:
+      description: Error interno del servidor
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: error
+            message: Error interno al procesar la solicitud.
+
+  schemas:
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          example: carlos.mendez@corporativoalpha.com
+        password:
+          type: string
+          example: User123
+
+    LoginResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        message:
+          type: string
+          example: Login exitoso
+        token:
+          type: string
+          example: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...
+        user:
+          type: object
+          properties:
+            id:
+              type: integer
+              example: 2
+            email:
+              type: string
+              example: carlos.mendez@corporativoalpha.com
+            rol:
+              type: string
+              enum: [ADMINISTRADOR, COLABORADOR]
+              example: COLABORADOR
+
+    SpaceRequest:
+      type: object
+      required: [nombre, tipo, capacidad, piso]
+      properties:
+        nombre:
+          type: string
+          example: Sala Creativa
+        tipo:
+          type: string
+          enum: [SALA, DESK]
+          example: SALA
+        capacidad:
+          type: integer
+          minimum: 1
+          example: 8
+        piso:
+          type: string
+          example: Piso 2
+        recursos:
+          type: string
+          example: Proyector, Pantalla 65, AC
+        activo:
+          type: integer
+          enum: [0, 1]
+          default: 1
+
+    Space:
+      type: object
+      properties:
+        id_espacio:
+          type: integer
+          example: 1
+        nombre:
+          type: string
+          example: Sala Creativa
+        tipo:
+          type: string
+          enum: [SALA, DESK]
+        capacidad:
+          type: integer
+          example: 8
+        recursos:
+          type: string
+          example: Proyector, Pantalla 65, AC
+        piso:
+          type: string
+          example: Piso 2
+        activo:
+          type: integer
+          enum: [0, 1]
+
+    SpacesListResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Space'
+        filtros:
+          type: object
+          properties:
+            fecha:
+              type: string
+              nullable: true
+            hora_inicio:
+              type: string
+              nullable: true
+            hora_fin:
+              type: string
+              nullable: true
+            tipo:
+              type: string
+              nullable: true
+            capacidad:
+              type: integer
+              nullable: true
+
+    BookingRequest:
+      type: object
+      required: [id_espacio, id_usuario, fecha, hora_inicio, hora_fin, asistentes]
+      properties:
+        id_espacio:
+          type: integer
+          example: 1
+        id_usuario:
+          type: integer
+          example: 2
+        fecha:
+          type: string
+          format: date
+          example: "2026-06-25"
+        hora_inicio:
+          type: string
+          example: "09:00"
+        hora_fin:
+          type: string
+          example: "11:00"
+        asistentes:
+          type: integer
+          minimum: 1
+          example: 5
+        notas:
+          type: string
+          maxLength: 300
+          nullable: true
+          example: Revisión de avances Q2 con el equipo de ventas
+
+    Booking:
+      type: object
+      properties:
+        id_reserva:
+          type: integer
+          example: 1
+        fecha:
+          type: string
+          format: date
+          example: "2026-06-25"
+        hora_inicio:
+          type: string
+          example: "09:00:00"
+        hora_fin:
+          type: string
+          example: "11:00:00"
+        asistentes:
+          type: integer
+          example: 5
+        estatus:
+          type: string
+          enum: [Activa, Cancelada]
+        notas:
+          type: string
+          nullable: true
+        nombre:
+          type: string
+          example: Sala Creativa
+        tipo:
+          type: string
+          enum: [SALA, DESK]
+        piso:
+          type: string
+          example: Piso 2
+
+    BookingsListResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Booking'
+
+    DashboardResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              id_reserva:
+                type: integer
+              hora_inicio:
+                type: string
+              hora_fin:
+                type: string
+              asistentes:
+                type: integer
+              nombre_espacio:
+                type: string
+              tipo:
+                type: string
+              email_usuario:
+                type: string
+        total_espacios:
+          type: integer
+          example: 12
+
+    SuccessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        message:
+          type: string
+          example: Operación exitosa.
+
+    CreateSpaceResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        message:
+          type: string
+          example: Espacio creado exitosamente.
+        id_espacio:
+          type: integer
+          example: 13
+
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: error
+        message:
+          type: string
+          example: Descripción del error.
