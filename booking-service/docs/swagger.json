@@ -1,0 +1,404 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Motor de reservas: valida solapamiento, fechas y capacidad (vía HTTP a catalog). Expone la ocupación del día.",
+        "title": "OfficeSpace — Booking Service",
+        "contact": {},
+        "version": "1.0"
+    },
+    "basePath": "/",
+    "paths": {
+        "/bookings": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Valida consistencia temporal, que no sea en el pasado (TZ America/Mexico_City), capacidad (vía HTTP a catalog) y no solapamiento. Devuelve 409 si el horario ya está ocupado.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "reservas"
+                ],
+                "summary": "Crear reserva",
+                "parameters": [
+                    {
+                        "description": "Datos de la reserva",
+                        "name": "reserva",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_booking-service_internal_models.CrearReservaRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_booking-service_internal_models.Reserva"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_booking-service_internal_apperror.AppError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_booking-service_internal_apperror.AppError"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_booking-service_internal_apperror.AppError"
+                        }
+                    }
+                }
+            }
+        },
+        "/bookings/availability": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "reservas"
+                ],
+                "summary": "Disponibilidad de un espacio",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID del espacio",
+                        "name": "espacio_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Fecha YYYY-MM-DD",
+                        "name": "fecha",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Hora inicio HH:MM",
+                        "name": "inicio",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Hora fin HH:MM",
+                        "name": "fin",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_booking-service_internal_models.DisponibilidadResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_booking-service_internal_apperror.AppError"
+                        }
+                    }
+                }
+            }
+        },
+        "/bookings/mine": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "reservas"
+                ],
+                "summary": "Mis reservas",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_booking-service_internal_models.Reserva"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_booking-service_internal_apperror.AppError"
+                        }
+                    }
+                }
+            }
+        },
+        "/bookings/{id}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Cancela una reserva propia (estado → CANCELADA). Una reserva ajena devuelve 403.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "reservas"
+                ],
+                "summary": "Cancelar reserva",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID de la reserva",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_booking-service_internal_models.Reserva"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_booking-service_internal_apperror.AppError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_booking-service_internal_apperror.AppError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_booking-service_internal_apperror.AppError"
+                        }
+                    }
+                }
+            }
+        },
+        "/health": {
+            "get": {
+                "description": "Indica si el servicio está operativo.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "salud"
+                ],
+                "summary": "Sonda de salud",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handlers.SaludResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/occupancy": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Reservas confirmadas de una fecha. Alimenta el dashboard de ocupación del administrador.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "reservas"
+                ],
+                "summary": "Ocupación del día",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Fecha YYYY-MM-DD",
+                        "name": "fecha",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_booking-service_internal_models.Reserva"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_booking-service_internal_apperror.AppError"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "github_com_i0dk1_OfficeSpace_booking-service_internal_apperror.AppError": {
+            "type": "object",
+            "properties": {
+                "codigo": {
+                    "type": "string"
+                },
+                "mensaje": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_i0dk1_OfficeSpace_booking-service_internal_models.CrearReservaRequest": {
+            "type": "object",
+            "properties": {
+                "asistentes": {
+                    "type": "integer",
+                    "example": 4
+                },
+                "espacio_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "fecha": {
+                    "type": "string",
+                    "example": "2026-06-24"
+                },
+                "hora_fin": {
+                    "type": "string",
+                    "example": "12:00"
+                },
+                "hora_inicio": {
+                    "type": "string",
+                    "example": "11:00"
+                }
+            }
+        },
+        "github_com_i0dk1_OfficeSpace_booking-service_internal_models.DisponibilidadResponse": {
+            "type": "object",
+            "properties": {
+                "disponible": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "espacio_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "fecha": {
+                    "type": "string",
+                    "example": "2026-06-24"
+                },
+                "hora_fin": {
+                    "type": "string",
+                    "example": "12:00"
+                },
+                "hora_inicio": {
+                    "type": "string",
+                    "example": "11:00"
+                }
+            }
+        },
+        "github_com_i0dk1_OfficeSpace_booking-service_internal_models.Reserva": {
+            "type": "object",
+            "properties": {
+                "asistentes": {
+                    "type": "integer",
+                    "example": 4
+                },
+                "creado_en": {
+                    "type": "string"
+                },
+                "espacio_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "estado": {
+                    "type": "string",
+                    "example": "CONFIRMADA"
+                },
+                "fecha": {
+                    "type": "string",
+                    "example": "2026-06-24"
+                },
+                "hora_fin": {
+                    "type": "string",
+                    "example": "10:00"
+                },
+                "hora_inicio": {
+                    "type": "string",
+                    "example": "09:00"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "usuario_email": {
+                    "type": "string",
+                    "example": "carlos.mendez@corporativoalpha.com"
+                }
+            }
+        },
+        "internal_handlers.SaludResponse": {
+            "type": "object",
+            "properties": {
+                "servicio": {
+                    "type": "string",
+                    "example": "booking-service"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "ok"
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "description": "Escribe: Bearer {token}",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
+    }
+}
