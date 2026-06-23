@@ -6,6 +6,7 @@ import { bookingApi } from '../services/booking'
 import type { Espacio, Reserva } from '../types'
 import { ApiError } from '../lib/api'
 import { fechaLegible, hoyISO } from '../lib/format'
+import { useIntervalo, useRefrescoAlEnfocar } from '../hooks/useAutoRefresh'
 import { toast } from '../lib/toast'
 import { CargandoBloque, EstadoVacio, PillTipo, Spinner } from '../components/ui'
 import { OccupancyTrack } from '../components/OccupancyTrack'
@@ -61,10 +62,19 @@ export function AdminPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Recarga la ocupación al cambiar la fecha (sin recargar el catálogo).
-  useEffect(() => {
-    bookingApi.ocupacion(fecha).then(setOcupacion).catch(() => setOcupacion([]))
+  // Refresca la ocupación (silencioso) sin tocar el catálogo.
+  const refrescarOcupacion = useCallback(() => {
+    bookingApi.ocupacion(fecha).then(setOcupacion).catch(() => {})
   }, [fecha])
+
+  // Recarga la ocupación al cambiar la fecha.
+  useEffect(() => {
+    refrescarOcupacion()
+  }, [refrescarOcupacion])
+
+  // Mantiene el dashboard al día: sondeo cada 20s y al volver a la pestaña.
+  useIntervalo(refrescarOcupacion, 20000)
+  useRefrescoAlEnfocar(refrescarOcupacion)
 
   const ocupacionPorEspacio = useMemo(() => {
     const mapa: Record<number, Reserva[]> = {}

@@ -8,6 +8,7 @@ import { catalogApi } from '../services/catalog'
 import type { Espacio, Reserva } from '../types'
 import { ApiError } from '../lib/api'
 import { fechaLegible, hoyISO } from '../lib/format'
+import { useRefrescoAlEnfocar } from '../hooks/useAutoRefresh'
 import { toast } from '../lib/toast'
 import { CargandoBloque, EstadoVacio, PillEstado } from '../components/ui'
 import { Modal } from '../components/Modal'
@@ -22,8 +23,8 @@ export function MisReservasPage() {
   const [aCancelar, setACancelar] = useState<Reserva | null>(null)
   const [cancelando, setCancelando] = useState(false)
 
-  const cargar = useCallback(async () => {
-    setCargando(true)
+  const cargar = useCallback(async (silencioso = false) => {
+    if (!silencioso) setCargando(true)
     setError(null)
     try {
       const [misReservas, listaEspacios] = await Promise.all([
@@ -35,15 +36,18 @@ export function MisReservasPage() {
       setEspacios(mapa)
       setReservas(misReservas)
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'No se pudieron cargar tus reservas.')
+      if (!silencioso) setError(err instanceof ApiError ? err.message : 'No se pudieron cargar tus reservas.')
     } finally {
-      setCargando(false)
+      if (!silencioso) setCargando(false)
     }
   }, [])
 
   useEffect(() => {
     void cargar()
   }, [cargar])
+
+  // Refresca al volver a la pestaña (en segundo plano).
+  useRefrescoAlEnfocar(() => void cargar(true))
 
   const hoy = hoyISO()
   const { proximas, pasadas } = useMemo(() => {

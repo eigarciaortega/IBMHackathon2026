@@ -7,6 +7,7 @@ import { bookingApi } from '../services/booking'
 import type { Espacio, Reserva, TipoEspacio } from '../types'
 import { ApiError } from '../lib/api'
 import { fechaLegible, hoyISO, opcionesHora } from '../lib/format'
+import { useRefrescoAlEnfocar } from '../hooks/useAutoRefresh'
 import { CargandoBloque, EstadoVacio, Etiqueta, PillTipo } from '../components/ui'
 import { OccupancyTrack } from '../components/OccupancyTrack'
 import { ConfirmarReservaModal } from '../components/ConfirmarReservaModal'
@@ -34,13 +35,14 @@ export function BuscarPage() {
 
   const rangoValido = useMemo(() => inicio < fin, [inicio, fin])
 
-  const buscar = useCallback(async () => {
+  // silencioso = refresco en segundo plano (sin spinner ni borrar resultados).
+  const buscar = useCallback(async (silencioso = false) => {
     if (!rangoValido) {
-      setError('La hora de fin debe ser posterior a la de inicio.')
+      if (!silencioso) setError('La hora de fin debe ser posterior a la de inicio.')
       return
     }
     setError(null)
-    setCargando(true)
+    if (!silencioso) setCargando(true)
     setBuscado(true)
     try {
       const espacios = await catalogApi.listar({
@@ -63,10 +65,13 @@ export function BuscarPage() {
       )
       setResultados(conDatos)
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'No se pudieron cargar los espacios.')
-      setResultados([])
+      // En refresco silencioso se conservan los resultados previos.
+      if (!silencioso) {
+        setError(err instanceof ApiError ? err.message : 'No se pudieron cargar los espacios.')
+        setResultados([])
+      }
     } finally {
-      setCargando(false)
+      if (!silencioso) setCargando(false)
     }
   }, [tipo, capacidadMin, fecha, inicio, fin, rangoValido])
 
@@ -75,6 +80,11 @@ export function BuscarPage() {
     void buscar()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Al volver a la pestaña, refresca la disponibilidad en segundo plano.
+  useRefrescoAlEnfocar(() => {
+    if (buscado) void buscar(true)
+  })
 
   const disponibles = resultados.filter((r) => r.disponible)
   const ocupados = resultados.filter((r) => !r.disponible)
