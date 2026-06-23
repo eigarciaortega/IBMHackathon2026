@@ -3,6 +3,7 @@ package com.corporativoalpha.officespace.catalog.controller;
 import com.corporativoalpha.officespace.catalog.domain.model.Space;
 import com.corporativoalpha.officespace.catalog.service.SpaceService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +14,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/spaces")
 @Tag(name = "Spaces", description = "API for managing office spaces")
+@SecurityRequirement(name = "bearerAuth")
 public class SpaceController {
 
     private final SpaceService spaceService;
