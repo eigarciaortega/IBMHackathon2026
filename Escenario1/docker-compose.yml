@@ -1,0 +1,62 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: officespace_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: officeuser
+      POSTGRES_PASSWORD: officepass
+      POSTGRES_DB: officespace
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./shared-infra/init-db.sql:/docker-entrypoint-initdb.d/init.sql
+
+  adminer:
+    image: adminer
+    container_name: officespace_adminer
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+
+  catalog-service:
+    build: ./catalog_service
+    container_name: officespace_catalog
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      PORT: 3001
+      DATABASE_URL: postgresql://officeuser:officepass@postgres:5432/officespace
+      JWT_SECRET: officespace_secret_2026
+    depends_on:
+      - postgres
+
+  booking-service:
+    build: ./booking_service
+    container_name: officespace_booking
+    restart: unless-stopped
+    ports:
+      - "3002:3002"
+    environment:
+      PORT: 3002
+      DATABASE_URL: postgresql://officeuser:officepass@postgres:5432/officespace
+      JWT_SECRET: officespace_secret_2026
+    depends_on:
+      - postgres
+
+  frontend:
+    build: ./frontend
+    container_name: officespace_frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - catalog-service
+      - booking-service
+
+volumes:
+  postgres_data:
