@@ -52,6 +52,65 @@ Las relaciones centrales son:
 - un espacio puede tener muchas reservas;
 - un usuario puede generar muchas busquedas registradas por Alpha Assistant.
 
+```mermaid
+erDiagram
+  USERS ||--o{ BOOKINGS : creates
+  USERS ||--o{ ASSISTANT_LOGS : searches
+  SPACES ||--o{ BOOKINGS : is_reserved
+
+  USERS {
+    uuid id PK
+    varchar email UK
+    text password_hash
+    varchar full_name
+    varchar role
+    timestamptz created_at
+  }
+
+  SPACES {
+    uuid id PK
+    varchar name
+    varchar type
+    integer capacity
+    varchar floor
+    boolean has_projector
+    boolean has_ac
+    boolean has_screen
+    boolean has_whiteboard
+    boolean is_quiet_zone
+    text description
+    boolean active
+    timestamptz created_at
+    timestamptz updated_at
+  }
+
+  BOOKINGS {
+    uuid id PK
+    uuid space_id FK
+    uuid user_id FK
+    date date
+    time start_time
+    time end_time
+    integer attendees
+    varchar status
+    timestamptz created_at
+    timestamptz updated_at
+  }
+
+  ASSISTANT_LOGS {
+    uuid id PK
+    uuid user_id FK
+    text query_text
+    varchar intent
+    varchar detected_type
+    integer detected_capacity
+    date detected_date
+    varchar detected_time_preference
+    text_array detected_resources
+    timestamptz created_at
+  }
+```
+
 ## Stack tecnologico
 
 - Frontend: HTML, CSS y JavaScript puro, sin React.
@@ -122,9 +181,49 @@ Esta version entrega un MVP funcional y defendible para el Escenario 1:
 
 Nota de desarrollo local: si cambias el esquema de base de datos y necesitas reiniciar datos semilla desde cero, usa `docker compose down -v` antes de levantar nuevamente con `docker compose up --build`.
 
-## Enfoque de innovacion
+## Caracteristicas innovadoras
 
-Alpha Assistant convierte consultas como "Necesito una sala para 5 personas manana en la manana con proyector" en filtros estructurados, consulta disponibilidad real y devuelve sugerencias concretas. El dashboard de negocio usa esas senales para detectar demanda, recursos mas solicitados y patrones de ocupacion.
+### Bot de sugerencias: Alpha Assistant
+
+Alpha Assistant convierte consultas como "Necesito una sala para 5 personas manana en la manana con proyector" en filtros estructurados, consulta disponibilidad real y devuelve sugerencias concretas.
+
+Esta innovacion se alinea con la opcion de **Bot de Sugerencias Inteligentes** del escenario:
+
+- interpreta lenguaje natural en filtros de tipo, capacidad, fecha, horario y recursos;
+- usa la misma logica de disponibilidad que el motor de reservas;
+- excluye espacios con reservas `ACTIVE` solapadas;
+- muestra tarjetas de espacios sugeridos en frontend;
+- permite reservar directamente desde una sugerencia;
+- registra busquedas en `assistant_logs` para analitica posterior.
+
+Alcance defendible: el asistente recomienda espacios disponibles y reduce friccion de reserva. No implementa todavia optimizacion avanzada basada en historial individual, espacios menos utilizados u horarios de menor conflicto, por lo que se presenta como una version MVP integrada del bot.
+
+### Panel de analisis para administradores
+
+El dashboard de negocio usa reservas y busquedas del asistente para detectar demanda, recursos mas solicitados y patrones de ocupacion.
+
+Esta innovacion se alinea con la opcion de **Panel de analisis** del escenario:
+
+- ocupacion del dia y espacios disponibles;
+- reservas totales y promedio de asistentes;
+- espacios mas reservados;
+- horarios pico;
+- demanda por tipo de espacio;
+- recursos mas solicitados por Alpha Assistant;
+- busquedas recientes del asistente.
+
+### Innovacion QA: CI/CD con pruebas automatizadas
+
+El pipeline esta en [`.github/workflows/ci.yml`](.github/workflows/ci.yml). Se ejecuta en `push` y `pull_request`.
+
+Esta innovacion se alinea con la opcion de **CI/CD con Pruebas Automatizadas** del escenario:
+
+- instala dependencias de `auth-service`, `catalog-service` y `booking-service`;
+- ejecuta `node --check` sobre los archivos JS de cada servicio;
+- valida `docker compose config`;
+- evita que errores de sintaxis o configuracion invalida lleguen a la rama principal de entrega.
+
+Alcance defendible: es un pipeline ligero para hackathon. No incluye aun cobertura de codigo ni pruebas end-to-end completas.
 
 ## QA Strategy
 
@@ -182,7 +281,7 @@ Variables incluidas:
 
 La coleccion incluye requests para login, catalogo, disponibilidad, reservas, Alpha Assistant y dashboard analytics.
 
-## Innovacion QA: CI/CD con GitHub Actions
+## CI/CD con GitHub Actions
 
 El pipeline esta en [`.github/workflows/ci.yml`](.github/workflows/ci.yml). Se ejecuta en `push` y `pull_request`.
 
