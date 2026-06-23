@@ -4,8 +4,10 @@
   "description": "Processor Service for NeoWallet P2P Payments",
   "main": "src/index.js",
   "scripts": {
+    "check": "node --check src/index.js",
     "start": "node src/index.js",
-    "dev": "node --watch src/index.js"
+    "dev": "node --watch src/index.js",
+    "test": "node --test"
   },
   "dependencies": {
     "express": "^4.19.2",
@@ -13,4 +15,3 @@
     "swagger-ui-express": "^5.0.1"
   }
 }
-

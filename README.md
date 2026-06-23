@@ -197,3 +197,69 @@ Debe devolver `CONSISTENT` cuando el total de balances de usuarios seed sea `105
 - Health checks.
 - Swagger/OpenAPI.
 - Coleccion Postman.
+
+## QA y pruebas
+
+La fase 1.6 agrega una estrategia de QA para cubrir los riesgos principales del sistema: perdida de dinero, duplicidad por reintentos, fallos parciales, race conditions y validaciones insuficientes.
+
+Documentacion agregada:
+
+- `docs/QA_STRATEGY.md`
+- `docs/TEST_CASES.md`
+- `docs/GHERKIN.md`
+- `docs/BUG_REPORT.md`
+
+La coleccion Postman esta en:
+
+- `postman/NeoWallet.postman_collection.json`
+
+Incluye requests para health checks, cuentas, recargas, update balance, transferencias, idempotencia, rollback, historial, auditoria y reconciliacion.
+
+## Pruebas automatizadas
+
+Cada servicio tiene pruebas ligeras con `node:test` y `assert`, enfocadas en validaciones de input y reglas simples.
+
+```bash
+cd accounts-service
+npm test
+```
+
+```bash
+cd processor-service
+npm test
+```
+
+Checks de sintaxis:
+
+```bash
+cd accounts-service
+npm run check
+```
+
+```bash
+cd processor-service
+npm run check
+```
+
+Validar Docker Compose:
+
+```bash
+docker compose config
+```
+
+## CI/CD
+
+Se agrego GitHub Actions en `.github/workflows/ci.yml`.
+
+El pipeline corre en `push` y `pull_request`:
+
+- instala dependencias de ambos servicios,
+- ejecuta `npm run check`,
+- ejecuta `npm test`,
+- valida `docker compose config`.
+
+No levanta toda la app para mantener el pipeline rapido y confiable.
+
+## Bugs prevenidos
+
+`docs/BUG_REPORT.md` documenta defectos criticos prevenidos, incluyendo saldo negativo, recargas negativas, auto-transferencias, fondos insuficientes, duplicidad por idempotencia, perdida de dinero ante fallo de credito, SQL injection y health checks falsos positivos.

@@ -1,0 +1,159 @@
+{
+  "info": {
+    "name": "NeoWallet P2P Payments",
+    "_postman_id": "d5a8463c-0625-4fc3-a643-3dbbb36e5b7f",
+    "description": "API tests for NeoWallet accounts-service and processor-service.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseAccountsUrl", "value": "http://localhost:3000" },
+    { "key": "baseProcessorUrl", "value": "http://localhost:3001" },
+    { "key": "userA", "value": "1" },
+    { "key": "userB", "value": "2" },
+    { "key": "userC", "value": "3" },
+    { "key": "transactionId", "value": "" },
+    { "key": "idempotencyKey", "value": "idem-postman-001" }
+  ],
+  "item": [
+    {
+      "name": "accounts-service",
+      "item": [
+        {
+          "name": "GET Health Accounts",
+          "request": { "method": "GET", "url": "{{baseAccountsUrl}}/health" },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('status 200', () => pm.response.to.have.status(200));", "pm.test('status ok', () => pm.expect(pm.response.json().status).to.eql('ok'));"] } }]
+        },
+        {
+          "name": "GET Account User A",
+          "request": { "method": "GET", "url": "{{baseAccountsUrl}}/accounts/{{userA}}" },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('status 200', () => pm.response.to.have.status(200));", "pm.test('has balance', () => pm.expect(pm.response.json()).to.have.property('balance'));"] } }]
+        },
+        {
+          "name": "GET Account Invalid ID",
+          "request": { "method": "GET", "url": "{{baseAccountsUrl}}/accounts/abc" },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('status 400', () => pm.response.to.have.status(400));"] } }]
+        },
+        {
+          "name": "GET Account Not Found",
+          "request": { "method": "GET", "url": "{{baseAccountsUrl}}/accounts/999" },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('status 404', () => pm.response.to.have.status(404));"] } }]
+        },
+        {
+          "name": "POST Recharge Valid",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"user_id\":{{userA}},\"amount\":10.00,\"payment_method\":\"SIMULATED_CARD\"}" },
+            "url": "{{baseAccountsUrl}}/api/recharge"
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('status 201', () => pm.response.to.have.status(201));"] } }]
+        },
+        {
+          "name": "POST Recharge Invalid Amount",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"user_id\":{{userA}},\"amount\":\"100abc\"}" },
+            "url": "{{baseAccountsUrl}}/api/recharge"
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('status 400', () => pm.response.to.have.status(400));"] } }]
+        },
+        {
+          "name": "POST Update Balance Credit",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"user_id\":{{userB}},\"amount\":5.00,\"operation\":\"credit\"}" },
+            "url": "{{baseAccountsUrl}}/accounts/update-balance"
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('status 200', () => pm.response.to.have.status(200));"] } }]
+        },
+        {
+          "name": "POST Update Balance Debit",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"user_id\":{{userB}},\"amount\":5.00,\"operation\":\"debit\"}" },
+            "url": "{{baseAccountsUrl}}/accounts/update-balance"
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('status 200', () => pm.response.to.have.status(200));"] } }]
+        },
+        {
+          "name": "POST Update Balance Insufficient Funds",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"user_id\":{{userC}},\"amount\":500.00,\"operation\":\"debit\"}" },
+            "url": "{{baseAccountsUrl}}/accounts/update-balance"
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('status 400', () => pm.response.to.have.status(400));", "pm.test('insufficient funds', () => pm.expect(pm.response.json().error).to.eql('insufficient_funds'));"] } }]
+        }
+      ]
+    },
+    {
+      "name": "processor-service",
+      "item": [
+        {
+          "name": "GET Health Processor",
+          "request": { "method": "GET", "url": "{{baseProcessorUrl}}/health" },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('status 200', () => pm.response.to.have.status(200));", "pm.test('accounts reachable', () => pm.expect(pm.response.json().accountsService).to.eql('reachable'));"] } }]
+        },
+        {
+          "name": "POST Transfer Success",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"sender_id\":{{userA}},\"receiver_id\":{{userB}},\"amount\":100.00}" },
+            "url": "{{baseProcessorUrl}}/api/transfer"
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('status 201', () => pm.response.to.have.status(201));", "pm.test('completed', () => pm.expect(pm.response.json().status).to.eql('COMPLETED'));", "pm.collectionVariables.set('transactionId', pm.response.json().transaction_id);"] } }]
+        },
+        {
+          "name": "POST Transfer Self Transfer",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"sender_id\":{{userA}},\"receiver_id\":{{userA}},\"amount\":10.00}" }, "url": "{{baseProcessorUrl}}/api/transfer" },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('status 400', () => pm.response.to.have.status(400));"] } }]
+        },
+        {
+          "name": "POST Transfer Invalid Amount",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"sender_id\":{{userA}},\"receiver_id\":{{userB}},\"amount\":1.234}" }, "url": "{{baseProcessorUrl}}/api/transfer" },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('status 400', () => pm.response.to.have.status(400));"] } }]
+        },
+        {
+          "name": "POST Transfer Sender Not Found",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"sender_id\":999,\"receiver_id\":{{userB}},\"amount\":10.00}" }, "url": "{{baseProcessorUrl}}/api/transfer" },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('status 404', () => pm.response.to.have.status(404));"] } }]
+        },
+        {
+          "name": "POST Transfer Receiver Not Found",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"sender_id\":{{userA}},\"receiver_id\":999,\"amount\":10.00}" }, "url": "{{baseProcessorUrl}}/api/transfer" },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('status 404', () => pm.response.to.have.status(404));"] } }]
+        },
+        {
+          "name": "POST Transfer Insufficient Funds",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"sender_id\":{{userC}},\"receiver_id\":{{userB}},\"amount\":500.00}" }, "url": "{{baseProcessorUrl}}/api/transfer" },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('status 400', () => pm.response.to.have.status(400));"] } }]
+        },
+        {
+          "name": "POST Transfer Idempotency First Try",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "X-Idempotency-Key", "value": "{{idempotencyKey}}" }], "body": { "mode": "raw", "raw": "{\"sender_id\":{{userB}},\"receiver_id\":{{userA}},\"amount\":25.00}" }, "url": "{{baseProcessorUrl}}/api/transfer" },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('status 201', () => pm.response.to.have.status(201));", "pm.test('not replay', () => pm.expect(pm.response.json().idempotent_replay).to.eql(false));"] } }]
+        },
+        {
+          "name": "POST Transfer Idempotency Replay",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "X-Idempotency-Key", "value": "{{idempotencyKey}}" }], "body": { "mode": "raw", "raw": "{\"sender_id\":{{userB}},\"receiver_id\":{{userA}},\"amount\":25.00}" }, "url": "{{baseProcessorUrl}}/api/transfer" },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('status 200', () => pm.response.to.have.status(200));", "pm.test('replay true', () => pm.expect(pm.response.json().idempotent_replay).to.eql(true));"] } }]
+        },
+        {
+          "name": "POST Transfer Simulated Credit Failure Rollback",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "X-Simulate-Credit-Failure", "value": "true" }], "body": { "mode": "raw", "raw": "{\"sender_id\":{{userA}},\"receiver_id\":{{userB}},\"amount\":5.00}" }, "url": "{{baseProcessorUrl}}/api/transfer" },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('status 502', () => pm.response.to.have.status(502));", "pm.test('rolled back', () => pm.expect(pm.response.json().status).to.eql('ROLLED_BACK'));"] } }]
+        },
+        { "name": "GET Transactions User A", "request": { "method": "GET", "url": "{{baseProcessorUrl}}/api/transactions/{{userA}}" }, "event": [{ "listen": "test", "script": { "exec": ["pm.test('status 200', () => pm.response.to.have.status(200));"] } }] },
+        { "name": "GET Transactions Invalid User", "request": { "method": "GET", "url": "{{baseProcessorUrl}}/api/transactions/abc" }, "event": [{ "listen": "test", "script": { "exec": ["pm.test('status 400', () => pm.response.to.have.status(400));"] } }] },
+        { "name": "GET Money Conservation Audit", "request": { "method": "GET", "url": "{{baseProcessorUrl}}/api/audit/money-conservation" }, "event": [{ "listen": "test", "script": { "exec": ["pm.test('status 200', () => pm.response.to.have.status(200));", "pm.test('consistent', () => pm.expect(pm.response.json().status).to.eql('CONSISTENT'));"] } }] },
+        { "name": "GET Reconciliation", "request": { "method": "GET", "url": "{{baseProcessorUrl}}/api/audit/reconciliation" }, "event": [{ "listen": "test", "script": { "exec": ["pm.test('status 200', () => pm.response.to.have.status(200));", "pm.test('has transaction counts', () => pm.expect(pm.response.json()).to.have.property('transactions'));"] } }] }
+      ]
+    }
+  ]
+}
+

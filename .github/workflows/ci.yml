@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install accounts-service dependencies
+        working-directory: accounts-service
+        run: npm install
+
+      - name: Install processor-service dependencies
+        working-directory: processor-service
+        run: npm install
+
+      - name: Check accounts-service syntax
+        working-directory: accounts-service
+        run: npm run check
+
+      - name: Check processor-service syntax
+        working-directory: processor-service
+        run: npm run check
+
+      - name: Test accounts-service
+        working-directory: accounts-service
+        run: npm test
+
+      - name: Test processor-service
+        working-directory: processor-service
+        run: npm test
+
+      - name: Validate Docker Compose
+        run: docker compose config
+
