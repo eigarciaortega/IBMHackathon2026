@@ -1,0 +1,106 @@
+/* Estilos de "Mis Reservas". */
+
+.page--my-reservations {
+  padding: 1.25rem;
+}
+
+.mr-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+
+.mr-table th,
+.mr-table td {
+  border: 1px solid #e4e7eb;
+  padding: 0.5rem 0.65rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.mr-table__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.mr-table__nota {
+  color: #9aa5b1;
+}
+
+.estado {
+  display: inline-block;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.estado--Activo,
+.estado--ocupado {
+  background: #def7ec;
+  color: #03543f;
+}
+
+.estado--Cancelado,
+.estado--libre {
+  background: #fde8e8;
+  color: #9b1c1c;
+}
+
+.boton--peligro {
+  background: #e12d39;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.35rem 0.7rem;
+  cursor: pointer;
+}
+
+.boton--peligro:hover:not(:disabled) {
+  background: #cf1124;
+}
+
+.mr-edit {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+  padding: 0.6rem;
+  background: #f5f7fa;
+  border-radius: 6px;
+}
+
+.mr-edit label {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.85rem;
+  gap: 0.2rem;
+}
+
+.mr-edit__actions {
+  display: flex;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.mr-feedback {
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+}
+
+.mr-feedback--exito {
+  background: #def7ec;
+  color: #03543f;
+}
+
+.mr-feedback--error {
+  background: #fde8e8;
+  color: #9b1c1c;
+}
+
+.campo-error {
+  color: #cf1124;
+  font-size: 0.85rem;
+  width: 100%;
+}

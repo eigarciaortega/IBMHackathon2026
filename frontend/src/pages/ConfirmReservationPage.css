@@ -1,0 +1,96 @@
+/* Estilos de la Pantalla de Confirmación de reserva (tarea 9.4). */
+
+.page--confirm .confirm__resumen {
+  background: #ffffff;
+  border: 1px solid #e4e7eb;
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.confirm__resumen h2 {
+  margin-top: 0;
+  font-size: 1.1rem;
+}
+
+.confirm__detalles {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem 1.5rem;
+}
+
+.confirm__detalles div {
+  display: flex;
+  flex-direction: column;
+}
+
+.confirm__detalles dt {
+  font-size: 0.8rem;
+  color: #616e7c;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.confirm__detalles dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+.confirm__form {
+  display: flex;
+  flex-direction: column;
+  max-width: 320px;
+  gap: 0.5rem;
+}
+
+.confirm__label {
+  font-weight: 600;
+}
+
+.confirm__form input {
+  padding: 0.5rem;
+  border: 1px solid #cbd2d9;
+  border-radius: 6px;
+  font-size: 1rem;
+}
+
+.confirm__form input[aria-invalid='true'] {
+  border-color: #cf1124;
+}
+
+.confirm__error {
+  color: #cf1124;
+  margin: 0;
+}
+
+.confirm__aviso {
+  color: #b44d12;
+}
+
+.confirm__exito {
+  color: #0a6c3d;
+  font-weight: 600;
+}
+
+.confirm__submit {
+  margin-top: 0.5rem;
+  padding: 0.6rem 1rem;
+  background: #2563eb;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.confirm__submit:disabled {
+  background: #9aa5b1;
+  cursor: not-allowed;
+}
+
+.confirm__ver-reservas {
+  display: inline-block;
+  margin-top: 0.5rem;
+  font-weight: 600;
+}

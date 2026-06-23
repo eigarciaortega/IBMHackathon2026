@@ -1,0 +1,208 @@
+/* Estilos de la Vista de administración (tarea 9.5). */
+
+.page--admin .admin-section {
+  margin-bottom: 2.5rem;
+}
+
+.admin-section__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.75rem;
+}
+
+.admin-table th,
+.admin-table td {
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid #d9e2ec;
+}
+
+.admin-table th {
+  font-weight: 600;
+  color: #486581;
+}
+
+.admin-table__actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.estado {
+  display: inline-block;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  text-transform: capitalize;
+}
+
+.estado--ocupado {
+  background-color: #ffe3e3;
+  color: #b4232c;
+}
+
+.estado--libre {
+  background-color: #d3f9d8;
+  color: #2b8a3e;
+}
+
+button {
+  cursor: pointer;
+  padding: 0.4rem 0.9rem;
+  border: 1px solid #9fb3c8;
+  border-radius: 6px;
+  background-color: #fff;
+  color: #1f2933;
+  font-size: 0.9rem;
+}
+
+button:hover:not(:disabled) {
+  background-color: #f0f4f8;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.boton--peligro {
+  border-color: #e03131;
+  color: #c92a2a;
+}
+
+.boton--peligro:hover:not(:disabled) {
+  background-color: #fff0f0;
+}
+
+.admin-feedback {
+  padding: 0.6rem 1rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+}
+
+.admin-feedback--exito {
+  background-color: #d3f9d8;
+  color: #2b8a3e;
+}
+
+.admin-feedback--error {
+  background-color: #ffe3e3;
+  color: #b4232c;
+}
+
+.admin-error {
+  padding: 0.6rem 1rem;
+  border-radius: 6px;
+  background-color: #ffe3e3;
+  color: #b4232c;
+  margin-bottom: 1rem;
+}
+
+.admin-form {
+  border: 1px solid #d9e2ec;
+  border-radius: 8px;
+  padding: 1.25rem;
+  background-color: #fff;
+  margin-top: 1rem;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1rem;
+}
+
+.campo label {
+  font-weight: 600;
+  margin-bottom: 0.3rem;
+}
+
+.campo input,
+.campo select {
+  padding: 0.45rem 0.6rem;
+  border: 1px solid #9fb3c8;
+  border-radius: 6px;
+  font-size: 0.95rem;
+}
+
+.campo input[aria-invalid='true'],
+.campo select[aria-invalid='true'] {
+  border-color: #e03131;
+}
+
+.campo-error {
+  color: #c92a2a;
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+}
+
+.admin-form__actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.admin-confirm {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(15, 23, 42, 0.5);
+  padding: 1rem;
+}
+
+.admin-confirm__panel {
+  background-color: #fff;
+  border-radius: 8px;
+  padding: 1.5rem;
+  max-width: 420px;
+  width: 100%;
+}
+
+.admin-confirm__actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+/* Checklist de Recursos del formulario de Espacio. */
+.campo--recursos {
+  border: 1px solid #cbd2d9;
+  border-radius: 6px;
+  padding: 0.6rem 0.8rem;
+}
+
+.campo--recursos legend {
+  font-weight: 600;
+  padding: 0 0.3rem;
+}
+
+.recursos-checklist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 0.35rem 1rem;
+}
+
+.recursos-checklist label {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-weight: 400;
+  cursor: pointer;
+}
+
+.campo-nota {
+  margin: 0;
+  color: #616e7c;
+  font-size: 0.9rem;
+}

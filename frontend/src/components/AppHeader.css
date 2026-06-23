@@ -1,0 +1,54 @@
+/* Cabecera de las vistas protegidas. */
+
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 0.75rem 1.25rem;
+  background: #1f2933;
+  color: #fff;
+}
+
+.app-header__brand {
+  font-weight: 700;
+  font-size: 1.1rem;
+  letter-spacing: 0.02em;
+}
+
+.app-header__nav {
+  display: flex;
+  gap: 1rem;
+  flex: 1;
+}
+
+.app-header__link {
+  color: #cbd2d9;
+  text-decoration: none;
+  font-weight: 600;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+}
+
+.app-header__link:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.app-header__link.active {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.app-header__logout {
+  background: #e12d39;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.app-header__logout:hover {
+  background: #cf1124;
+}
