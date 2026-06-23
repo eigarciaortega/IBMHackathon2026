@@ -116,6 +116,20 @@ Cancela la reserva (`estado → CANCELADA`), liberando el horario.
 - `200 Reserva`
 - `401` · `403 ACCESO_DENEGADO` (reserva ajena) · `404 RESERVA_NO_ENCONTRADA`
 
+### `GET /notifications` (ADMIN)
+Historial reciente de notificaciones y conteo de no leídas.
+- `200 { notificaciones: [ Notificacion ], no_leidas }` · `401` · `403 ACCESO_DENEGADO`
+
+### `POST /notifications/read` (ADMIN)
+Marca como leídas todas las notificaciones pendientes.
+- `204` · `401` · `403 ACCESO_DENEGADO`
+
+### `GET /notifications/stream` (ADMIN, SSE)
+Flujo de notificaciones en tiempo real (Server-Sent Events). Como `EventSource` no
+envía headers, el JWT de administrador viaja en el query param `token`.
+- `200 text/event-stream` (eventos `notificacion` con la `Notificacion` en JSON)
+- `401 TOKEN_INVALIDO` · `403 ACCESO_DENEGADO`
+
 ### `GET /api-docs`
 Swagger UI.
 
@@ -127,3 +141,14 @@ Swagger UI.
   "asistentes": 4, "estado": "CONFIRMADA", "creado_en": "2026-06-23T00:00:00Z"
 }
 ```
+
+**Notificacion:**
+```json
+{
+  "id": 1, "tipo": "RESERVA_CREADA",
+  "mensaje": "carlos.mendez@corporativoalpha.com reservó Sala Monterrey de 09:00 a 10:00",
+  "actor_email": "carlos.mendez@corporativoalpha.com", "recurso": "Sala Monterrey",
+  "leida": false, "creado_en": "2026-06-23T00:00:00Z"
+}
+```
+`tipo` ∈ `RESERVA_CREADA` · `RESERVA_CANCELADA` · `ESPACIO_CREADO` · `ESPACIO_ACTUALIZADO` · `ESPACIO_ELIMINADO`.

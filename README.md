@@ -33,6 +33,7 @@ apagado.
 - [Documentación de la API (Swagger)](#documentación-de-la-api-swagger)
 - [Guía de uso](#guía-de-uso)
 - [Justificación arquitectónica](#justificación-arquitectónica)
+- [Bonus: notificaciones en tiempo real](#bonus-notificaciones-en-tiempo-real)
 - [Pruebas y QA](#pruebas-y-qa)
 - [Documentación adicional](#documentación-adicional)
 - [Licencia](#licencia)
@@ -211,6 +212,29 @@ código de dominio.
 servicios migrando las mismas tablas al arrancar generan condiciones de carrera. El
 esquema, índices, restricciones y semilla viven en `shared-infra/init-db.sql`, que
 PostgreSQL ejecuta una vez al inicializar el volumen.
+
+## Bonus: notificaciones en tiempo real
+
+El administrador recibe una alerta **en el momento** en que ocurre cualquier acción
+relevante —una reserva creada o cancelada (por cualquier colaborador) y altas,
+ediciones o borrados de espacios— sin recargar la página.
+
+La entrega es en tiempo real con **Server-Sent Events (SSE)** sobre
+**PostgreSQL `LISTEN/NOTIFY`**, lo que mantiene los servicios desacoplados:
+
+1. `catalog-service` y `booking-service` solo **agregan** una fila a la tabla
+   `notificaciones` (bitácora compartida de solo-inserción).
+2. Un **trigger** de PostgreSQL publica esa fila, ya en su forma JSON, en el canal
+   `notificaciones` (`pg_notify`).
+3. `booking-service` mantiene un **`LISTEN`** sobre ese canal y reenvía cada evento
+   a los administradores conectados por SSE (`GET /notifications/stream`). La SPA se
+   suscribe con `EventSource`, actualiza la campana (contador de no leídas) y lanza
+   un toast.
+
+Así, catalog no llama a booking por HTTP para notificar: la base de datos hace de
+bus de eventos. La puerta de enlace nginx proxea el flujo SSE sin buffering. El
+historial y el marcado como leídas viven en `GET /notifications` y
+`POST /notifications/read` (ambos solo para ADMINISTRADOR).
 
 ## Pruebas y QA
 
