@@ -18,7 +18,7 @@ COPY src ./src
 RUN mvn clean package -DskipTests -B --no-transfer-progress
 
 # ── Stage 2: Runtime ─────────────────────────────────────────────────
-FROM eclipse-temurin:21-jdk-noble AS runtime
+FROM tomcat:jre21-temurin-jammy AS runtime
 
 # Eliminar webapps por defecto
 RUN rm -rf /usr/local/tomcat/webapps/*
