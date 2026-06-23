@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OfficeSpace — Reserva Confirmada</title>
+  <link rel="stylesheet" href="../css/styles.css">
+  <style>
+    .success-banner {
+      text-align: center;
+      padding: 24px 0 20px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 24px;
+    }
+    .success-banner h2 {
+      font-size: 1rem; letter-spacing: 3px;
+      text-transform: uppercase; color: var(--white);
+    }
+    .success-banner p {
+      color: var(--gray); font-size: .8rem;
+      letter-spacing: 1px; margin-top: 6px;
+    }
+    .success-line {
+      width: 48px; height: 2px;
+      background: var(--red); margin: 14px auto 0;
+    }
+  </style>
+</head>
+<body>
+
+<nav class="navbar" id="navbar"></nav>
+
+<main class="page" style="max-width:560px;">
+  <div class="card" id="confirm-card" style="border-top:3px solid var(--red);">
+    <div class="success-banner">
+      <h2>Reserva Confirmada</h2>
+      <div class="success-line"></div>
+      <p>Tu espacio ha sido reservado exitosamente</p>
+    </div>
+
+    <div class="folio">
+      <small>Numero de Folio</small>
+      <strong id="folio-num">#-----</strong>
+    </div>
+
+    <div class="confirm-box" id="detalles-reserva"></div>
+
+    <p style="font-size:.78rem;color:var(--gray);margin:16px 0;letter-spacing:.3px;">
+      Recuerda presentarte puntualmente al espacio reservado.
+    </p>
+
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <a href="search.html"      class="btn btn-primary"   style="flex:1;justify-content:center;">Nueva Busqueda</a>
+      <a href="my-bookings.html" class="btn btn-secondary" style="flex:1;justify-content:center;">Mis Reservas</a>
+    </div>
+  </div>
+</main>
+
+<script src="../js/app.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    if (!Auth.requireLogin()) return;
+    renderNavbar('');
+
+    const raw = sessionStorage.getItem('ultima_reserva');
+    if (!raw) {
+      document.getElementById('confirm-card').innerHTML = `
+        <div class="empty">
+          <div class="empty-icon">—</div>
+          <p>No se encontro informacion de reserva.</p>
+          <a href="search.html" class="btn btn-primary" style="margin-top:16px;">Ir a Buscar</a>
+        </div>`;
+      return;
+    }
+
+    const r = JSON.parse(raw);
+    document.getElementById('folio-num').textContent = `#${String(r.id).padStart(5,'0')}`;
+
+    document.getElementById('detalles-reserva').innerHTML = `
+      <h3>Detalles de la Reserva</h3>
+      <div class="confirm-row"><span>Espacio</span><span>${r.espacio_nombre || 'N/A'}</span></div>
+      <div class="confirm-row"><span>Ubicacion</span><span>${r.piso || 'N/A'}</span></div>
+      <div class="confirm-row"><span>Fecha</span><span>${fmtDate(r.fecha)}</span></div>
+      <div class="confirm-row"><span>Horario</span><span>${fmtTime(r.hora_inicio)} — ${fmtTime(r.hora_fin)}</span></div>
+      <div class="confirm-row"><span>Asistentes</span><span>${r.asistentes} persona(s)</span></div>
+      <div class="confirm-row"><span>Reservado por</span><span>${Auth.user()?.email}</span></div>
+    `;
+
+    sessionStorage.removeItem('ultima_reserva');
+  });
+</script>
+</body>
+</html>

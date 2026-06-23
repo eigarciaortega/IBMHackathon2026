@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OfficeSpace — Mis Reservas</title>
+  <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+
+<nav class="navbar" id="navbar"></nav>
+
+<main class="page">
+  <h2 class="page-title">Mis Reservas</h2>
+  <div id="alert-mis" class="alert"></div>
+
+  <div class="card">
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('proximas', this)">Proximas</button>
+      <button class="tab-btn"        onclick="switchTab('pasadas',  this)">Pasadas</button>
+    </div>
+    <div id="tab-proximas"></div>
+    <div id="tab-pasadas" style="display:none;"></div>
+  </div>
+</main>
+
+<script src="../js/app.js"></script>
+<script>
+  let todasLasReservas = [];
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    if (!Auth.requireLogin()) return;
+    renderNavbar('mybookings');
+    iniciarNotificaciones();
+    await cargarReservas();
+  });
+
+  async function cargarReservas() {
+    document.getElementById('tab-proximas').innerHTML =
+      '<div class="skeleton" style="height:80px;margin-bottom:8px;"></div>'.repeat(3);
+    try {
+      const res = await apiFetch('/bookings/mis-reservas');
+      if (!res) return;
+      todasLasReservas = await res.json();
+      renderTabs();
+    } catch (err) {
+      showAlert('alert-mis', 'Error al cargar tus reservas.', 'error');
+    }
+  }
+
+  function switchTab(tab, btn) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-proximas').style.display = tab === 'proximas' ? 'block' : 'none';
+    document.getElementById('tab-pasadas').style.display  = tab === 'pasadas'  ? 'block' : 'none';
+  }
+
+  function renderTabs() {
+   const hoy = new Date().toISOString().split('T')[0];
+    const proximas = todasLasReservas.filter(r => (r.fecha || '').split('T')[0] >= hoy);
+    const pasadas  = todasLasReservas.filter(r => (r.fecha || '').split('T')[0] <  hoy);
+    document.getElementById('tab-proximas').innerHTML = renderTabla(proximas, true);
+    document.getElementById('tab-pasadas').innerHTML  = renderTabla(pasadas, false);
+  }
+
+  function renderTabla(reservas, puedenCancelar) {
+    if (reservas.length === 0) {
+      return `<div class="empty"><div class="empty-icon">—</div>
+        <p>${puedenCancelar ? 'No tienes reservas proximas.' : 'No tienes reservas pasadas.'}</p>
+        ${puedenCancelar ? '<a href="search.html" class="btn btn-primary" style="margin-top:16px;">Buscar un espacio</a>' : ''}
+        </div>`;
+    }
+    const filas = reservas.map(r => `
+      <tr>
+        <td><strong>#${String(r.id).padStart(5,'0')}</strong></td>
+        <td>${r.espacio_nombre || `Espacio #${r.space_id}`}</td>
+        <td><span class="badge ${r.tipo === 'SALA' ? 'badge-sala' : 'badge-desk'}">${r.tipo || '—'}</span></td>
+        <td>${fmtDate(r.fecha)}</td>
+        <td>${fmtTime(r.hora_inicio)} — ${fmtTime(r.hora_fin)}</td>
+        <td>${r.asistentes}</td>
+        <td>${r.piso || '—'}</td>
+        <td>
+          ${puedenCancelar
+            ? `<button class="btn btn-danger btn-sm" onclick="cancelar(${r.id})">Cancelar</button>`
+            : `<span style="color:var(--gray);font-size:.75rem;letter-spacing:.5px;">Finalizada</span>`}
+        </td>
+      </tr>`).join('');
+
+    return `
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Folio</th><th>Espacio</th><th>Tipo</th><th>Fecha</th><th>Horario</th><th>Asist.</th><th>Piso</th><th>Accion</th></tr>
+          </thead>
+          <tbody>${filas}</tbody>
+        </table>
+      </div>`;
+  }
+
+  async function cancelar(id) {
+    if (!confirm('Deseas cancelar esta reserva?')) return;
+    try {
+      const res  = await apiFetch(`/bookings/${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (res.ok) {
+        showAlert('alert-mis', 'Reserva cancelada correctamente.', 'success');
+        await cargarReservas();
+      } else {
+        showAlert('alert-mis', data.error || 'No se pudo cancelar.', 'error');
+      }
+    } catch (err) {
+      showAlert('alert-mis', 'Error de conexion.', 'error');
+    }
+  }
+</script>
+</body>
+</html>

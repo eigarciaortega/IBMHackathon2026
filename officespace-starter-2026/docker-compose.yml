@@ -1,0 +1,102 @@
+version: '3.8'
+
+services:
+
+  # ── Base de datos ─────────────────────────────────────────────────────────
+  postgres-db:
+    image: postgres:15-alpine
+    container_name: officespace_db
+    restart: always
+    environment:
+      POSTGRES_USER: alpha_user
+      POSTGRES_PASSWORD: AlphaPassword123
+      POSTGRES_DB: officespace
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./shared-infra/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U alpha_user -d officespace"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Auth Service :3003 ────────────────────────────────────────────────────
+  auth-service:
+    build: ./auth-service
+    container_name: officespace_auth
+    restart: always
+    ports:
+      - "3003:3003"
+    environment:
+      DB_HOST: postgres-db
+      DB_USER: alpha_user
+      DB_PASSWORD: AlphaPassword123
+      DB_NAME: officespace
+      DB_PORT: 5432
+      JWT_SECRET: officespace_secret_2026
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+
+  # ── Catalog Service :3001 ─────────────────────────────────────────────────
+  catalog-service:
+    build: ./catalog-service
+    container_name: officespace_catalog
+    restart: always
+    ports:
+      - "3001:3001"
+    environment:
+      DB_HOST: postgres-db
+      DB_USER: alpha_user
+      DB_PASSWORD: AlphaPassword123
+      DB_NAME: officespace
+      DB_PORT: 5432
+      JWT_SECRET: officespace_secret_2026
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+
+  # ── Booking Service :3002 ─────────────────────────────────────────────────
+  booking-service:
+    build: ./booking-service
+    container_name: officespace_booking
+    restart: always
+    ports:
+      - "3002:3002"
+    environment:
+      DB_HOST: postgres-db
+      DB_USER: alpha_user
+      DB_PASSWORD: AlphaPassword123
+      DB_NAME: officespace
+      DB_PORT: 5432
+      JWT_SECRET: officespace_secret_2026
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+
+  # ── API Gateway :3000 ─────────────────────────────────────────────────────
+  api-gateway:
+    build: ./api-gateway
+    container_name: officespace_gateway
+    restart: always
+    ports:
+      - "3000:3000"
+    depends_on:
+      - auth-service
+      - catalog-service
+      - booking-service
+
+  # ── Frontend :8080 ────────────────────────────────────────────────────────
+  frontend:
+    build: ./frontend
+    container_name: officespace_frontend
+    restart: always
+    ports:
+      - "8080:80"
+    depends_on:
+      - api-gateway
+
+volumes:
+  postgres_data:

@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OfficeSpace — Administracion</title>
+  <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+
+<nav class="navbar" id="navbar"></nav>
+
+<main class="page">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:28px;flex-wrap:wrap;gap:12px;">
+    <h2 class="page-title" style="margin-bottom:0;">Panel de Administracion</h2>
+    <a href="history.html" class="btn btn-secondary">Ver Historial Completo</a>
+  </div>
+
+  <div class="tabs" style="margin-bottom:24px;">
+    <button class="tab-btn active" onclick="showTab('dashboard', this)">Dashboard</button>
+    <button class="tab-btn"        onclick="showTab('espacios',  this)">Espacios</button>
+  </div>
+
+  <div id="alert-admin" class="alert"></div>
+
+  <!-- Dashboard -->
+  <div id="tab-dashboard">
+    <div id="stats-grid" class="stats-grid"></div>
+    <div class="card">
+      <h3 style="margin-bottom:16px;font-size:.8rem;letter-spacing:2px;text-transform:uppercase;color:var(--gray);">Reservas de Hoy</h3>
+      <div id="dashboard-tabla"></div>
+    </div>
+  </div>
+
+  <!-- Espacios -->
+  <div id="tab-espacios" style="display:none;">
+    <div class="card" style="margin-bottom:20px;" id="form-espacio-card">
+      <h3 id="form-titulo" style="margin-bottom:16px;font-size:.8rem;letter-spacing:2px;text-transform:uppercase;color:var(--gray);">Nuevo Espacio</h3>
+      <input type="hidden" id="espacio-id">
+      <div class="form-row">
+        <div class="form-group"><label>Nombre *</label><input type="text" id="e-nombre" placeholder="Ej: Sala Norte"></div>
+        <div class="form-group">
+          <label>Tipo *</label>
+          <select id="e-tipo"><option value="SALA">Sala de juntas</option><option value="DESK">Escritorio</option></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Capacidad *</label><input type="number" id="e-capacidad" min="1" placeholder="Ej: 8"></div>
+        <div class="form-group"><label>Piso / Ubicacion *</label><input type="text" id="e-piso" placeholder="Ej: Piso 3"></div>
+      </div>
+      <div class="form-group"><label>Recursos</label><input type="text" id="e-recursos" placeholder="Ej: Proyector, Aire acondicionado"></div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-primary" onclick="guardarEspacio()">Guardar</button>
+        <button class="btn btn-secondary" onclick="limpiarForm()">Limpiar</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <h3 style="font-size:.8rem;letter-spacing:2px;text-transform:uppercase;color:var(--gray);">Lista de Espacios</h3>
+        <span id="total-espacios" style="font-size:.75rem;color:var(--gray);"></span>
+      </div>
+      <div id="tabla-espacios"></div>
+    </div>
+  </div>
+</main>
+
+<script src="../js/app.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    if (!Auth.requireLogin()) return;
+    if (!Auth.isAdmin()) { alert('Acceso restringido.'); window.location.href = 'search.html'; return; }
+    renderNavbar('admin');
+    iniciarNotificaciones();
+    cargarDashboard();
+  });
+
+  function showTab(tab, btn) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-dashboard').style.display = tab === 'dashboard' ? 'block' : 'none';
+    document.getElementById('tab-espacios').style.display  = tab === 'espacios'  ? 'block' : 'none';
+    if (tab === 'espacios') cargarEspacios();
+  }
+
+  async function cargarDashboard() {
+    try {
+      const [resDb, resEsp] = await Promise.all([apiFetch('/bookings/dashboard'), apiFetch('/spaces')]);
+      const db  = await resDb.json();
+      const esp = await resEsp.json();
+
+      document.getElementById('stats-grid').innerHTML = `
+        <div class="stat-card"><div class="stat-number">${db.total_reservas}</div><div class="stat-label">Reservas Hoy</div></div>
+        <div class="stat-card"><div class="stat-number">${esp.length}</div><div class="stat-label">Espacios Totales</div></div>
+        <div class="stat-card"><div class="stat-number">${esp.filter(e=>e.tipo==='SALA').length}</div><div class="stat-label">Salas de Juntas</div></div>
+        <div class="stat-card"><div class="stat-number">${esp.filter(e=>e.tipo==='DESK').length}</div><div class="stat-label">Escritorios</div></div>
+      `;
+
+      if (db.reservas.length === 0) {
+        document.getElementById('dashboard-tabla').innerHTML = '<div class="empty"><div class="empty-icon">—</div><p>No hay reservas para hoy.</p></div>';
+        return;
+      }
+
+      const filas = db.reservas.map(r => `
+        <tr>
+          <td><strong>#${String(r.id).padStart(5,'0')}</strong></td>
+          <td>${r.espacio_nombre}</td>
+          <td><span class="badge ${r.tipo==='SALA'?'badge-sala':'badge-desk'}">${r.tipo}</span></td>
+          <td>${fmtTime(r.hora_inicio)} — ${fmtTime(r.hora_fin)}</td>
+          <td>${r.asistentes} / ${r.capacidad}</td>
+          <td style="font-size:.78rem;color:var(--gray);">${r.usuario_email}</td>
+        </tr>`).join('');
+
+      document.getElementById('dashboard-tabla').innerHTML = `
+        <div class="table-wrap"><table>
+          <thead><tr><th>Folio</th><th>Espacio</th><th>Tipo</th><th>Horario</th><th>Ocupacion</th><th>Usuario</th></tr></thead>
+          <tbody>${filas}</tbody>
+        </table></div>`;
+    } catch (err) {
+      showAlert('alert-admin', 'Error al cargar el dashboard.', 'error');
+    }
+  }
+
+  async function cargarEspacios() {
+    document.getElementById('tabla-espacios').innerHTML =
+      '<div class="skeleton" style="height:60px;margin-bottom:8px;"></div>'.repeat(4);
+    try {
+      const res = await apiFetch('/spaces');
+      const espacios = await res.json();
+      document.getElementById('total-espacios').textContent = `${espacios.length} espacio(s)`;
+
+      if (espacios.length === 0) {
+        document.getElementById('tabla-espacios').innerHTML = '<div class="empty"><div class="empty-icon">—</div><p>No hay espacios registrados.</p></div>';
+        return;
+      }
+
+      const filas = espacios.map(e => `
+        <tr>
+          <td>${e.id}</td>
+          <td><strong>${e.nombre}</strong></td>
+          <td><span class="badge ${e.tipo==='SALA'?'badge-sala':'badge-desk'}">${e.tipo}</span></td>
+          <td>${e.capacidad}</td>
+          <td>${e.piso}</td>
+          <td style="font-size:.78rem;color:var(--gray);">${e.recursos || '—'}</td>
+          <td>
+            <div style="display:flex;gap:6px;">
+              <button class="btn btn-secondary btn-sm" onclick='editarEspacio(${JSON.stringify(e)})'>Editar</button>
+              <button class="btn btn-danger btn-sm"    onclick="eliminarEspacio(${e.id})">Eliminar</button>
+            </div>
+          </td>
+        </tr>`).join('');
+
+      document.getElementById('tabla-espacios').innerHTML = `
+        <div class="table-wrap"><table>
+          <thead><tr><th>ID</th><th>Nombre</th><th>Tipo</th><th>Capacidad</th><th>Piso</th><th>Recursos</th><th>Acciones</th></tr></thead>
+          <tbody>${filas}</tbody>
+        </table></div>`;
+    } catch (err) {
+      showAlert('alert-admin', 'Error al cargar espacios.', 'error');
+    }
+  }
+
+  function editarEspacio(e) {
+    document.getElementById('espacio-id').value  = e.id;
+    document.getElementById('e-nombre').value    = e.nombre;
+    document.getElementById('e-tipo').value      = e.tipo;
+    document.getElementById('e-capacidad').value = e.capacidad;
+    document.getElementById('e-piso').value      = e.piso;
+    document.getElementById('e-recursos').value  = e.recursos || '';
+    document.getElementById('form-titulo').textContent = `Editar Espacio #${e.id}`;
+    document.getElementById('form-espacio-card').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  function limpiarForm() {
+    document.getElementById('espacio-id').value  = '';
+    document.getElementById('e-nombre').value    = '';
+    document.getElementById('e-tipo').value      = 'SALA';
+    document.getElementById('e-capacidad').value = '';
+    document.getElementById('e-piso').value      = '';
+    document.getElementById('e-recursos').value  = '';
+    document.getElementById('form-titulo').textContent = 'Nuevo Espacio';
+  }
+
+  async function guardarEspacio() {
+    const id       = document.getElementById('espacio-id').value;
+    const nombre   = document.getElementById('e-nombre').value.trim();
+    const tipo     = document.getElementById('e-tipo').value;
+    const capacidad= parseInt(document.getElementById('e-capacidad').value);
+    const piso     = document.getElementById('e-piso').value.trim();
+    const recursos = document.getElementById('e-recursos').value.trim();
+
+    if (!nombre || !tipo || !capacidad || !piso) {
+      showAlert('alert-admin', 'Completa los campos obligatorios: nombre, tipo, capacidad y piso.', 'error'); return;
+    }
+
+    const method = id ? 'PUT' : 'POST';
+    const path   = id ? `/spaces/${id}` : '/spaces';
+
+    try {
+      const res  = await apiFetch(path, { method, body: JSON.stringify({ nombre, tipo, capacidad, piso, recursos }) });
+      const data = await res.json();
+      if (res.ok) {
+        showAlert('alert-admin', `Espacio ${id ? 'actualizado' : 'creado'} correctamente.`, 'success');
+        limpiarForm();
+        cargarEspacios();
+      } else {
+        showAlert('alert-admin', data.error || 'Error al guardar.', 'error');
+      }
+    } catch (err) {
+      showAlert('alert-admin', 'Error de conexion.', 'error');
+    }
+  }
+
+  async function eliminarEspacio(id) {
+    if (!confirm(`Deseas eliminar el espacio #${id}?`)) return;
+    try {
+      const res  = await apiFetch(`/spaces/${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (res.ok) {
+        showAlert('alert-admin', 'Espacio eliminado.', 'success');
+        cargarEspacios();
+      } else {
+        showAlert('alert-admin', data.error || 'Error al eliminar.', 'error');
+      }
+    } catch (err) {
+      showAlert('alert-admin', 'Error de conexion.', 'error');
+    }
+  }
+</script>
+</body>
+</html>
