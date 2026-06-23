@@ -1,0 +1,380 @@
+{
+  "info": {
+    "name": "NeoWallet API",
+    "description": "Colección de pruebas para NeoWallet — sistema de pagos P2P",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_accounts",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "base_processor",
+      "value": "http://localhost:3001"
+    },
+    {
+      "key": "internal_key",
+      "value": "neowallet-internal-dev-key"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health Checks",
+      "item": [
+        {
+          "name": "Accounts Health",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function() { pm.response.to.have.status(200); });",
+                  "pm.test('servicio correcto', function() {",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.status).to.eql('ok');",
+                  "  pm.expect(json.servicio).to.eql('accounts-service');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{base_accounts}}/health"
+          }
+        },
+        {
+          "name": "Processor Health",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function() { pm.response.to.have.status(200); });",
+                  "pm.test('servicio correcto', function() {",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.status).to.eql('ok');",
+                  "  pm.expect(json.servicio).to.eql('processor-service');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{base_processor}}/health"
+          }
+        }
+      ]
+    },
+    {
+      "name": "CU-007: Consultar saldo",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', function() { pm.response.to.have.status(200); });",
+              "pm.test('balance correcto', function() {",
+              "  var json = pm.response.json();",
+              "  pm.expect(json.id).to.eql(1);",
+              "  pm.expect(json.name).to.include('A');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "{{base_accounts}}/accounts/1"
+      }
+    },
+    {
+      "name": "CU-008: Recarga exitosa",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', function() { pm.response.to.have.status(200); });",
+              "pm.test('new_balance presente', function() {",
+              "  var json = pm.response.json();",
+              "  pm.expect(json.new_balance).to.be.a('number');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "url": "{{base_accounts}}/api/recharge",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"user_id\": 3, \"amount\": 200.50, \"payment_method\": \"simulada\" }"
+        }
+      }
+    },
+    {
+      "name": "CU-009: Recarga monto inválido",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 400', function() { pm.response.to.have.status(400); });",
+              "pm.test('error invalid_amount', function() {",
+              "  var json = pm.response.json();",
+              "  pm.expect(json.error).to.eql('invalid_amount');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "url": "{{base_accounts}}/api/recharge",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"user_id\": 1, \"amount\": -50, \"payment_method\": \"simulada\" }"
+        }
+      }
+    },
+    {
+      "name": "CU-001: Transferencia exitosa A→B $100",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', function() { pm.response.to.have.status(200); });",
+              "pm.test('status COMPLETED', function() {",
+              "  var json = pm.response.json();",
+              "  pm.expect(json.status).to.eql('COMPLETED');",
+              "  pm.expect(json.transaction_id).to.not.be.empty;",
+              "  pm.collectionVariables.set('last_tx_id', json.transaction_id);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "url": "{{base_processor}}/api/transfer",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"sender_id\": 1, \"receiver_id\": 2, \"amount\": 100 }"
+        }
+      }
+    },
+    {
+      "name": "CU-001-Verify: Balances después de transferencia",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('A balance 900', async function() {",
+              "  var res = await pm.sendRequest('{{base_accounts}}/accounts/1');",
+              "  pm.expect(res.json().balance).to.eql(900);",
+              "});",
+              "pm.test('B balance 150', async function() {",
+              "  var res = await pm.sendRequest('{{base_accounts}}/accounts/2');",
+              "  pm.expect(res.json().balance).to.eql(150);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "{{base_accounts}}/accounts/1"
+      }
+    },
+    {
+      "name": "CU-002: Fondos insuficientes",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 400', function() { pm.response.to.have.status(400); });",
+              "pm.test('error insufficient_funds', function() {",
+              "  var json = pm.response.json();",
+              "  pm.expect(json.error).to.eql('insufficient_funds');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "url": "{{base_processor}}/api/transfer",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"sender_id\": 2, \"receiver_id\": 1, \"amount\": 200 }"
+        }
+      }
+    },
+    {
+      "name": "CU-003: Auto-transferencia",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 400', function() { pm.response.to.have.status(400); });",
+              "pm.test('error self_transfer_not_allowed', function() {",
+              "  var json = pm.response.json();",
+              "  pm.expect(json.error).to.eql('self_transfer_not_allowed');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "url": "{{base_processor}}/api/transfer",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"sender_id\": 1, \"receiver_id\": 1, \"amount\": 50 }"
+        }
+      }
+    },
+    {
+      "name": "CU-005: Usuario no encontrado (remitente)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 404', function() { pm.response.to.have.status(404); });",
+              "pm.test('error user_not_found', function() {",
+              "  var json = pm.response.json();",
+              "  pm.expect(json.error).to.eql('user_not_found');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "url": "{{base_processor}}/api/transfer",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"sender_id\": 999, \"receiver_id\": 1, \"amount\": 50 }"
+        }
+      }
+    },
+    {
+      "name": "CU-014: update-balance sin auth",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 401', function() { pm.response.to.have.status(401); });"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "url": "{{base_accounts}}/accounts/update-balance",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"user_id\": 1, \"amount\": 50, \"operation\": \"debit\", \"idempotency_key\": \"bad-auth\" }"
+        }
+      }
+    },
+    {
+      "name": "CU-010: Invariante del dinero",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// Obtener balances antes",
+              "var resA = await pm.sendRequest('{{base_accounts}}/accounts/1');",
+              "var resB = await pm.sendRequest('{{base_accounts}}/accounts/2');",
+              "var resC = await pm.sendRequest('{{base_accounts}}/accounts/3');",
+              "var totalAntes = resA.json().balance + resB.json().balance + resC.json().balance;",
+              "console.log('Total antes: ' + totalAntes);",
+              "",
+              "// Batería de transferencias",
+              "await pm.sendRequest({ url: '{{base_processor}}/api/transfer', method: 'POST',",
+              "  header: {'Content-Type': 'application/json'},",
+              "  body: { mode: 'raw', raw: JSON.stringify({sender_id:1, receiver_id:2, amount:100}) }",
+              "});",
+              "// Esperar por procesamiento de la saga",
+              "await new Promise(r => setTimeout(r, 3000));",
+              "await pm.sendRequest({ url: '{{base_processor}}/api/transfer', method: 'POST',",
+              "  header: {'Content-Type': 'application/json'},",
+              "  body: { mode: 'raw', raw: JSON.stringify({sender_id:2, receiver_id:3, amount:50}) }",
+              "});",
+              "await new Promise(r => setTimeout(r, 3000));",
+              "await pm.sendRequest({ url: '{{base_processor}}/api/transfer', method: 'POST',",
+              "  header: {'Content-Type': 'application/json'},",
+              "  body: { mode: 'raw', raw: JSON.stringify({sender_id:2, receiver_id:1, amount:200}) }",
+              "});",
+              "await new Promise(r => setTimeout(r, 3000));",
+              "await pm.sendRequest({ url: '{{base_processor}}/api/transfer', method: 'POST',",
+              "  header: {'Content-Type': 'application/json'},",
+              "  body: { mode: 'raw', raw: JSON.stringify({sender_id:1, receiver_id:3, amount:150}) }",
+              "});",
+              "await new Promise(r => setTimeout(r, 3000));",
+              "",
+              "// Obtener balances después",
+              "resA = await pm.sendRequest('{{base_accounts}}/accounts/1');",
+              "resB = await pm.sendRequest('{{base_accounts}}/accounts/2');",
+              "resC = await pm.sendRequest('{{base_accounts}}/accounts/3');",
+              "var totalDespues = resA.json().balance + resB.json().balance + resC.json().balance;",
+              "console.log('Total después: ' + totalDespues);",
+              "",
+              "pm.test('INVARIANTE DEL DINERO: total no cambió', function() {",
+              "  pm.expect(totalDespues).to.eql(totalAntes);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "{{base_accounts}}/accounts/1"
+      }
+    }
+  ]
+}

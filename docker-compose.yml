@@ -1,17 +1,109 @@
+version: "3.9"
+
 services:
-  postgres:
-    image: postgres:15
-    container_name: officespace-postgres
-    restart: always
+  accounts-db:
+    image: postgres:16-alpine
+    container_name: neowallet-accounts-db
     environment:
-      POSTGRES_DB: ${OFFICESPACE_DB_NAME}
-      POSTGRES_USER: ${OFFICESPACE_DB_USER}
-      POSTGRES_PASSWORD: ${OFFICESPACE_DB_PASSWORD}
+      POSTGRES_USER: ${ACCOUNTS_DB_USER:-neowallet}
+      POSTGRES_PASSWORD: ${ACCOUNTS_DB_PASSWORD:-neowallet_dev}
+      POSTGRES_DB: ${ACCOUNTS_DB_NAME:-accounts_db}
     ports:
-      - "${OFFICESPACE_DB_PORT}:5432"
+      - "5434:5432"
     volumes:
-      - officespace_postgres_data:/var/lib/postgresql/data
-      - ./shared-infra/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+      - accounts-data:/var/lib/postgresql/data
+      - ./shared-infra/init-accounts-db.sql:/docker-entrypoint-initdb.d/01-init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${ACCOUNTS_DB_USER:-neowallet} -d ${ACCOUNTS_DB_NAME:-accounts_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - neowallet-net
+
+  processor-db:
+    image: postgres:16-alpine
+    container_name: neowallet-processor-db
+    environment:
+      POSTGRES_USER: ${PROCESSOR_DB_USER:-neowallet}
+      POSTGRES_PASSWORD: ${PROCESSOR_DB_PASSWORD:-neowallet_dev}
+      POSTGRES_DB: ${PROCESSOR_DB_NAME:-processor_db}
+    ports:
+      - "${PROCESSOR_DB_PORT:-5433}:5432"
+    volumes:
+      - processor-data:/var/lib/postgresql/data
+      - ./shared-infra/init-processor-db.sql:/docker-entrypoint-initdb.d/01-init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PROCESSOR_DB_USER:-neowallet} -d ${PROCESSOR_DB_NAME:-processor_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - neowallet-net
+
+  accounts-service:
+    build:
+      context: ./accounts-service
+      dockerfile: Dockerfile
+    container_name: neowallet-accounts-service
+    environment:
+      ACCOUNTS_DB_HOST: accounts-db
+      ACCOUNTS_DB_PORT: "5432"
+      ACCOUNTS_DB_USER: ${ACCOUNTS_DB_USER:-neowallet}
+      ACCOUNTS_DB_PASSWORD: ${ACCOUNTS_DB_PASSWORD:-neowallet_dev}
+      ACCOUNTS_DB_NAME: ${ACCOUNTS_DB_NAME:-accounts_db}
+      ACCOUNTS_DB_SSLMODE: disable
+      ACCOUNTS_SERVICE_PORT: "3000"
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:-neowallet-internal-dev-key}
+    ports:
+      - "${ACCOUNTS_SERVICE_PORT:-3000}:3000"
+    depends_on:
+      accounts-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/health || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - neowallet-net
+
+  processor-service:
+    build:
+      context: ./processor-service
+      dockerfile: Dockerfile
+    container_name: neowallet-processor-service
+    environment:
+      PROCESSOR_DB_HOST: processor-db
+      PROCESSOR_DB_PORT: "5432"
+      PROCESSOR_DB_USER: ${PROCESSOR_DB_USER:-neowallet}
+      PROCESSOR_DB_PASSWORD: ${PROCESSOR_DB_PASSWORD:-neowallet_dev}
+      PROCESSOR_DB_NAME: ${PROCESSOR_DB_NAME:-processor_db}
+      PROCESSOR_DB_SSLMODE: disable
+      ACCOUNTS_SERVICE_URL: http://accounts-service:3000
+      PROCESSOR_SERVICE_PORT: "3001"
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:-neowallet-internal-dev-key}
+    ports:
+      - "${PROCESSOR_SERVICE_PORT:-3001}:3001"
+    depends_on:
+      accounts-db:
+        condition: service_healthy
+      processor-db:
+        condition: service_healthy
+      accounts-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3001/health || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - neowallet-net
 
 volumes:
-  officespace_postgres_data:
+  accounts-data:
+  processor-data:
+
+networks:
+  neowallet-net:
+    driver: bridge

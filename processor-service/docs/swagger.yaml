@@ -1,0 +1,68 @@
+basePath: /
+definitions:
+  apperror.AppError:
+    properties:
+      error:
+        type: string
+      mensaje:
+        type: string
+      transaction_id:
+        type: string
+    type: object
+  models.TransferRequest:
+    properties:
+      amount:
+        type: number
+      idempotency_key:
+        type: string
+      receiver_id:
+        type: integer
+      sender_id:
+        type: integer
+    type: object
+  models.TransferResponse:
+    properties:
+      status:
+        type: string
+      transaction_id:
+        type: string
+    type: object
+host: localhost:3001
+info:
+  contact: {}
+  description: Orquestador de transferencias P2P con Saga y compensación.
+  title: NeoWallet - Processor Service
+  version: "1.0"
+paths:
+  /api/transfer:
+    post:
+      description: Transfiere dinero de un usuario a otro usando Saga orquestada con
+        compensación
+      parameters:
+      - description: Datos de transferencia
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.TransferRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.TransferResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.AppError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/apperror.AppError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/apperror.AppError'
+      summary: Transferencia P2P
+      tags:
+      - transfers
+swagger: "2.0"

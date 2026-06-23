@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NeoWallet · Pagos P2P</title>
+<link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&f[]=clash-display@500,600,700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #09090b;
+  --slate: #18181b;
+  --slate2: #1f1f23;
+  --border: #27272a;
+  --muted: #71717a;
+  --text: #fafafa;
+  --dim: #a1a1aa;
+  --violet: #8b5cf6;
+  --violet-dim: rgba(139,92,246,0.15);
+  --emerald: #10b981;
+  --emerald-dim: rgba(16,185,129,0.12);
+  --rose: #f43f5e;
+  --rose-dim: rgba(244,63,94,0.12);
+  --amber: #f59e0b;
+  --sky: #0ea5e9;
+  --radius: 20px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Satoshi', system-ui, sans-serif;
+  background: var(--ink);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(139,92,246,0.06), transparent),
+              radial-gradient(ellipse 50% 50% at 100% 80%, rgba(14,165,233,0.04), transparent);
+  pointer-events: none; z-index: 0;
+}
+.container { max-width: 1160px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+/* Nav */
+nav {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 0; border-bottom: 1px solid var(--border); margin-bottom: 36px;
+}
+.nav-brand { display: flex; align-items: center; gap: 14px; }
+.nav-logo {
+  width: 44px; height: 44px; border-radius: 14px;
+  background: linear-gradient(135deg, var(--violet), #6366f1);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.2rem; box-shadow: 0 0 30px rgba(139,92,246,0.35);
+  position: relative;
+}
+.nav-logo::after {
+  content: ''; position: absolute; inset: -1px; border-radius: 15px;
+  background: linear-gradient(135deg, rgba(139,92,246,0.4), rgba(99,102,241,0.1));
+  z-index: -1; filter: blur(8px);
+}
+.nav-brand h1 {
+  font-family: 'Clash Display', sans-serif;
+  font-size: 1.6rem; font-weight: 600; letter-spacing: -0.02em;
+  background: linear-gradient(to right, #e2e8f0, #a5b4fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.nav-status {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 18px; border-radius: 50px;
+  background: var(--emerald-dim); border: 1px solid rgba(16,185,129,0.2);
+}
+.nav-status-dot {
+  width: 7px; height: 7px; background: var(--emerald); border-radius: 50%;
+  box-shadow: 0 0 8px rgba(16,185,129,0.6);
+  animation: breathe 2.5s ease-in-out infinite;
+}
+@keyframes breathe { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.8)} }
+.nav-status-text { font-size: 0.82rem; color: var(--emerald); font-weight: 500; }
+
+/* Total bar */
+.total-card {
+  background: linear-gradient(135deg, var(--slate), var(--slate2));
+  border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 22px 28px; margin-bottom: 28px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: relative; overflow: hidden;
+}
+.total-card::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+  background: var(--violet); border-radius: 0 4px 4px 0;
+}
+.total-label { display: flex; align-items: center; gap: 12px; }
+.total-label-icon {
+  width: 40px; height: 40px; border-radius: 12px;
+  background: var(--violet-dim); display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem;
+}
+.total-label-text { font-size: 0.88rem; color: var(--dim); font-weight: 500; }
+.total-label-sub { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+.total-value { font-size: 2rem; font-weight: 900; letter-spacing: -0.03em; color: var(--text); }
+.total-value span { color: var(--dim); font-size: 1rem; font-weight: 400; margin-left: 4px; }
+
+/* Balance cards */
+.cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-bottom: 28px; }
+@media(max-width:860px){ .cards{grid-template-columns:1fr} }
+.c-card {
+  background: var(--slate); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 28px; position: relative; overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.22,1,0.36,1);
+}
+.c-card:hover { border-color: rgba(139,92,246,0.3); transform: translateY(-2px); box-shadow: 0 12px 40px rgba(0,0,0,0.4); }
+.c-card::after {
+  content: ''; position: absolute; top: -40px; right: -40px;
+  width: 100px; height: 100px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(139,92,246,0.08), transparent);
+  pointer-events: none;
+}
+.c-rank {
+  font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.12em;
+  color: var(--muted); font-weight: 700; margin-bottom: 14px;
+}
+.c-avatar {
+  width: 48px; height: 48px; border-radius: 16px;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 1.1rem; margin-bottom: 14px;
+}
+.c-name { font-size: 1.05rem; font-weight: 700; margin-bottom: 2px; }
+.c-email { font-size: 0.78rem; color: var(--muted); margin-bottom: 18px; }
+.c-balance { font-size: 2.6rem; font-weight: 900; letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
+.c-balance.pos { color: var(--emerald); }
+.c-balance.zero { color: var(--muted); }
+.c-balance .cents { font-size: 1.4rem; }
+.c-id { font-size: 0.7rem; color: var(--muted); margin-top: 14px; font-family: 'SF Mono', monospace; }
+
+/* Panels */
+.panels { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 28px; }
+@media(max-width:860px){ .panels{grid-template-columns:1fr} }
+.panel {
+  background: var(--slate); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 28px;
+}
+.panel-header {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 22px;
+  font-size: 0.95rem; font-weight: 600;
+}
+
+/* Form elements */
+.field { margin-bottom: 16px; }
+.field-label { display: block; font-size: 0.78rem; color: var(--dim); margin-bottom: 6px; font-weight: 500; }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+select, input {
+  width: 100%; padding: 11px 14px; border-radius: 12px;
+  border: 1px solid var(--border); background: var(--ink);
+  color: var(--text); font-size: 0.9rem; font-family: inherit;
+  transition: all 0.2s; outline: none;
+}
+select:focus, input:focus { border-color: var(--violet); box-shadow: 0 0 0 3px var(--violet-dim); }
+select { cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2371717a'%3E%3Cpath d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; }
+input[type=number]::-webkit-inner-spin-button { opacity: 0.5; }
+
+.btn {
+  width: 100%; padding: 13px; border-radius: 12px; border: none;
+  font-size: 0.9rem; font-weight: 600; cursor: pointer; font-family: inherit;
+  transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;
+  letter-spacing: -0.01em;
+}
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-primary {
+  background: linear-gradient(135deg, var(--violet), #7c3aed);
+  color: white; box-shadow: 0 2px 12px rgba(139,92,246,0.35);
+}
+.btn-primary:hover:not(:disabled) { box-shadow: 0 4px 20px rgba(139,92,246,0.5); transform: translateY(-1px); }
+.btn-ghost {
+  background: transparent; border: 1px solid var(--border); color: var(--dim);
+}
+.btn-ghost:hover { border-color: var(--violet); color: var(--text); }
+
+.toast {
+  padding: 14px 18px; border-radius: 14px; font-size: 0.84rem; font-weight: 500;
+  margin-top: 14px; display: none; align-items: flex-start; gap: 10px;
+  animation: fadeSlide 0.4s cubic-bezier(0.22,1,0.36,1);
+}
+.toast.show { display: flex; }
+.toast.ok { background: var(--emerald-dim); border: 1px solid rgba(16,185,129,0.25); color: var(--emerald); }
+.toast.err { background: var(--rose-dim); border: 1px solid rgba(244,63,94,0.25); color: var(--rose); }
+.toast-icon { font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
+.toast-body { flex: 1; }
+.toast-code { font-family: 'SF Mono', monospace; font-size: 0.7rem; opacity: 0.7; margin-top: 4px; }
+@keyframes fadeSlide { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+
+/* Error badges bar */
+.error-ref {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px; margin-bottom: 28px;
+}
+.e-badge {
+  padding: 10px 14px; border-radius: 10px; font-size: 0.74rem; font-weight: 500;
+  display: flex; align-items: center; gap: 8px;
+  background: var(--slate); border: 1px solid var(--border);
+}
+.e-badge-code { font-family: 'SF Mono', monospace; font-weight: 600; font-size: 0.72rem; }
+.e-badge-code.r400 { color: var(--rose); }
+.e-badge-code.r404 { color: var(--amber); }
+.e-badge-code.r401 { color: var(--amber); }
+.e-badge-code.r500 { color: var(--rose); }
+.e-badge-http { font-size: 0.68rem; color: var(--muted); margin-left: auto; }
+
+/* Table */
+.table-wrap { overflow-x: auto; margin-top: 20px; }
+table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+th {
+  text-align: left; padding: 12px 16px; color: var(--muted);
+  font-weight: 500; font-size: 0.72rem; text-transform: uppercase;
+  letter-spacing: 0.08em; border-bottom: 1px solid var(--border);
+}
+td { padding: 14px 16px; border-bottom: 1px solid rgba(39,39,42,0.5); }
+tr:hover td { background: rgba(139,92,246,0.03); }
+.badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 10px; border-radius: 6px;
+  font-size: 0.74rem; font-weight: 600;
+}
+.badge-sent { color: var(--rose); background: var(--rose-dim); }
+.badge-received { color: var(--emerald); background: var(--emerald-dim); }
+.badge-completed { color: var(--emerald); background: var(--emerald-dim); }
+.badge-rolled_back { color: var(--amber); background: rgba(245,158,11,0.12); }
+.badge-failed { color: var(--rose); background: var(--rose-dim); }
+.amt-sent { color: var(--rose); font-weight: 600; font-variant-numeric: tabular-nums; }
+.amt-received { color: var(--emerald); font-weight: 600; font-variant-numeric: tabular-nums; }
+.tx-hash { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.72rem; color: var(--muted); }
+.tx-date { color: var(--dim); font-size: 0.8rem; }
+
+/* Footer */
+footer {
+  text-align: center; padding: 32px 0 40px; border-top: 1px solid var(--border);
+  margin-top: 36px; display: flex; align-items: center; justify-content: center;
+  gap: 24px; flex-wrap: wrap;
+}
+footer a {
+  color: var(--dim); text-decoration: none; font-size: 0.82rem; font-weight: 500;
+  transition: color 0.2s; display: flex; align-items: center; gap: 6px;
+}
+footer a:hover { color: var(--text); }
+footer .divider { width: 4px; height: 4px; border-radius: 50%; background: var(--border); }
+footer .tagline { color: var(--muted); font-size: 0.78rem; }
+
+/* History selector */
+.selector-bar { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; }
+.selector-bar select { width: auto; min-width: 180px; }
+.selector-count { font-size: 0.8rem; color: var(--muted); }
+
+.spin {
+  display: inline-block; width: 14px; height: 14px;
+  border: 2px solid rgba(255,255,255,0.2); border-top-color: white;
+  border-radius: 50%; animation: spin 0.6s linear infinite;
+}
+@keyframes spin { to{transform:rotate(360deg)} }
+</style>
+</head>
+<body>
+<div class="container">
+  <nav>
+    <div class="nav-brand">
+      <div class="nav-logo">⚡</div>
+      <h1>NeoWallet</h1>
+    </div>
+    <div class="nav-status">
+      <div class="nav-status-dot"></div>
+      <span class="nav-status-text">Sistema operativo</span>
+    </div>
+  </nav>
+
+  <div class="total-card">
+    <div class="total-label">
+      <div class="total-label-icon">🏦</div>
+      <div>
+        <div class="total-label-text">Dinero total en el sistema</div>
+        <div class="total-label-sub">Invariante: no se crea ni se destruye dinero (salvo recargas)</div>
+      </div>
+    </div>
+    <div class="total-value" id="total-disp">—</div>
+  </div>
+
+  <div class="cards" id="cards"></div>
+
+  <div class="panels">
+    <div class="panel">
+      <div class="panel-header">💸 Transferir dinero</div>
+      <div class="field"><label class="field-label">Remitente</label><select id="tx-from"><option value="1">Usuario A (Rico)</option><option value="2">Usuario B (Pobre)</option><option value="3">Usuario C (Nuevo)</option></select></div>
+      <div class="field"><label class="field-label">Destinatario</label><select id="tx-to"><option value="2">Usuario B (Pobre)</option><option value="1">Usuario A (Rico)</option><option value="3">Usuario C (Nuevo)</option></select></div>
+      <div class="field"><label class="field-label">Monto (USD)</label><input type="number" id="tx-amt" value="100.00" min="0.01" step="0.01"></div>
+      <button class="btn btn-primary" onclick="transfer()" id="tx-btn">Enviar transferencia →</button>
+      <div class="toast" id="tx-toast"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">💰 Recargar saldo</div>
+      <div class="field"><label class="field-label">Usuario</label><select id="rc-user"><option value="1">Usuario A (Rico)</option><option value="2">Usuario B (Pobre)</option><option value="3">Usuario C (Nuevo)</option></select></div>
+      <div class="field"><label class="field-label">Monto (USD)</label><input type="number" id="rc-amt" value="200.00" min="0.01" step="0.01"></div>
+      <button class="btn btn-primary" onclick="recharge()" id="rc-btn">Añadir fondos +</button>
+      <div class="toast" id="rc-toast"></div>
+    </div>
+  </div>
+
+  <div class="error-ref">
+    <div class="e-badge"><span class="e-badge-code r400">self_transfer_not_allowed</span><span class="e-badge-http">400</span></div>
+    <div class="e-badge"><span class="e-badge-code r400">invalid_amount</span><span class="e-badge-http">400</span></div>
+    <div class="e-badge"><span class="e-badge-code r400">insufficient_funds</span><span class="e-badge-http">400</span></div>
+    <div class="e-badge"><span class="e-badge-code r404">user_not_found</span><span class="e-badge-http">404</span></div>
+    <div class="e-badge"><span class="e-badge-code r401">unauthorized</span><span class="e-badge-http">401</span></div>
+    <div class="e-badge"><span class="e-badge-code r500">transfer_failed</span><span class="e-badge-http">500</span></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">📊 Historial de transacciones</div>
+    <div class="selector-bar">
+      <select id="hist-user" onchange="loadHistory()">
+        <option value="1">Usuario A (Rico)</option>
+        <option value="2">Usuario B (Pobre)</option>
+        <option value="3">Usuario C (Nuevo)</option>
+      </select>
+      <span class="selector-count" id="hist-count"></span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Tipo</th><th>Contraparte</th><th>Monto</th><th>Estado</th><th>Fecha</th><th>Transacción</th></tr></thead>
+        <tbody id="hist-body"><tr><td colspan="6" style="text-align:center;padding:40px;color:var(--muted)">Seleccioná un usuario para ver su historial</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <footer>
+    <a href="/api-docs" target="_blank">📖 API Docs (Swagger)</a>
+    <span class="divider"></span>
+    <a href="https://github.com/i0dk1/NeoWallet" target="_blank">🐙 GitHub</a>
+    <span class="divider"></span>
+    <span class="tagline">NeoWallet v1 · Saga orquestada · Idempotencia · Database-per-service</span>
+  </footer>
+</div>
+
+<script>
+const ACCOUNTS = location.origin;
+const PROCESSOR = location.origin.replace(':3000',':3001');
+let totalAnterior = null;
+
+function toast(id, msg, type, code) {
+  const t = document.getElementById(id);
+  t.className = 'toast show ' + type;
+  t.innerHTML = `<span class="toast-icon">${type==='ok'?'✓':'✗'}</span><div class="toast-body">${msg}${code?`<div class="toast-code">${code}</div>`:''}</div>`;
+  setTimeout(() => t.className = 'toast', 6000);
+}
+
+async function api(url, opts) {
+  const r = await fetch(url, opts);
+  const d = await r.json();
+  if (!r.ok) {
+    const e = new Error(d.mensaje || d.error);
+    e.code = d.error; e.txId = d.transaction_id;
+    throw e;
+  }
+  return d;
+}
+
+async function loadBalances() {
+  const cards = document.getElementById('cards');
+  const [a,b,c] = await Promise.all([
+    api(`${ACCOUNTS}/accounts/1`).catch(()=>null),
+    api(`${ACCOUNTS}/accounts/2`).catch(()=>null),
+    api(`${ACCOUNTS}/accounts/3`).catch(()=>null)
+  ]);
+  const users = [a,b,c];
+  const total = users.reduce((s,u) => s + (u ? parseFloat(u.balance) : 0), 0);
+
+  cards.innerHTML = users.map((u,i) => {
+    if (!u) return `<div class="c-card"><div class="c-rank">Usuario ${['A','B','C'][i]}</div><div class="c-name">Error al cargar</div></div>`;
+    const b = parseFloat(u.balance);
+    const cls = b === 0 ? 'zero' : 'pos';
+    const parts = String(u.balance).includes('.') ? String(u.balance).split('.') : [String(u.balance), '00'];
+    const whole = parts[0];
+    const cents = parts[1] || '00';
+    const colors = ['#8b5cf6','#0ea5e9','#f59e0b'];
+    const labels = ['A · Rico','B · Pobre','C · Nuevo'];
+    return `
+      <div class="c-card">
+        <div class="c-rank">Usuario ${labels[i]}</div>
+        <div class="c-avatar" style="background:${colors[i]}20;color:${colors[i]}">${u.name.split(' ')[0][0]}${u.name.split(' ')[1]?u.name.split(' ')[1][0]:''}</div>
+        <div class="c-name">${u.name}</div>
+        <div class="c-email">${u.email}</div>
+        <div class="c-balance ${cls}">\$${whole}<span class="cents">.${cents}</span></div>
+        <div class="c-id">ID #${u.id}</div>
+      </div>`;
+  }).join('');
+
+  document.getElementById('total-disp').innerHTML = `\$${total.toFixed(2)}<span>USD</span>`;
+}
+
+async function transfer() {
+  const btn = document.getElementById('tx-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span> Procesando...';
+
+  try {
+    const d = await api(`${PROCESSOR}/api/transfer`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        sender_id: +document.getElementById('tx-from').value,
+        receiver_id: +document.getElementById('tx-to').value,
+        amount: document.getElementById('tx-amt').value
+      })
+    });
+    toast('tx-toast', `Transferencia <strong>${d.status}</strong> completada exitosamente.`, 'ok', `tx: ${d.transaction_id}`);
+    loadBalances(); loadHistory();
+  } catch(e) {
+    toast('tx-toast', e.message, 'err', e.code);
+  }
+  btn.disabled = false;
+  btn.innerHTML = 'Enviar transferencia →';
+}
+
+async function recharge() {
+  const btn = document.getElementById('rc-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span> Procesando...';
+
+  try {
+    const d = await api(`${ACCOUNTS}/api/recharge`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        user_id: +document.getElementById('rc-user').value,
+        amount: document.getElementById('rc-amt').value,
+        payment_method: 'simulada'
+      })
+    });
+    toast('rc-toast', `Nuevo saldo: <strong>\$${d.new_balance}</strong>`, 'ok');
+    loadBalances();
+  } catch(e) {
+    toast('rc-toast', e.message, 'err', e.code);
+  }
+  btn.disabled = false;
+  btn.innerHTML = 'Añadir fondos +';
+}
+
+async function loadHistory() {
+  const uid = document.getElementById('hist-user').value;
+  const body = document.getElementById('hist-body');
+  const count = document.getElementById('hist-count');
+  try {
+    const txs = await api(`${PROCESSOR}/api/transactions/${uid}`);
+    count.textContent = `${txs.length} transacciones`;
+    if (!txs.length) { body.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--muted)">Sin transacciones para este usuario</td></tr>'; return; }
+    body.innerHTML = txs.map(tx => `
+      <tr>
+        <td><span class="badge badge-${tx.tipo}">${tx.tipo==='sent'?'↑ Enviado':'↓ Recibido'}</span></td>
+        <td>Usuario ${tx.counterparty}</td>
+        <td class="amt-${tx.tipo==='sent'?'sent':'received'}">${tx.tipo==='sent'?'−':'+'}\$${tx.amount}</td>
+        <td><span class="badge badge-${tx.status.toLowerCase()}">${tx.status}</span></td>
+        <td class="tx-date">${new Date(tx.created_at).toLocaleString('es-MX',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}</td>
+        <td class="tx-hash">${tx.transaction_id.substring(0,14)}…</td>
+      </tr>`).join('');
+  } catch(e) { body.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--rose)">Error al cargar historial</td></tr>'; }
+}
+
+/* prevent self-transfer */
+['tx-from','tx-to'].forEach(id => {
+  document.getElementById(id).addEventListener('change', function() {
+    const other = document.getElementById(id === 'tx-from' ? 'tx-to' : 'tx-from');
+    if (other.value === this.value) {
+      other.value = ['1','2','3'].find(v => v !== this.value);
+    }
+  });
+});
+
+loadBalances();
+loadHistory();
+setInterval(loadBalances, 10000);
+</script>
+</body>
+</html>

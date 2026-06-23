@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NeoWallet Dashboard</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; padding: 20px; min-height: 100vh; }
+h1 { font-size: 1.5rem; color: #38bdf8; margin-bottom: 20px; text-align: center; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; max-width: 900px; margin: 0 auto; }
+.card { background: #1e293b; border-radius: 12px; padding: 20px; border: 1px solid #334155; }
+.card h2 { font-size: 0.9rem; color: #94a3b8; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
+.balance { font-size: 2rem; font-weight: 700; color: #34d399; }
+.balance.zero { color: #64748b; }
+.card-body { font-size: 0.85rem; color: #94a3b8; margin-top: 8px; }
+label { display: block; font-size: 0.8rem; color: #94a3b8; margin-bottom: 4px; }
+input, select, button { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #e2e8f0; font-size: 0.9rem; margin-bottom: 10px; }
+button { background: #2563eb; border: none; cursor: pointer; font-weight: 600; }
+button:hover { background: #1d4ed8; }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+.result { font-size: 0.85rem; padding: 10px; border-radius: 8px; margin-top: 10px; }
+.result.ok { background: #064e3b; color: #34d399; }
+.result.err { background: #7f1d1d; color: #fca5a5; }
+.tx-list { max-height: 200px; overflow-y: auto; font-size: 0.8rem; }
+.tx-item { padding: 8px; border-bottom: 1px solid #334155; display: flex; justify-content: space-between; }
+.tx-item .sent { color: #f87171; } .tx-item .received { color: #34d399; }
+.status-badge { font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; }
+.status-COMPLETED { background: #064e3b; color: #34d399; }
+.status-ROLLED_BACK { background: #713f12; color: #fbbf24; }
+.back { color: #38bdf8; text-decoration: none; font-size: 0.8rem; display: block; text-align: center; margin-top: 16px; }
+.spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid #334155; border-top: 2px solid #38bdf8; border-radius: 50%; animation: spin 0.6s linear infinite; margin-left: 8px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<h1>⚡ NeoWallet Dashboard</h1>
+
+<div class="grid" id="balances">
+  <div class="card"><h2>Usuario A (Rico)</h2><div class="balance" id="bal-1">...</div><div class="card-body" id="info-1"></div></div>
+  <div class="card"><h2>Usuario B (Pobre)</h2><div class="balance" id="bal-2">...</div><div class="card-body" id="info-2"></div></div>
+  <div class="card"><h2>Usuario C (Nuevo)</h2><div class="balance" id="bal-3">...</div><div class="card-body" id="info-3"></div></div>
+</div>
+
+<div class="grid" style="margin-top: 16px; max-width: 900px; margin-left: auto; margin-right: auto;">
+  <div class="card">
+    <h2>💸 Transferir</h2>
+    <label>De</label>
+    <select id="sender"><option value="1">Usuario A</option><option value="2">Usuario B</option><option value="3">Usuario C</option></select>
+    <label>Para</label>
+    <select id="receiver"><option value="2">Usuario B</option><option value="1">Usuario A</option><option value="3">Usuario C</option></select>
+    <label>Monto ($)</label>
+    <input type="number" id="amount" value="50" min="0.01" step="0.01" placeholder="50.00">
+    <button onclick="doTransfer()">Transferir</button>
+    <div id="tx-result"></div>
+  </div>
+
+  <div class="card">
+    <h2>💰 Recargar</h2>
+    <label>Usuario</label>
+    <select id="recharge-user"><option value="1">Usuario A</option><option value="2">Usuario B</option><option value="3">Usuario C</option></select>
+    <label>Monto ($)</label>
+    <input type="number" id="recharge-amount" value="100" min="0.01" step="0.01" placeholder="100.00">
+    <button onclick="doRecharge()">Recargar</button>
+    <div id="recharge-result"></div>
+  </div>
+</div>
+
+<div style="max-width: 900px; margin: 16px auto 0;">
+  <div class="card">
+    <h2>📋 Historial</h2>
+    <select id="history-user" onchange="loadHistory()" style="width: auto; margin-bottom: 10px;">
+      <option value="1">Usuario A</option><option value="2">Usuario B</option><option value="3">Usuario C</option>
+    </select>
+    <div class="tx-list" id="tx-history">Seleccioná un usuario...</div>
+  </div>
+</div>
+
+<div style="text-align: center; margin-top: 16px;">
+  <a class="back" href="/api-docs" target="_blank">📖 Swagger API Docs</a>
+  <span style="color: #64748b; margin: 0 10px;">|</span>
+  <span style="font-size: 0.75rem; color: #64748b;">Por definir</span>
+</div>
+
+<script>
+const ACCOUNTS = 'http://localhost:3000';
+const PROCESSOR = 'http://localhost:3001';
+
+async function api(url, opts = {}) {
+  const res = await fetch(url, opts);
+  const data = await res.json();
+  if (!res.ok) throw data;
+  return data;
+}
+
+async function loadBalances() {
+  for (let id = 1; id <= 3; id++) {
+    try {
+      const u = await api(`${ACCOUNTS}/accounts/${id}`);
+      document.getElementById(`bal-${id}`).textContent = `$${u.balance}`;
+      document.getElementById(`bal-${id}`).className = parseFloat(u.balance) === 0 ? 'balance zero' : 'balance';
+      document.getElementById(`info-${id}`).textContent = u.email;
+    } catch (e) {
+      document.getElementById(`bal-${id}`).textContent = 'Error';
+    }
+  }
+}
+
+async function doTransfer() {
+  const r = document.getElementById('tx-result');
+  r.innerHTML = '<span class="spinner"></span> Procesando...';
+  r.className = 'result';
+  const btn = document.querySelector('button');
+  btn.disabled = true;
+
+  try {
+    const data = await api(`${PROCESSOR}/api/transfer`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sender_id: parseInt(document.getElementById('sender').value),
+        receiver_id: parseInt(document.getElementById('receiver').value),
+        amount: document.getElementById('amount').value
+      })
+    });
+    r.innerHTML = `✅ Transferencia <b>${data.status}</b><br><small>TX: ${data.transaction_id}</small>`;
+    r.className = 'result ok';
+    loadBalances();
+    loadHistory();
+  } catch (e) {
+    r.innerHTML = `❌ ${e.error || e.mensaje || JSON.stringify(e)}`;
+    r.className = 'result err';
+  }
+  btn.disabled = false;
+}
+
+async function doRecharge() {
+  const r = document.getElementById('recharge-result');
+  r.innerHTML = '<span class="spinner"></span> Procesando...';
+  r.className = 'result';
+  const btn = document.querySelectorAll('button')[1];
+  btn.disabled = true;
+
+  try {
+    const data = await api(`${ACCOUNTS}/api/recharge`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        user_id: parseInt(document.getElementById('recharge-user').value),
+        amount: document.getElementById('recharge-amount').value,
+        payment_method: 'simulada'
+      })
+    });
+    r.innerHTML = `✅ Nuevo saldo: <b>$${data.new_balance}</b>`;
+    r.className = 'result ok';
+    loadBalances();
+  } catch (e) {
+    r.innerHTML = `❌ ${e.error || e.mensaje || JSON.stringify(e)}`;
+    r.className = 'result err';
+  }
+  btn.disabled = false;
+}
+
+async function loadHistory() {
+  const uid = document.getElementById('history-user').value;
+  const el = document.getElementById('tx-history');
+  try {
+    const txs = await api(`${PROCESSOR}/api/transactions/${uid}`);
+    if (!txs.length) { el.innerHTML = 'Sin transacciones.'; return; }
+    el.innerHTML = txs.map(tx => `
+      <div class="tx-item">
+        <span class="${tx.tipo}">${tx.tipo === 'sent' ? '↑ Enviado' : '↓ Recibido'}</span>
+        <span>Contraparte #${tx.counterparty}</span>
+        <span>$${tx.amount}</span>
+        <span class="status-badge status-${tx.status}">${tx.status}</span>
+        <span style="color:#64748b;font-size:0.7rem">${new Date(tx.created_at).toLocaleString()}</span>
+      </div>
+    `).join('');
+  } catch (e) {
+    el.innerHTML = 'Error al cargar historial.';
+  }
+}
+
+loadBalances();
+loadHistory();
+setInterval(loadBalances, 5000);
+</script>
+</body>
+</html>
