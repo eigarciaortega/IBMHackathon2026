@@ -50,12 +50,13 @@ $id_usuario = (int) $payload['id_usuario'];
 // 5. Consulta relacional — solo reservas activas del usuario
 $query = "
     SELECT r.id_reserva, r.fecha, r.hora_inicio, r.hora_fin, 
-           r.asistentes, r.estatus,
+           r.asistentes, r.estatus, r.notas,
            e.nombre, e.tipo, e.piso
     FROM reservas r
     JOIN espacios e ON r.id_espacio = e.id_espacio
     WHERE r.id_usuario = $id_usuario
       AND r.estatus = 'Activa'
+      AND r.fecha >= CURDATE()
     ORDER BY r.fecha ASC, r.hora_inicio ASC
 ";
 

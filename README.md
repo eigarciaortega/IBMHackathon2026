@@ -30,60 +30,28 @@ Permite a colaboradores buscar y reservar salas de juntas y escritorios, con un 
 
 ---
 
-## Instalación y Arranque
+## 🚀 Instalación y Arranque (Vía Docker)
+
+Toda la arquitectura de microservicios y la base de datos están contenerizadas para un despliegue instantáneo.
 
 ### 1. Clonar el repositorio
-
-```bash
+\`\`\`bash
 git clone https://github.com/tu-usuario/officespace-ibm.git
 cd officespace-ibm
-```
+\`\`\`
 
-### 2. Iniciar MAMP
+### 2. Levantar la Infraestructura
+Asegúrate de tener Docker y Docker Compose instalados, y ejecuta:
+\`\`\`bash
+docker-compose up -d --build
+\`\`\`
+*Nota: Este comando descargará las imágenes necesarias, compilará los microservicios instalando los drivers de MySQL nativos y ejecutará el script `init-db.sql` automáticamente para poblar la base de datos.*
 
-- Abre MAMP y arranca los servicios de Apache y MySQL
-- Verifica que MySQL esté corriendo en el puerto **3306**
+### 3. Acceder al Sistema
+Una vez que los contenedores estén en ejecución (`Started`), abre tu navegador web en las siguientes rutas:
 
-### 3. Inicializar la base de datos
-
-Abre MySQL Workbench (o phpMyAdmin en `http://localhost:8888/phpMyAdmin`) y ejecuta el script de inicialización:
-
-```sql
--- Ejecutar el archivo completo:
-source shared-infra/init-db.sql
-```
-
-O copia y pega el contenido de `shared-infra/init-db.sql` directamente en el editor SQL.
-
-### 4. Configurar la conexión a BD
-
-Verifica que `shared-infra/db.php` tenga estos valores:
-
-```php
-$host = '127.0.0.1';
-$port = 3306;
-$user = 'root';
-$pass = 'root';   // Cambia si tu MAMP tiene contraseña distinta
-$db   = 'officespace_db';
-```
-
-### 5. Levantar los microservicios
-
-Abre **3 terminales** y ejecuta un comando en cada una:
-
-```bash
-# Terminal 1 — Auth Service (puerto 8003)
-cd auth-service
-/Applications/MAMP/bin/php/php8.3.30/bin/php -S localhost:8003
-
-# Terminal 2 — Catalog Service (puerto 8001)
-cd catalog-service
-/Applications/MAMP/bin/php/php8.3.30/bin/php -S localhost:8001
-
-# Terminal 3 — Booking Service (puerto 8002)
-cd booking-service
-/Applications/MAMP/bin/php/php8.3.30/bin/php -S localhost:8002
-```
+- **Aplicación (Frontend):** [http://localhost:8080/login.php](http://localhost:8080/login.php)
+- **Documentación API (Swagger):** [http://localhost:8080/api-docs.php](http://localhost:8080/api-docs.php)
 
 ### 6. Acceder al sistema
 

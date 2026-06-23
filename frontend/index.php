@@ -300,7 +300,7 @@
                                 ${b.estatus}
                             </button>
                         </div>
-                        ${b.notas ? `<p class="mt-1.5 ml-12 text-[11px] text-slate-400 italic truncate">📝 ${b.notas}</p>` : ''}
+                        ${b.notas ? `<p class="mt-1.5 ml-12 text-[11px] text-slate-400 italic truncate"> ${b.notas}</p>` : ''}
                     </div>`;
                 });
             } else {

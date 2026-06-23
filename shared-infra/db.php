@@ -9,8 +9,9 @@ $pass = getenv('DB_PASS') ?: 'Mango10<';
 $db   = getenv('DB_NAME') ?: 'officespace_db';
 
 $conn = mysqli_connect($host, $user, $pass, $db, (int)$port);
-
+mysqli_set_charset($conn, 'utf8mb4');
 if (!$conn) {
+    
     http_response_code(500);
     echo json_encode([
         "status"  => "error",

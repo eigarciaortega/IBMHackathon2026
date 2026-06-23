@@ -25,14 +25,6 @@ info:
     name: Equipo OfficeSpace
     email: hackathon-support@corporativoalpha.com
 
-servers:
-  - url: http://localhost:8003
-    description: Auth Service
-  - url: http://localhost:8001
-    description: Catalog Service
-  - url: http://localhost:8002
-    description: Booking Service
-
 tags:
   - name: Auth
     description: Autenticación y emisión de tokens JWT
@@ -46,6 +38,9 @@ paths:
   # ─── AUTH SERVICE ────────────────────────────────────────────────────────────
 
   /login.php:
+    servers:
+      - url: http://localhost:8003
+        description: Auth Service
     post:
       tags: [Auth]
       summary: Iniciar sesión
@@ -95,6 +90,9 @@ paths:
   # ─── CATALOG SERVICE ─────────────────────────────────────────────────────────
 
   /get_spaces.php:
+    servers:
+      - url: http://localhost:8001
+        description: Catalog Service
     get:
       tags: [Spaces]
       summary: Listar espacios disponibles
@@ -151,6 +149,9 @@ paths:
                 $ref: '#/components/schemas/SpacesListResponse'
 
   /create_space.php:
+    servers:
+      - url: http://localhost:8001
+        description: Catalog Service
     post:
       tags: [Spaces]
       summary: Crear espacio
@@ -197,6 +198,9 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
 
   /update_space.php:
+    servers:
+      - url: http://localhost:8001
+        description: Catalog Service
     post:
       tags: [Spaces]
       summary: Actualizar espacio
@@ -239,6 +243,9 @@ paths:
           $ref: '#/components/responses/NotFound'
 
   /delete_space.php:
+    servers:
+      - url: http://localhost:8001
+        description: Catalog Service
     post:
       tags: [Spaces]
       summary: Eliminar espacio
@@ -284,6 +291,9 @@ paths:
   # ─── BOOKING SERVICE ─────────────────────────────────────────────────────────
 
   /create_booking.php:
+    servers:
+      - url: http://localhost:8002
+        description: Booking Service
     post:
       tags: [Bookings]
       summary: Crear reserva
@@ -376,6 +386,9 @@ paths:
           $ref: '#/components/responses/InternalError'
 
   /get_user_bookings.php:
+    servers:
+      - url: http://localhost:8002
+        description: Booking Service
     get:
       tags: [Bookings]
       summary: Mis reservas activas
@@ -393,6 +406,9 @@ paths:
           $ref: '#/components/responses/Unauthorized'
 
   /get_all_user_bookings.php:
+    servers:
+      - url: http://localhost:8002
+        description: Booking Service
     get:
       tags: [Bookings]
       summary: Historial completo de reservas
@@ -410,6 +426,9 @@ paths:
           $ref: '#/components/responses/Unauthorized'
 
   /cancel_booking.php:
+    servers:
+      - url: http://localhost:8002
+        description: Booking Service
     post:
       tags: [Bookings]
       summary: Cancelar reserva
@@ -456,6 +475,9 @@ paths:
           $ref: '#/components/responses/NotFound'
 
   /get_reservas_hoy.php:
+    servers:
+      - url: http://localhost:8002
+        description: Booking Service
     get:
       tags: [Bookings]
       summary: Dashboard de ocupación del día

@@ -1,5 +1,5 @@
 <?php
-// /api-docs.php
+// /frontend/api-docs.php
 // Swagger UI servido via CDN — sin instalación de dependencias
 header("Access-Control-Allow-Origin: *");
 ?>
@@ -30,7 +30,7 @@ header("Access-Control-Allow-Origin: *");
   <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
   <script>
     SwaggerUIBundle({
-      url: "<?= rtrim(dirname($_SERVER['PHP_SELF']), '/') ?>/openapi.yaml",
+      url: "openapi.yaml", // Al mover ambos archivos a /frontend, se lee de forma directa
       dom_id: '#swagger-ui',
       presets: [SwaggerUIBundle.presets.apis, SwaggerUIBundle.SwaggerUIStandalonePreset],
       layout: 'BaseLayout',
