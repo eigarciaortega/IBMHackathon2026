@@ -7,7 +7,7 @@ import { AuthContext } from './auth-context'
 const CLAVE_TOKEN = 'officespace_token'
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem(CLAVE_TOKEN))
+  const [token, setToken] = useState<string | null>(() => sessionStorage.getItem(CLAVE_TOKEN))
   const [usuario, setUsuario] = useState<Usuario | null>(null)
   const [cargando, setCargando] = useState(true)
 
@@ -15,7 +15,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setToken(null)
     setUsuario(null)
     fijarToken(null)
-    localStorage.removeItem(CLAVE_TOKEN)
+    sessionStorage.removeItem(CLAVE_TOKEN)
   }, [])
 
   // Cierra la sesión automáticamente cuando cualquier API devuelve 401.
@@ -25,7 +25,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Rehidrata la sesión al cargar: valida el token guardado contra /auth/me.
   useEffect(() => {
-    const guardado = localStorage.getItem(CLAVE_TOKEN)
+    const guardado = sessionStorage.getItem(CLAVE_TOKEN)
     if (!guardado) {
       setCargando(false)
       return
@@ -44,7 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (email: string, password: string) => {
     const { token: nuevo } = await authApi.login(email, password)
     fijarToken(nuevo)
-    localStorage.setItem(CLAVE_TOKEN, nuevo)
+    sessionStorage.setItem(CLAVE_TOKEN, nuevo)
     const u = await authApi.me()
     setToken(nuevo)
     setUsuario(u)
