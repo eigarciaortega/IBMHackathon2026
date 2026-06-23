@@ -1,0 +1,162 @@
+# =============================================================================
+# OfficeSpace .gitignore
+# Node.js + React + PostgreSQL + Docker + Debian Linux
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Dependencies
+# -----------------------------------------------------------------------------
+**/node_modules/
+.pnpm-store/
+.pnpm-debug.log*
+
+# pnpm lockfile is committed, but local store is not
+# pnpm-lock.yaml  <-- DO commit this
+
+# -----------------------------------------------------------------------------
+# Environment Variables (NEVER commit secrets)
+# -----------------------------------------------------------------------------
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.production
+*.env
+
+# Keep .env.example files (they document required variables without values)
+!.env.example
+
+# -----------------------------------------------------------------------------
+# Build Outputs
+# -----------------------------------------------------------------------------
+dist/
+build/
+.vite/
+*.tsbuildinfo
+
+# -----------------------------------------------------------------------------
+# Logs
+# -----------------------------------------------------------------------------
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# -----------------------------------------------------------------------------
+# Runtime & Process
+# -----------------------------------------------------------------------------
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# -----------------------------------------------------------------------------
+# Testing
+# -----------------------------------------------------------------------------
+coverage/
+.nyc_output/
+*.lcov
+test-results/
+playwright-report/
+playwright/.cache/
+
+# -----------------------------------------------------------------------------
+# Docker
+# -----------------------------------------------------------------------------
+# Do NOT ignore docker-compose.yml or Dockerfiles
+# Ignore local override files
+docker-compose.override.yml
+docker-compose.local.yml
+
+# -----------------------------------------------------------------------------
+# Database
+# -----------------------------------------------------------------------------
+# Local PostgreSQL data directory if mounted as volume
+pgdata/
+postgres-data/
+*.sql.bak
+
+# -----------------------------------------------------------------------------
+# OS Generated Files
+# -----------------------------------------------------------------------------
+# Linux
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# macOS (if teammates use it)
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Windows (if teammates use it)
+Thumbs.db
+Thumbs.db:encryptionkey
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# -----------------------------------------------------------------------------
+# Editor & IDE
+# -----------------------------------------------------------------------------
+# VSCode
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.json.example
+
+# JetBrains (WebStorm, IntelliJ)
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Vim/Neovim
+*.swp
+*.swo
+*~
+.netrwhist
+Session.vim
+
+# Emacs
+*#
+.#*
+\#*#
+
+# -----------------------------------------------------------------------------
+# Temporary & Cache Files
+# -----------------------------------------------------------------------------
+.cache/
+.parcel-cache/
+.eslintcache
+.stylelintcache
+*.tmp
+*.temp
+
+# -----------------------------------------------------------------------------
+# Package Tarballs
+# -----------------------------------------------------------------------------
+*.tgz
+*.tar.gz
+
+# -----------------------------------------------------------------------------
+# Postman (export files are committed intentionally in /docs)
+# Ignore auto-generated local Postman data
+# -----------------------------------------------------------------------------
+# Only ignore if you have a local postman app data directory
+# /docs/postman_collection.json  <-- DO commit this
