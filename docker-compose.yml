@@ -1,0 +1,76 @@
+services:
+
+  accounts-db:
+    image: postgres:16-alpine
+    container_name: accounts-db
+    env_file: .env
+    environment:
+      POSTGRES_DB: ${DB_DB}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5435:5432"
+    volumes:
+      - accounts-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  processor-db:
+    image: postgres:16-alpine
+    container_name: processor-db
+    env_file: .env
+    environment:
+      POSTGRES_DB: ${PROCESSOR_DB_DB}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5436:5432"
+    volumes:
+      - processor-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  account-service:
+    build:
+      context: ./accountService
+    container_name: account-service
+    env_file: .env
+    environment:
+      DB_URL: jdbc:postgresql://accounts-db:5432/${DB_DB}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "3000:3000"
+    depends_on:
+      accounts-db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  processor-service:
+    build:
+      context: ./processorService
+    container_name: processor-service
+    env_file: .env
+    environment:
+      DB_URL: jdbc:postgresql://processor-db:5432/${PROCESSOR_DB_DB}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      ACCOUNT_SERVICE_URL: http://account-service:3000
+    ports:
+      - "3001:3001"
+    depends_on:
+      processor-db:
+        condition: service_healthy
+      account-service:
+        condition: service_started
+    restart: unless-stopped
+
+volumes:
+  accounts-db-data:
+  processor-db-data:

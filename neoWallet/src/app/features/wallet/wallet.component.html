@@ -1,0 +1,340 @@
+<div class="min-h-screen bg-neo-bg text-white">
+
+  <!-- ── Header ─────────────────────────────────────────── -->
+  <header class="border-b border-neo-border px-4 py-3" style="background:#080f19">
+    <div class="max-w-3xl mx-auto flex items-center justify-between">
+
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background:#0d2416">
+          <svg lucideWallet [size]="20" color="#22c55e"></svg>
+        </div>
+        <div>
+          <p class="font-bold text-base leading-tight">NeoWallet</p>
+          <p class="text-xs" style="color:#4a6a80">by FastPay</p>
+        </div>
+      </div>
+
+      <!-- Desktop status badge -->
+      @if (currentUser()) {
+        <div class="hidden md:flex items-center gap-2 rounded-full px-4 py-1.5 border border-neo-border text-sm"
+             style="background:#0c1822">
+          <span class="w-2 h-2 rounded-full bg-neo-accent inline-block"></span>
+          <span style="color:#6b8eaa">Sistema activo</span>
+          <span class="font-semibold text-neo-accent">
+            · ${{ currentUser()!.balance | number:'1.2-2' }}
+          </span>
+        </div>
+      }
+
+    </div>
+  </header>
+
+  <!-- ── Main ───────────────────────────────────────────── -->
+  <main class="max-w-3xl mx-auto px-4 pb-16">
+
+    <!-- Section title + user selector -->
+    <div class="flex items-start justify-between py-6">
+      <div>
+        <p class="text-xs font-semibold tracking-widest uppercase mb-1" style="color:#4a6a80">Sesión activa</p>
+        <h1 class="text-2xl font-bold">Mi billetera</h1>
+      </div>
+
+      <!-- User dropdown -->
+      <div class="relative mt-1">
+        <button
+          (click)="toggleUserDropdown($event)"
+          class="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm border border-neo-border transition-colors hover:border-neo-muted"
+          style="background:#0c1822"
+        >
+          <svg lucideUsers [size]="15" color="#6b8eaa"></svg>
+          <span class="max-w-[130px] truncate">{{ currentUser()?.name ?? 'Seleccionar' }}</span>
+          <svg lucideChevronDown [size]="13" color="#6b8eaa"></svg>
+        </button>
+
+        @if (showUserDropdown()) {
+          <div
+            class="absolute right-0 top-full mt-2 w-56 rounded-xl border border-neo-border overflow-hidden z-50 shadow-2xl"
+            style="background:#0b1825"
+          >
+            @for (user of allUsers(); track user.id) {
+              <button
+                (click)="selectUser(user)"
+                class="w-full text-left px-4 py-3 text-sm transition-colors hover:bg-neo-surface"
+                [style.color]="user.id === currentUser()?.id ? '#22c55e' : 'white'"
+              >
+                {{ user.name }}
+              </button>
+            }
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- ── Balance card ───────────────────────────────────── -->
+    <div class="balance-card rounded-2xl p-6 mb-5">
+      <p class="text-sm mb-2" style="color:rgba(255,255,255,0.55)">Saldo disponible</p>
+
+      @if (initialLoading()) {
+        <div class="h-12 w-48 rounded-lg mb-8 animate-pulse" style="background:rgba(255,255,255,0.08)"></div>
+      } @else {
+        <p class="text-5xl font-bold mb-8 tracking-tight">
+          ${{ currentUser()?.balance | number:'1.2-2' }}
+        </p>
+      }
+
+      <div class="flex justify-between items-end">
+        <div>
+          <p class="text-xs mb-1" style="color:rgba(255,255,255,0.45)">Titular</p>
+          <p class="font-semibold text-sm">{{ currentUser()?.name ?? '—' }}</p>
+        </div>
+        <div class="text-right">
+          <p class="text-xs mb-1" style="color:rgba(255,255,255,0.45)">ID de cuenta</p>
+          <p class="font-semibold text-sm">{{ accountId() }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Tab bar ────────────────────────────────────────── -->
+    <div class="flex gap-1 rounded-xl p-1 mb-4" style="background:#0c1822">
+
+      <button
+        (click)="setActiveTab('transfer')"
+        class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all"
+        [style.background]="activeTab() === 'transfer' ? '#0e0e1a' : 'transparent'"
+        [style.color]="activeTab() === 'transfer' ? 'white' : '#6b8eaa'"
+      >
+        <svg lucideSend [size]="14" [color]="activeTab() === 'transfer' ? 'white' : '#6b8eaa'"></svg>
+        Transferir
+      </button>
+
+      <button
+        (click)="setActiveTab('recharge')"
+        class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all"
+        [style.background]="activeTab() === 'recharge' ? '#0e0e1a' : 'transparent'"
+        [style.color]="activeTab() === 'recharge' ? 'white' : '#6b8eaa'"
+      >
+        <svg lucidePlus [size]="14" [color]="activeTab() === 'recharge' ? 'white' : '#6b8eaa'"></svg>
+        Recargar
+      </button>
+
+      <button
+        (click)="setActiveTab('history')"
+        class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all"
+        [style.background]="activeTab() === 'history' ? '#0e0e1a' : 'transparent'"
+        [style.color]="activeTab() === 'history' ? 'white' : '#6b8eaa'"
+      >
+        <svg lucideHistory [size]="14" [color]="activeTab() === 'history' ? 'white' : '#6b8eaa'"></svg>
+        Historial
+      </button>
+
+    </div>
+
+    <!-- Feedback banners -->
+    @if (success()) {
+      <div class="mb-4 px-4 py-3 rounded-xl text-sm border"
+           style="background:rgba(34,197,94,0.08);border-color:rgba(34,197,94,0.25);color:#4ade80">
+        {{ success() }}
+      </div>
+    }
+    @if (error()) {
+      <div class="mb-4 px-4 py-3 rounded-xl text-sm border"
+           style="background:rgba(248,113,113,0.08);border-color:rgba(248,113,113,0.25);color:#f87171">
+        {{ error() }}
+      </div>
+    }
+
+    <!-- ── Tab content ────────────────────────────────────── -->
+    <div class="rounded-2xl p-6 mb-6" style="background:#0c1822">
+
+      @switch (activeTab()) {
+
+        <!-- TRANSFER -->
+        @case ('transfer') {
+          <h2 class="font-bold text-lg mb-1">Enviar dinero</h2>
+          <p class="text-sm mb-6" style="color:#6b8eaa">Transferencias P2P instantáneas, sin comisiones.</p>
+
+          <div class="mb-4">
+            <label class="block text-sm font-medium mb-2">Destinatario</label>
+            <div class="relative">
+              <select
+                [(ngModel)]="recipientId"
+                class="w-full rounded-xl px-4 py-3.5 text-sm appearance-none focus:outline-none border border-neo-border transition-colors"
+                style="background:#070d14;color:#6b8eaa"
+              >
+                <option value="" disabled>Selecciona un usuario</option>
+                @for (user of recipients(); track user.id) {
+                  <option [value]="user.id" style="color:white">{{ user.name }}</option>
+                }
+              </select>
+              <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                <svg lucideChevronDown [size]="16" color="#6b8eaa"></svg>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-6">
+            <label class="block text-sm font-medium mb-2">Monto (USD)</label>
+            <input
+              type="number"
+              min="0.01"
+              step="0.01"
+              [(ngModel)]="transferAmount"
+              placeholder="0.00"
+              class="w-full rounded-xl px-4 py-3.5 text-sm border border-neo-border focus:outline-none transition-colors"
+              style="background:#070d14;color:#6b8eaa"
+            />
+            @if (transferAmount && transferAmount > (currentUser()?.balance ?? 0)) {
+              <p class="text-xs mt-1" style="color:#f87171">Saldo insuficiente</p>
+            }
+          </div>
+          <button
+            (click)="transfer()"
+            [disabled]="loading() || !recipientId || !transferAmount || transferAmount <= 0 || transferAmount > (currentUser()?.balance ?? 0)"
+            class="w-full btn-accent flex items-center justify-center gap-2 py-4 rounded-xl text-sm font-semibold text-white"
+          >
+            <svg lucideSend [size]="16" color="white"></svg>
+            {{ loading() ? 'Procesando…' : 'Confirmar transferencia' }}
+          </button>
+        }
+
+        <!-- RECHARGE -->
+        @case ('recharge') {
+          <h2 class="font-bold text-lg mb-1">Recargar saldo</h2>
+          <p class="text-sm mb-6" style="color:#6b8eaa">Agrega fondos a tu billetera al instante.</p>
+
+          <div class="mb-4">
+            <label class="block text-sm font-medium mb-2">Monto</label>
+            <input
+              type="number"
+              min="0.01"
+              step="0.01"
+              [(ngModel)]="rechargeAmount"
+              placeholder="0.00"
+              class="w-full rounded-xl px-4 py-3.5 text-sm border border-neo-border focus:outline-none transition-colors mb-3"
+              style="background:#070d14;color:#6b8eaa"
+            />
+            <div class="flex gap-2">
+              @for (amt of quickAmounts; track amt) {
+                <button
+                  (click)="addQuickAmount(amt)"
+                  class="flex-1 py-2 rounded-lg text-xs border border-neo-border transition-colors hover:border-neo-accent"
+                  style="color:#6b8eaa"
+                >
+                  +${{ amt }}
+                </button>
+              }
+            </div>
+          </div>
+
+          <div class="mb-6">
+            <label class="block text-sm font-medium mb-2">Método de pago</label>
+            <div class="relative">
+              <select
+                [(ngModel)]="paymentMethod"
+                class="w-full rounded-xl px-4 py-3.5 text-sm appearance-none focus:outline-none border border-neo-border"
+                style="background:#070d14;color:#6b8eaa"
+              >
+                @for (method of paymentMethods; track method) {
+                  <option [value]="method" style="color:white">{{ method }}</option>
+                }
+              </select>
+              <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                <svg lucideChevronDown [size]="16" color="#6b8eaa"></svg>
+              </div>
+            </div>
+          </div>
+
+          <button
+            (click)="recharge()"
+            [disabled]="loading() || !rechargeAmount || rechargeAmount <= 0"
+            class="w-full btn-accent flex items-center justify-center gap-2 py-4 rounded-xl text-sm font-semibold text-white"
+          >
+            <svg lucidePlus [size]="16" color="white"></svg>
+            {{ loading() ? 'Procesando…' : 'Confirmar recarga' }}
+          </button>
+        }
+
+        <!-- HISTORY -->
+        @case ('history') {
+          @if (transactions().length === 0) {
+            <div class="flex flex-col items-center justify-center py-10 text-center">
+              <div class="mb-4 opacity-35">
+                <svg lucideHistory [size]="52" color="#6b8eaa"></svg>
+              </div>
+              <p class="font-semibold mb-2">Sin transacciones aún</p>
+              <p class="text-sm" style="color:#6b8eaa">
+                Tu historial aparecerá aquí cuando envíes o recibas dinero.
+              </p>
+            </div>
+          } @else {
+            <h2 class="font-bold text-lg mb-4">Historial</h2>
+            <div class="flex flex-col gap-3">
+              @for (tx of transactions(); track tx.id) {
+                <div class="flex items-center gap-3 p-3 rounded-xl" style="background:#070d14">
+
+                  <div
+                    class="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
+                    [style.background]="tx.type === 'received' ? 'rgba(34,197,94,0.1)' : 'rgba(248,113,113,0.1)'"
+                  >
+                    @if (tx.type === 'received') {
+                      <svg lucideArrowDownLeft [size]="16" color="#22c55e"></svg>
+                    } @else {
+                      <svg lucideArrowUpRight [size]="16" color="#f87171"></svg>
+                    }
+                  </div>
+
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium truncate">{{ counterpartyName(tx.counterparty_id) }}</p>
+                    <p class="text-xs" style="color:#6b8eaa">{{ formatDate(tx.created_at) }}</p>
+                  </div>
+
+                  <div class="text-right flex-shrink-0">
+                    <p
+                      class="text-sm font-semibold"
+                      [style.color]="tx.type === 'received' ? '#4ade80' : '#f87171'"
+                    >
+                      {{ tx.type === 'received' ? '+' : '-' }}${{ tx.amount | number:'1.2-2' }}
+                    </p>
+                    <p class="text-xs" style="color:#4a6a80">{{ tx.status }}</p>
+                  </div>
+
+                </div>
+              }
+            </div>
+          }
+        }
+
+      }
+    </div>
+
+    <!-- ── Feature cards ──────────────────────────────────── -->
+    <div class="grid gap-4 md:grid-cols-3">
+
+      <div class="rounded-2xl p-5" style="background:#0c1822">
+        <div class="w-11 h-11 rounded-xl flex items-center justify-center mb-4" style="background:#0d2416">
+          <svg lucideZap [size]="22" color="#22c55e"></svg>
+        </div>
+        <p class="font-bold mb-1">Instantáneo</p>
+        <p class="text-sm" style="color:#6b8eaa">Transferencias en menos de 500ms.</p>
+      </div>
+
+      <div class="rounded-2xl p-5" style="background:#0c1822">
+        <div class="w-11 h-11 rounded-xl flex items-center justify-center mb-4" style="background:#0d2416">
+          <svg lucideShield [size]="22" color="#22c55e"></svg>
+        </div>
+        <p class="font-bold mb-1">Seguro</p>
+        <p class="text-sm" style="color:#6b8eaa">Patrón Saga garantiza que no se pierda dinero.</p>
+      </div>
+
+      <div class="rounded-2xl p-5" style="background:#0c1822">
+        <div class="w-11 h-11 rounded-xl flex items-center justify-center mb-4" style="background:#0d2416">
+          <svg lucideWallet [size]="22" color="#22c55e"></svg>
+        </div>
+        <p class="font-bold mb-1">Sin comisiones</p>
+        <p class="text-sm" style="color:#6b8eaa">P2P gratis entre usuarios NeoWallet.</p>
+      </div>
+
+    </div>
+
+  </main>
+</div>

@@ -1,0 +1,80 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-neo-bg: #070d14;
+  --color-neo-surface: #0c1822;
+  --color-neo-surface-2: #111f2e;
+  --color-neo-border: #1a2d3d;
+  --color-neo-accent: #22c55e;
+  --color-neo-teal: #14b8a6;
+  --color-neo-muted: #6b8eaa;
+  --color-neo-muted-2: #3a5568;
+
+  --font-family-sans: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background-color: #070d14;
+  color: white;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Balance card gradient matching design */
+.balance-card {
+  background: linear-gradient(135deg, #0e3525 0%, #0b2540 50%, #060e1b 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.balance-card::before {
+  content: '';
+  position: absolute;
+  top: -50px;
+  right: -10px;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(34, 197, 94, 0.1) 0%, transparent 65%);
+  pointer-events: none;
+}
+
+/* Green-to-teal gradient button */
+.btn-accent {
+  background: linear-gradient(90deg, #22c55e 0%, #14b8a6 100%);
+  transition: opacity 0.15s ease;
+}
+
+.btn-accent:hover:not(:disabled) {
+  opacity: 0.88;
+}
+
+.btn-accent:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Hide number input arrows */
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+}
+
+input[type='number'] {
+  -moz-appearance: textfield;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: #070d14;
+}
+::-webkit-scrollbar-thumb {
+  background: #1a2d3d;
+  border-radius: 4px;
+}
