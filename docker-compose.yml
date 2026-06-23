@@ -32,6 +32,17 @@ services:
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       # Igual que en application.properties      
       SERVER_PORT: 8081
+  
+  auth-service: # Nuevo servicio
+    build: ./auth-service
+    container_name: auth_service
+    ports:
+      - "8080:8080" # Puerto distintivo para auth-service
+    environment:
+      SERVER_PORT: 8080
+      JWT_SECRET_KEY: changeit_this_should_be_a_long_and_secure_random_key_in_production
+      JWT_EXPIRATION_MS: 3600000
+      JWT_ISSUER: corporativoalpha.com
 
 volumes:
   postgres_data:
