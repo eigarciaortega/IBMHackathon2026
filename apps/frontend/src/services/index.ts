@@ -5,6 +5,7 @@ import {
   Booking,
   CollaboratorDashboard,
   Faq,
+  AssistantReply,
   NotificationItem,
   Occupancy,
   Paginated,
@@ -49,6 +50,9 @@ export const spacesService = {
 export const resourcesService = {
   list: (params?: Record<string, unknown>) =>
     catalogApi.get<Paginated<Resource>>('/resources', { params }).then((r) => r.data),
+  create: (body: unknown) => catalogApi.post<Resource>('/resources', body).then((r) => r.data),
+  update: (id: string, body: unknown) => catalogApi.put<Resource>(`/resources/${id}`, body).then((r) => r.data),
+  remove: (id: string) => catalogApi.delete(`/resources/${id}`).then((r) => r.data),
 };
 
 export const chatbotService = {
@@ -64,6 +68,8 @@ export const chatbotService = {
         suggestions?: { id: string; question: string; category: string }[];
       }>('/chatbot/ask', { question })
       .then((r) => r.data),
+  assistant: (message: string, context?: { role?: string; currentPage?: string }) =>
+    catalogApi.post<AssistantReply>('/chatbot/assistant', { message, context }).then((r) => r.data),
 };
 
 // ===== booking-service (3003): /bookings, /dashboard, /notifications, /export =====
@@ -90,6 +96,15 @@ export const bookingsService = {
   approve: (id: string) => bookingApi.patch(`/bookings/${id}/approve`).then((r) => r.data),
   reject: (id: string) => bookingApi.patch(`/bookings/${id}/reject`).then((r) => r.data),
   release: (id: string) => bookingApi.patch(`/bookings/${id}/release`).then((r) => r.data),
+  downloadIcs: async (id: string, label = 'reserva') => {
+    const res = await bookingApi.get(`/bookings/${id}/calendar.ics`, { responseType: 'blob' });
+    const url = URL.createObjectURL(res.data as Blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${label}.ics`;
+    a.click();
+    URL.revokeObjectURL(url);
+  },
 };
 
 export const dashboardService = {

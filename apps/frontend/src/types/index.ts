@@ -137,6 +137,17 @@ export interface Faq {
   category: string;
 }
 
+export interface AssistantSuggestion {
+  label: string;
+  message: string;
+}
+export interface AssistantReply {
+  answer: string;
+  suggestions: AssistantSuggestion[];
+  action?: { type: 'NAVIGATE' | 'NONE'; target?: string };
+  engine: 'local' | 'watson';
+}
+
 export interface Occupancy {
   today: { occupiedSpaces: number; availableSpaces: number; totalSpaces: number; occupancyRate: number; bookingsCount: number };
   week: { bookingsCount: number; occupancyRate: number; dailyBreakdown: { day: string; bookings: number; occupancyRate: number }[] };

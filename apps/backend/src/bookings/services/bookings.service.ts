@@ -341,6 +341,94 @@ export class BookingsService implements OwnershipResolver {
     return this.toResponse(booking);
   }
 
+  /**
+   * Genera un archivo .ics (RFC 5545) para una reserva.
+   * Reglas: solo el dueño o ADMIN; solo CONFIRMED o ATTENDED.
+   */
+  async getCalendarIcs(
+    id: string,
+    currentUser: AuthenticatedUser,
+  ): Promise<{ filename: string; content: string }> {
+    const booking = await this.bookingsRepository.findById(id);
+    if (!booking) {
+      throw new NotFoundException('Reserva no encontrada.');
+    }
+    if (currentUser.role !== Role.ADMIN && booking.userId !== currentUser.id) {
+      throw new ForbiddenException('No tienes permisos sobre esta reserva.');
+    }
+    const status = this.effectiveStatus(booking);
+    if (status !== BookingStatus.CONFIRMED && status !== BookingStatus.ATTENDED) {
+      throw new BadRequestException(
+        'Solo se pueden exportar reservas confirmadas o con asistencia verificada.',
+      );
+    }
+
+    const b = booking as Booking & {
+      space?: { name?: string; floor?: string; zone?: string; spaceType?: string };
+      purpose?: string;
+    };
+    const date = formatDate(booking.bookingDate); // YYYY-MM-DD
+    const start = formatTime(booking.startTime).slice(0, 8); // HH:MM:SS
+    const end = formatTime(booking.endTime).slice(0, 8);
+    const spaceName = b.space?.name ?? 'Espacio';
+    const location = [b.space?.name, b.space?.floor, b.space?.zone].filter(Boolean).join(', ');
+    const content = this.buildIcs({
+      uid: `${id}@officespace`,
+      date,
+      start,
+      end,
+      summary: `Reserva: ${spaceName}`,
+      location,
+      description: b.purpose ?? 'Reserva de espacio en OfficeSpace.',
+    });
+    return { filename: `reserva-${spaceName.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}.ics`, content };
+  }
+
+  /** Construye el contenido .ics (TZID America/Mexico_City, sin DST). */
+  private buildIcs(e: {
+    uid: string;
+    date: string;
+    start: string;
+    end: string;
+    summary: string;
+    location: string;
+    description: string;
+  }): string {
+    const esc = (s: string) =>
+      s.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n');
+    const dt = (date: string, time: string) =>
+      `${date.replace(/-/g, '')}T${time.replace(/:/g, '')}`;
+    const stamp = new Date().toISOString().replace(/[-:]/g, '').slice(0, 15) + 'Z';
+    const lines = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//OfficeSpace//Reservation System//ES',
+      'CALSCALE:GREGORIAN',
+      'METHOD:PUBLISH',
+      'BEGIN:VTIMEZONE',
+      'TZID:America/Mexico_City',
+      'BEGIN:STANDARD',
+      'DTSTART:19700101T000000',
+      'TZOFFSETFROM:-0600',
+      'TZOFFSETTO:-0600',
+      'TZNAME:CST',
+      'END:STANDARD',
+      'END:VTIMEZONE',
+      'BEGIN:VEVENT',
+      `UID:${e.uid}`,
+      `DTSTAMP:${stamp}`,
+      `DTSTART;TZID=America/Mexico_City:${dt(e.date, e.start)}`,
+      `DTEND;TZID=America/Mexico_City:${dt(e.date, e.end)}`,
+      `SUMMARY:${esc(e.summary)}`,
+      `LOCATION:${esc(e.location)}`,
+      `DESCRIPTION:${esc(e.description)}`,
+      'STATUS:CONFIRMED',
+      'END:VEVENT',
+      'END:VCALENDAR',
+    ];
+    return lines.join('\r\n') + '\r\n';
+  }
+
   async myBookings(currentUser: AuthenticatedUser) {
     const result = await this.bookingsRepository.findMany({
       userId: currentUser.id,

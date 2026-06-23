@@ -8,10 +8,11 @@ import {
   Post,
   Query,
   Req,
+  Res,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { Request } from 'express';
+import { ApiBearerAuth, ApiOperation, ApiProduces, ApiTags } from '@nestjs/swagger';
+import { Request, Response } from 'express';
 import { Role } from '../../common/constants/roles.constant';
 import { CheckOwnership } from '../../common/decorators/ownership.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -109,6 +110,24 @@ export class BookingsController {
   @ApiOperation({ summary: 'Detalle de reserva (propietario o ADMIN)' })
   findOne(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: AuthenticatedUser) {
     return this.bookingsService.findOne(id, user);
+  }
+
+  @Get(':id/calendar.ics')
+  @UseGuards(OwnershipGuard)
+  @CheckOwnership(BookingsService)
+  @ApiProduces('text/calendar')
+  @ApiOperation({
+    summary: 'Descargar la reserva como evento .ics (propietario o ADMIN; solo CONFIRMED/ATTENDED)',
+  })
+  async calendarIcs(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: AuthenticatedUser,
+    @Res() res: Response,
+  ) {
+    const { filename, content } = await this.bookingsService.getCalendarIcs(id, user);
+    res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(content);
   }
 
   @Patch(':id/cancel')

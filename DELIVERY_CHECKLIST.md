@@ -90,6 +90,9 @@ Leyenda: ✅ Cumplido · ⚠ Parcial · ❌ Pendiente
 | 8.1 | Característica innovadora implementada | ✅ | Control de asistencia (ATTENDED/NO_SHOW + Attendance Rate) |
 | 8.2 | Documentación de la innovación | ✅ | `INNOVATION.md` + sección en README |
 | 8.3 | Analytics / métricas | ✅ | Dashboard con ocupación, horas pico, tasa de asistencia |
+| 8.4 | OfficeSpace Assistant (tipo IBM Watson) | ✅ | Widget contextual por rol; `POST /chatbot/assistant`; motor local + IBM Watson opcional por env (fallback a local) |
+| 8.5 | Integración Google Calendar | ✅ | Enlace `render` sin credenciales + `GET /bookings/:id/calendar.ics` (RFC 5545) |
+| 8.6 | Gestión avanzada de espacios/recursos (Admin) | ✅ | CRUD completo, estados, mantenimiento, recursos y filtros desde la UI |
 
 ---
 

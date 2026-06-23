@@ -11,6 +11,26 @@ import { PageHeader } from '../components/PageHeader';
 import { getApiErrorMessage } from '../lib/api';
 import { Booking } from '../types';
 
+/** Construye un enlace de Google Calendar (sin credenciales) para una reserva. */
+function googleCalendarUrl(b: Booking): string {
+  const compact = (date: string, time: string) =>
+    `${date.replace(/-/g, '')}T${time.replace(/:/g, '').slice(0, 6).padEnd(6, '0')}`;
+  const start = compact(b.bookingDate, b.startTime);
+  const end = compact(b.bookingDate, b.endTime);
+  const text = `Reserva: ${b.space?.name ?? 'Espacio'}`;
+  const location = [b.space?.name, b.space?.floor, b.space?.zone].filter(Boolean).join(', ');
+  const details = b.purpose ? `Motivo: ${b.purpose}` : 'Reserva de espacio en OfficeSpace.';
+  const params = new URLSearchParams({
+    action: 'TEMPLATE',
+    text,
+    dates: `${start}/${end}`,
+    details,
+    location,
+    ctz: 'America/Mexico_City',
+  });
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
+}
+
 export function MyBookingsPage() {
   const qc = useQueryClient();
   const location = useLocation();
@@ -79,14 +99,38 @@ export function MyBookingsPage() {
                       <StatusBadge status={b.status} />
                     </td>
                     <td className="text-right">
-                      {b.status === 'CONFIRMED' && (
-                        <button onClick={() => setToCancel(b)} className="btn btn-ghost btn-sm text-rose-600">
-                          Cancelar
-                        </button>
-                      )}
-                      {b.status === 'PENDING_APPROVAL' && (
-                        <span className="text-xs text-amber-700">Esperando aprobación del administrador</span>
-                      )}
+                      <div className="flex flex-wrap items-center justify-end gap-1">
+                        {(b.status === 'CONFIRMED' || b.status === 'ATTENDED') && (
+                          <>
+                            <a
+                              href={googleCalendarUrl(b)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="btn btn-ghost btn-sm text-teal-700"
+                              title="Abrir Google Calendar con el evento prellenado"
+                            >
+                              Google Calendar
+                            </a>
+                            <button
+                              onClick={() =>
+                                void bookingsService.downloadIcs(b.id, `reserva-${b.space?.name ?? 'espacio'}`)
+                              }
+                              className="btn btn-ghost btn-sm text-graphite-600"
+                              title="Descargar evento .ics"
+                            >
+                              .ics
+                            </button>
+                          </>
+                        )}
+                        {b.status === 'CONFIRMED' && (
+                          <button onClick={() => setToCancel(b)} className="btn btn-ghost btn-sm text-rose-600">
+                            Cancelar
+                          </button>
+                        )}
+                        {b.status === 'PENDING_APPROVAL' && (
+                          <span className="text-xs text-amber-700">Esperando aprobación del administrador</span>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}

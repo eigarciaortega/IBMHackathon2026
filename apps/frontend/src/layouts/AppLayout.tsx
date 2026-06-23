@@ -3,6 +3,7 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
 import { notificationsService } from '../services';
+import { AssistantWidget } from '../components/AssistantWidget';
 
 interface NavItem {
   to: string;
@@ -165,6 +166,9 @@ export function AppLayout() {
           </div>
         </main>
       </div>
+
+      {/* OfficeSpace Assistant — disponible en toda la app tras login */}
+      <AssistantWidget />
     </div>
   );
 }

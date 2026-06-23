@@ -71,3 +71,16 @@ OfficeSpace no compite como "otra agenda de salas": compite como una capa de **i
 - **Tiempo real** (WebSockets) para disponibilidad y alertas de liberación de espacios.
 
 La base ya está lista: el modelo, los estados y las métricas existen; las extensiones se montan encima sin rediseñar el sistema.
+
+## OfficeSpace Assistant — asistente conversacional empresarial
+
+El sistema incorpora un **asistente tipo IBM Watson Assistant** (widget flotante en toda la app, estilo IBM-like azul/teal) con arquitectura **dual a prueba de fallos**:
+
+- **Motor local rule-based** por defecto: sin IA, sin red, siempre disponible. Reconoce intenciones por palabras clave normalizadas y responde de forma **contextual por rol** (acciones de admin vs. colaborador), con **botones de acción** que navegan directamente (ej. "Ir a /spaces") y **enriquecimiento con datos reales** (salas disponibles ahora, solicitudes pendientes).
+- **IBM Watson Assistant v2** opcional, listo por variables de entorno (`IBM_WATSON_ASSISTANT_*`): si están configuradas, el `catalog-service` consume Watson por REST (sin SDK ni librerías pesadas) y **cae al motor local** si falla. No requiere credenciales para funcionar ni las expone.
+
+Esto demuestra integración empresarial con el ecosistema IBM sin acoplar el producto a un proveedor: el asistente funciona end-to-end en la demo y escala a Watson cuando la organización lo provisiona.
+
+## Interoperabilidad de calendario sin fricción
+
+Cada reserva confirmada se exporta a **Google Calendar** (enlace seguro, sin OAuth ni API keys) y a **archivo .ics** (RFC 5545, endpoint `GET /bookings/:id/calendar.ics`), llevando la reserva al flujo de trabajo real del colaborador sin integraciones costosas.

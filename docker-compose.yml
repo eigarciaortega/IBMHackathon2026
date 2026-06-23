@@ -71,6 +71,11 @@ services:
       JWT_SECRET: replace_with_a_long_random_secret
       CATALOG_SERVICE_PORT: 3002
       CORS_ORIGIN: http://localhost:5173
+      # OfficeSpace Assistant · IBM Watson Assistant (opcional; vacío => motor local)
+      IBM_WATSON_ASSISTANT_API_KEY: ${IBM_WATSON_ASSISTANT_API_KEY:-}
+      IBM_WATSON_ASSISTANT_URL: ${IBM_WATSON_ASSISTANT_URL:-}
+      IBM_WATSON_ASSISTANT_ID: ${IBM_WATSON_ASSISTANT_ID:-}
+      IBM_WATSON_ASSISTANT_VERSION: ${IBM_WATSON_ASSISTANT_VERSION:-2023-06-15}
     ports:
       - '3002:3002'
 

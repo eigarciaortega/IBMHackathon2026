@@ -172,9 +172,16 @@ CORS_ORIGIN=http://localhost:5173
 VITE_AUTH_URL=http://localhost:3001/api/v1
 VITE_CATALOG_URL=http://localhost:3002/api/v1
 VITE_BOOKING_URL=http://localhost:3003/api/v1
+
+# OfficeSpace Assistant · IBM Watson Assistant (OPCIONAL)
+# Vacías => motor local rule-based. Completas => Watson v2 con fallback a local.
+IBM_WATSON_ASSISTANT_API_KEY=
+IBM_WATSON_ASSISTANT_URL=
+IBM_WATSON_ASSISTANT_ID=
+IBM_WATSON_ASSISTANT_VERSION=2023-06-15
 ```
 
-> El archivo `.env` real **no** se versiona (está en `.gitignore` / `.dockerignore`).
+> El archivo `.env` real **no** se versiona (está en `.gitignore` / `.dockerignore`). Las variables `IBM_*` son **opcionales**: sin ellas el asistente funciona con el motor local.
 
 ---
 
@@ -203,8 +210,37 @@ Orden de arranque garantizado por healthchecks: **postgres → auth-service (mig
 | Rol | Email | Password |
 |-----|-------|----------|
 | **Administrador** | `admin@corporativoalpha.com` | `Admin123` |
-| **Colaborador** | `colaborador@corporativoalpha.com` | `Colab123` |
+| **Colaborador** | `ana.torres@corporativoalpha.com` | `User123` |
 | Colaborador (alterno) | `carlos.mendez@corporativoalpha.com` | `User123` |
+
+---
+
+## 🎬 Datos de demostración (dashboard completo)
+
+El seed crea automáticamente un dataset de demo **idempotente** para que el dashboard luzca completo en la presentación. Usa fechas relativas a la fecha actual (siempre vigentes) y los usuarios `admin@corporativoalpha.com`, `ana.torres@corporativoalpha.com` y `carlos.mendez@corporativoalpha.com`.
+
+Qué genera:
+
+- **10 espacios demo** (Sala Ejecutiva Norte, Sala Creativa Menta, Cabina Focus 01/02, Auditorio Ámbar, Sala Sprint Azul, Sala Consejo Graphite, Open Desk Flex A, Laboratorio Innovación en **MANTENIMIENTO**, Sala Training) con recursos en español (WiFi, Pantalla, Proyector, Pizarra, Videoconferencia, Bocinas, HDMI, Café, Aire acondicionado, Mesa colaborativa).
+- **~80 reservas** con fechas relativas: reservas de **hoy** (varias activas en la hora actual + pasadas + futuras del día), de **esta semana** (Lun–Vie con horas pico 09–11 y 15–16) y del **mes**, repartidas por estado: `CONFIRMED` (~59), `ATTENDED` (8), `NO_SHOW` (4), `PENDING_APPROVAL` recurrentes (5), `CANCELLED`/liberadas (4). **Nunca se solapan** reservas CONFIRMED en el mismo espacio (respeta la exclusion constraint).
+- **Notificaciones** demo para admin y colaboradores (leídas y no leídas).
+- **Auditoría** demo (CREATE/CANCEL/RELEASE/APPROVE_BOOKING, MARK_ATTENDED, MARK_NO_SHOW, CREATE/UPDATE/CHANGE_SPACE_STATUS).
+
+**Idempotencia:** los datos demo llevan marcador (`[DEMO_DASHBOARD]` en reservas y notificaciones; `ipAddress = DEMO_SEED` en auditoría) y se **borran y regeneran** en cada ejecución del seed. **No** se borran ni alteran usuarios, roles ni credenciales reales.
+
+Reiniciar la demo desde cero:
+
+```bash
+# Local (sin Docker)
+npx prisma db seed
+
+# Docker (recrea volumen de BD y re-siembra)
+docker compose down -v
+docker compose up --build
+```
+
+> En Docker el seed se ejecuta como JS compilado (`node prisma/dist/seed.js`). Si editas `prisma/seed.ts`, recompílalo:
+> `npx tsc prisma/seed.ts --outDir prisma/dist --module commonjs --target es2020 --moduleResolution node --esModuleInterop --skipLibCheck --resolveJsonModule`
 
 ---
 
@@ -230,6 +266,30 @@ Orden de arranque garantizado por healthchecks: **postgres → auth-service (mig
 ## 🚀 Innovación
 
 A diferencia de un sistema de reservas tradicional, OfficeSpace **cierra el ciclo de uso del espacio**: además de reservar, **verifica la asistencia real** (ATTENDED / NO_SHOW) y calcula la **Attendance Rate**. Esto convierte reservas en **datos de ocupación reales** para optimizar espacios, reducir *no‑shows* y planear la capacidad de la oficina. Detalle completo en `INNOVATION.md`.
+
+---
+
+## 🤖 OfficeSpace Assistant (IBM Watson opcional)
+
+Widget de chat flotante disponible en toda la app tras el login, con estilo IBM-like (azul profundo + teal), burbujas de conversación, acciones rápidas contextuales por rol y respuestas con botones de acción (navegación directa). Resuelve dudas sobre reservas, cancelación, estados (ATTENDED, NO_SHOW, PENDING_APPROVAL), liberación de espacios, disponibilidad, aprobaciones recurrentes y dashboard, y enriquece la conversación con datos reales (salas disponibles ahora, solicitudes pendientes).
+
+Endpoint: `POST /api/v1/chatbot/assistant` con `{ message, context: { role, currentPage } }` → `{ answer, suggestions[], action?, engine }`.
+
+**Modo de funcionamiento (dual, a prueba de fallos):**
+
+- **Motor local rule-based** (por defecto): sin IA, sin red, siempre disponible. Reconoce intenciones por palabras clave normalizadas (sin acentos).
+- **IBM Watson Assistant** (opcional): si se definen las variables `IBM_WATSON_ASSISTANT_API_KEY`, `IBM_WATSON_ASSISTANT_URL` e `IBM_WATSON_ASSISTANT_ID`, el `catalog-service` llama a Watson Assistant v2 (REST, sin SDK ni librerías pesadas). Si la llamada falla o las variables están vacías, cae automáticamente al motor local. **Nunca se rompe ni requiere credenciales.** No subir credenciales reales al repo.
+
+## 📅 Integración con Google Calendar (sin credenciales)
+
+En **Mis Reservas**, cada reserva `CONFIRMED` o `ATTENDED` ofrece:
+
+- **Agregar a Google Calendar** — abre Google con el evento prellenado mediante enlace seguro (`calendar.google.com/calendar/render?...`). No requiere API keys ni OAuth.
+- **Descargar .ics** — `GET /api/v1/bookings/:id/calendar.ics` genera un evento RFC 5545 (TZID `America/Mexico_City`) compatible con cualquier calendario. Solo el dueño o un ADMIN, y solo para reservas `CONFIRMED`/`ATTENDED`.
+
+## 🛠️ Gestión avanzada de espacios y recursos (Admin)
+
+Desde **Espacios**, el ADMIN crea/edita/elimina salas, cambia estado (Disponible / Mantenimiento / Inactiva — el mantenimiento bloquea nuevas reservas), gestiona recursos asignados, crea recursos nuevos y filtra por nombre, tipo, capacidad, piso, zona, estado y recurso. El backend impide desactivar/poner en mantenimiento salas con reservas futuras confirmadas (sugiere usar Mantenimiento o cancelar primero).
 
 ---
 

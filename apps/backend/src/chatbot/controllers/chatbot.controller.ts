@@ -11,17 +11,20 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
 import { Role } from '../../common/constants/roles.constant';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
+import { AuthenticatedUser } from '../../common/interfaces/authenticated-user.interface';
 import { AskDto } from '../dto/ask.dto';
+import { AssistantRequestDto, AssistantResponseDto } from '../dto/assistant.dto';
 import { CreateFaqDto } from '../dto/create-faq.dto';
 import { QueryFaqDto } from '../dto/query-faq.dto';
 import { UpdateFaqDto } from '../dto/update-faq.dto';
+import { AssistantService } from '../services/assistant.service';
 import { ChatbotService } from '../services/chatbot.service';
 
 function getIp(req: Request): string | undefined {
@@ -37,7 +40,19 @@ function getIp(req: Request): string | undefined {
 @UseGuards(JwtAuthGuard)
 @Controller('chatbot')
 export class ChatbotController {
-  constructor(private readonly chatbotService: ChatbotService) {}
+  constructor(
+    private readonly chatbotService: ChatbotService,
+    private readonly assistantService: AssistantService,
+  ) {}
+
+  @Post('assistant')
+  @ApiOperation({
+    summary: 'OfficeSpace Assistant — respuesta contextual por rol (motor local; IBM Watson opcional por env)',
+  })
+  @ApiOkResponse({ type: AssistantResponseDto })
+  assistant(@Body() dto: AssistantRequestDto, @CurrentUser() user: AuthenticatedUser) {
+    return this.assistantService.reply(dto.message, dto.context ?? {}, user.role as 'ADMIN' | 'COLLABORATOR');
+  }
 
   @Get('faq')
   @ApiOperation({ summary: 'Listar FAQs activas (ADMIN/COLLABORATOR)' })
