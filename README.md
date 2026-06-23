@@ -22,20 +22,35 @@ OfficeSpace centraliza:
 - Catalogo de salas, hot desks y espacios colaborativos.
 - Busqueda de disponibilidad y reservas sin solapamiento.
 - Dashboard de ocupacion y analitica.
-- Alpha Assistant, un chatbot basado en reglas para convertir lenguaje natural en filtros.
-- Registro de patrones de busqueda para analisis posterior.
+- Alpha Assistant, un asistente basado en reglas que convierte lenguaje natural en filtros, busca espacios disponibles y permite reservar desde sugerencias.
+- Registro de patrones de busqueda para analisis posterior en dashboard.
 
 ## Arquitectura
 
 La solucion se organiza como microservicios reales con una base de datos PostgreSQL compartida para acelerar el desarrollo del hackathon y mantener una historia tecnica facil de defender:
 
-- `auth-service`: login, perfil y JWT basico.
+- `auth-service`: login, perfil y JWT simple para sesion.
 - `catalog-service`: administracion de espacios.
 - `booking-service`: disponibilidad, reservas, dashboard y Alpha Assistant.
 - `frontend`: interfaz web con HTML, CSS y JavaScript puro.
 - `shared-infra`: scripts de base de datos y datos semilla.
 
 Esta separacion permite evolucionar cada dominio sin mezclar responsabilidades, pero conserva una infraestructura simple para demo.
+
+## Modelo de datos
+
+El esquema logico esta documentado en [`docs/DATA_MODEL.md`](docs/DATA_MODEL.md). Incluye un diagrama ER en Mermaid con las entidades principales:
+
+- `users`
+- `spaces`
+- `bookings`
+- `assistant_logs`
+
+Las relaciones centrales son:
+
+- un usuario puede crear muchas reservas;
+- un espacio puede tener muchas reservas;
+- un usuario puede generar muchas busquedas registradas por Alpha Assistant.
 
 ## Stack tecnologico
 
@@ -86,13 +101,13 @@ Colaboradores:
 
 ## Estado actual
 
-Esta version entrega el esqueleto inicial, autenticacion y CRUD de catalogo:
+Esta version entrega un MVP funcional y defendible para el Escenario 1:
 
 - Carpetas principales.
 - Dockerfile por servicio.
 - `docker-compose.yml`.
 - PostgreSQL con tablas y datos semilla.
-- Swagger basico por servicio.
+- Swagger UI interactivo por servicio.
 - Endpoints `/health`.
 - Auth funcional con `POST /login`, `GET /me`, JWT y validacion contra PostgreSQL.
 - Middleware reutilizable para validar token y rol administrador.
@@ -101,17 +116,15 @@ Esta version entrega el esqueleto inicial, autenticacion y CRUD de catalogo:
 - Control de roles en catalogo: colaboradores pueden consultar y solo administradores pueden crear, editar o eliminar.
 - Motor de reservas con `GET /availability`, `POST /bookings`, `GET /bookings/my`, `DELETE /bookings/:id`, `GET /dashboard/today` y `GET /dashboard/analytics`.
 - Validacion critica de no solapamiento por espacio: `new_start < existing_end AND new_end > existing_start`.
-- Dashboard basico de ocupacion y analitica de reservas para administradores.
-- Rutas de negocio restantes como stubs documentados.
-- Frontend inicial con login conectado, `localStorage`, redireccion por rol, busqueda de disponibilidad, confirmacion de reserva, mis reservas, dashboard, administracion basica de espacios y Alpha Assistant.
-
-La persistencia y logica completa del asistente queda lista para implementarse en la siguiente iteracion.
+- Dashboard de ocupacion y analitica de reservas para administradores.
+- Frontend funcional con login conectado, `localStorage`, redireccion por rol, busqueda de disponibilidad, confirmacion de reserva, mis reservas, dashboard, administracion de espacios y Alpha Assistant.
+- Alpha Assistant funcional con interpretacion de lenguaje natural, filtros detectados, sugerencias reales de espacios disponibles, reserva desde sugerencias y registro en `assistant_logs`.
 
 Nota de desarrollo local: si cambias el esquema de base de datos y necesitas reiniciar datos semilla desde cero, usa `docker compose down -v` antes de levantar nuevamente con `docker compose up --build`.
 
 ## Enfoque de innovacion
 
-Alpha Assistant convierte consultas como "Necesito una sala para 5 personas manana en la manana con proyector" en filtros estructurados. El dashboard de negocio usara esas senales para detectar demanda, recursos mas solicitados y patrones de ocupacion.
+Alpha Assistant convierte consultas como "Necesito una sala para 5 personas manana en la manana con proyector" en filtros estructurados, consulta disponibilidad real y devuelve sugerencias concretas. El dashboard de negocio usa esas senales para detectar demanda, recursos mas solicitados y patrones de ocupacion.
 
 ## QA Strategy
 
