@@ -54,7 +54,7 @@ func TestCrearValidaciones(t *testing.T) {
 	}
 	for _, c := range casos {
 		t.Run(c.nombre, func(t *testing.T) {
-			_, err := svc.Crear(context.Background(), c.req)
+			_, err := svc.Crear(context.Background(), c.req, "admin@x.com")
 			if got := codigoDe(t, err); got != c.codigo {
 				t.Errorf("código = %q; se esperaba %q", got, c.codigo)
 			}
@@ -67,7 +67,7 @@ func TestCrearExitosoNormaliza(t *testing.T) {
 	svc := NewEspacioService(repo)
 	_, err := svc.Crear(context.Background(), models.EspacioRequest{
 		Nombre: "  Sala Norte  ", Tipo: "SALA", Capacidad: 4, Piso: "  Piso 2  ",
-	})
+	}, "admin@x.com")
 	if err != nil {
 		t.Fatalf("no se esperaba error: %v", err)
 	}

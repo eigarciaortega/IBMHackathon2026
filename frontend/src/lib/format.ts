@@ -50,3 +50,19 @@ export function horaAMinutos(hhmm: string): number {
   const [h, m] = hhmm.split(':').map(Number)
   return h * 60 + (m || 0)
 }
+
+// Tiempo relativo legible en español ("hace 2 min", "hace 3 h", "ayer"...).
+export function tiempoRelativo(iso: string): string {
+  const fecha = new Date(iso)
+  const seg = Math.round((Date.now() - fecha.getTime()) / 1000)
+  if (Number.isNaN(seg)) return ''
+  if (seg < 45) return 'hace un momento'
+  const min = Math.round(seg / 60)
+  if (min < 60) return `hace ${min} min`
+  const horas = Math.round(min / 60)
+  if (horas < 24) return `hace ${horas} h`
+  const dias = Math.round(horas / 24)
+  if (dias === 1) return 'ayer'
+  if (dias < 7) return `hace ${dias} días`
+  return fecha.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })
+}

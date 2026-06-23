@@ -100,7 +100,21 @@ erDiagram
         text        estado "CONFIRMADA | CANCELADA"
         timestamptz creado_en
     }
+
+    NOTIFICACIONES {
+        bigserial   id PK
+        text        tipo "RESERVA_* | ESPACIO_*"
+        text        mensaje
+        text        actor_email "sin FK (bitácora de eventos)"
+        text        recurso
+        boolean     leida
+        timestamptz creado_en
+    }
 ```
+
+`NOTIFICACIONES` es una bitácora de eventos sin FKs a propósito: una notificación de
+"espacio eliminado" debe sobrevivir al borrado del espacio. No es una tabla de dominio
+que un servicio consulte para decidir lógica; catalog y booking solo le **agregan** filas.
 
 ### Garantía anti-solapamiento a nivel de base de datos
 
@@ -134,3 +148,39 @@ el `409` queda garantizado tanto por la aplicación como por la base.
 - `idx_reservas_espacio_fecha (espacio_id, fecha)` — acelera la verificación de
   disponibilidad y solapamiento.
 - `idx_reservas_usuario (usuario_email)` — acelera "Mis Reservas".
+- `idx_notificaciones_creado (creado_en DESC)` — acelera el historial reciente.
+
+## Notificaciones en tiempo real (bonus)
+
+El administrador recibe alertas instantáneas de cada acción (reservas y CRUD de
+espacios) mediante **SSE sobre PostgreSQL `LISTEN/NOTIFY`**, manteniendo los
+servicios desacoplados —la base de datos hace de bus de eventos—:
+
+```mermaid
+sequenceDiagram
+    participant C as catalog / booking
+    participant DB as PostgreSQL
+    participant B as booking (LISTEN + hub SSE)
+    participant A as Admin (EventSource)
+    C->>DB: INSERT INTO notificaciones
+    DB-->>DB: trigger → pg_notify('notificaciones', json)
+    DB-->>B: NOTIFY
+    B-->>A: event: notificacion (SSE)
+```
+
+- **Productores:** `catalog-service` (alta/edición/borrado de espacios) y
+  `booking-service` (alta/cancelación de reservas) solo insertan en `notificaciones`.
+- **Disparador:** un trigger `AFTER INSERT` publica la fila —ya en JSON— en el canal
+  `notificaciones` con `pg_notify`.
+- **Hub:** `booking-service` mantiene una conexión dedicada con `LISTEN` y difunde
+  cada evento a los administradores conectados por `GET /notifications/stream`.
+- **Auth del stream:** `EventSource` no envía headers, por lo que el JWT de
+  administrador viaja como query param `token` y se valida en el handler.
+- **Gateway:** nginx proxea el stream con `proxy_buffering off` para que los eventos
+  lleguen sin retención.
+- **Persistencia:** el historial y el conteo de no leídas se sirven con
+  `GET /notifications`; `POST /notifications/read` marca todo como leído.
+
+Decisión: se eligió `LISTEN/NOTIFY` en vez de que catalog llamara a booking por HTTP
+para evitar acoplar los servicios; el único punto de encuentro sigue siendo la base
+compartida, coherente con el resto de la arquitectura.

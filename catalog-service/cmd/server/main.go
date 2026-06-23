@@ -56,7 +56,8 @@ func main() {
 	defer pool.Close()
 
 	repo := repository.NewEspacioRepository(pool)
-	svc := services.NewEspacioService(repo)
+	notifRepo := repository.NewNotificacionRepository(pool)
+	svc := services.NewEspacioService(repo).ConNotificador(notifRepo)
 	handler := handlers.NewEspacioHandler(svc)
 
 	router := construirRouter(cfg, handler)

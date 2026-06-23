@@ -64,3 +64,25 @@ export interface Disponibilidad {
   hora_fin: string
   disponible: boolean
 }
+
+export type TipoNotificacion =
+  | 'RESERVA_CREADA'
+  | 'RESERVA_CANCELADA'
+  | 'ESPACIO_CREADO'
+  | 'ESPACIO_ACTUALIZADO'
+  | 'ESPACIO_ELIMINADO'
+
+export interface Notificacion {
+  id: number
+  tipo: TipoNotificacion
+  mensaje: string
+  actor_email: string
+  recurso: string
+  leida: boolean
+  creado_en: string
+}
+
+export interface ListaNotificaciones {
+  notificaciones: Notificacion[]
+  no_leidas: number
+}

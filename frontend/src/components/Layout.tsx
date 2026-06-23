@@ -2,6 +2,7 @@
 // rol y menú de usuario. El contenido de cada página se renderiza vía <Outlet>.
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+import { NotificacionesMenu } from './NotificacionesMenu'
 import { IconAdmin, IconBuscar, IconReservas, IconSalir, Logo } from './icons'
 
 function enlaceClase({ isActive }: { isActive: boolean }) {
@@ -50,6 +51,7 @@ export function Layout() {
           </nav>
 
           <div className="ml-auto flex items-center gap-3">
+            {esAdmin && <NotificacionesMenu />}
             <div className="hidden text-right leading-tight sm:block">
               <p className="text-sm font-medium text-body">{usuario?.nombre}</p>
               <p className="text-xs text-muted">

@@ -4,6 +4,8 @@ package services
 
 import (
 	"context"
+	"fmt"
+	"log"
 	"time"
 
 	"github.com/i0dk1/OfficeSpace/booking-service/internal/apperror"
@@ -27,17 +29,42 @@ type CatalogoClient interface {
 	ObtenerEspacio(ctx context.Context, id int, token string) (*clients.EspacioDTO, error)
 }
 
+// Notificador registra eventos de negocio para el centro de notificaciones del
+// administrador. Es opcional: si es nil, el servicio no emite notificaciones.
+type Notificador interface {
+	Crear(ctx context.Context, n models.NuevaNotificacion) error
+}
+
 // ReservaService implementa el motor de reservas.
 type ReservaService struct {
 	repo    ReservaRepositorio
 	catalog CatalogoClient
 	loc     *time.Location
+	notif   Notificador
 	// Reloj permite inyectar el "ahora" en pruebas; por defecto time.Now.
 	Reloj func() time.Time
 }
 
 func NewReservaService(repo ReservaRepositorio, catalog CatalogoClient, loc *time.Location) *ReservaService {
 	return &ReservaService{repo: repo, catalog: catalog, loc: loc, Reloj: time.Now}
+}
+
+// ConNotificador conecta un Notificador para emitir alertas tras crear o cancelar
+// reservas. Devuelve el propio servicio para encadenar.
+func (s *ReservaService) ConNotificador(n Notificador) *ReservaService {
+	s.notif = n
+	return s
+}
+
+// notificar emite una notificación en modo best-effort: un fallo aquí nunca debe
+// tumbar la operación de reserva.
+func (s *ReservaService) notificar(ctx context.Context, n models.NuevaNotificacion) {
+	if s.notif == nil {
+		return
+	}
+	if err := s.notif.Crear(ctx, n); err != nil {
+		log.Printf("no se pudo registrar la notificación %q: %v", n.Tipo, err)
+	}
 }
 
 // CrearReserva aplica todas las validaciones críticas y crea la reserva. El
@@ -69,7 +96,17 @@ func (s *ReservaService) CrearReserva(ctx context.Context, token, email string, 
 		return nil, apperror.ErrReservaSolapada
 	}
 	// 5. Inserción (la restricción de exclusión blinda contra condiciones de carrera).
-	return s.repo.Crear(ctx, req, email)
+	reserva, err := s.repo.Crear(ctx, req, email)
+	if err != nil {
+		return nil, err
+	}
+	s.notificar(ctx, models.NuevaNotificacion{
+		Tipo:       models.TipoReservaCreada,
+		Mensaje:    fmt.Sprintf("%s reservó %s el %s de %s a %s", email, espacio.Nombre, req.Fecha, req.HoraInicio, req.HoraFin),
+		ActorEmail: email,
+		Recurso:    espacio.Nombre,
+	})
+	return reserva, nil
 }
 
 // MisReservas devuelve el historial de reservas del usuario autenticado.
@@ -116,5 +153,14 @@ func (s *ReservaService) Cancelar(ctx context.Context, id int, email string) (*m
 	if reserva.UsuarioEmail != email {
 		return nil, apperror.ErrAccesoDenegado
 	}
-	return s.repo.Cancelar(ctx, id)
+	cancelada, err := s.repo.Cancelar(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	s.notificar(ctx, models.NuevaNotificacion{
+		Tipo:       models.TipoReservaCancelada,
+		Mensaje:    fmt.Sprintf("%s canceló su reserva del %s de %s a %s", email, cancelada.Fecha, cancelada.HoraInicio, cancelada.HoraFin),
+		ActorEmail: email,
+	})
+	return cancelada, nil
 }
