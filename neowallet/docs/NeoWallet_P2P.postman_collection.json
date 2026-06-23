@@ -1,0 +1,552 @@
+{
+  "info": {
+    "name": "NeoWallet P2P Payments",
+    "_postman_id": "neowallet-p2p-2026",
+    "description": "Suite de pruebas para NeoWallet P2P Payments. Importa este archivo en Postman y ejecuta primero la carpeta 'Autenticación' para obtener los tokens.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "ACCOUNTS_URL", "value": "http://localhost:3000", "type": "string" },
+    { "key": "PROCESSOR_URL", "value": "http://localhost:3001", "type": "string" },
+    { "key": "INTERNAL_KEY", "value": "internal-neowallet-key-2026", "type": "string" },
+    { "key": "TOKEN_A", "value": "", "type": "string" },
+    { "key": "TOKEN_B", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "1. Autenticación",
+      "item": [
+        {
+          "name": "1.1 ✅ Obtener token - Usuario A (exitoso)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.accessToken) {",
+                  "  pm.collectionVariables.set('TOKEN_A', json.accessToken);",
+                  "  console.log('TOKEN_A guardado');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"usuario.a@neowallet.com\",\"password\":\"password123\"}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{ACCOUNTS_URL}}/auth/token", "host": ["{{ACCOUNTS_URL}}"], "path": ["auth", "token"] }
+          }
+        },
+        {
+          "name": "1.2 ✅ Obtener token - Usuario B",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.accessToken) {",
+                  "  pm.collectionVariables.set('TOKEN_B', json.accessToken);",
+                  "  console.log('TOKEN_B guardado');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"usuario.b@neowallet.com\",\"password\":\"password123\"}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{ACCOUNTS_URL}}/auth/token", "host": ["{{ACCOUNTS_URL}}"], "path": ["auth", "token"] }
+          }
+        },
+        {
+          "name": "1.3 ❌ Credenciales inválidas (401)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"usuario.a@neowallet.com\",\"password\":\"wrong-password\"}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{ACCOUNTS_URL}}/auth/token", "host": ["{{ACCOUNTS_URL}}"], "path": ["auth", "token"] }
+          }
+        },
+        {
+          "name": "1.4 ❌ Email con formato inválido (400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"no-es-un-email\",\"password\":\"password123\"}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{ACCOUNTS_URL}}/auth/token", "host": ["{{ACCOUNTS_URL}}"], "path": ["auth", "token"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. RF-001: Consultar Saldo",
+      "item": [
+        {
+          "name": "2.1 ✅ Saldo Usuario A ($1000)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{TOKEN_A}}" }],
+            "url": { "raw": "{{ACCOUNTS_URL}}/accounts/1", "host": ["{{ACCOUNTS_URL}}"], "path": ["accounts", "1"] }
+          }
+        },
+        {
+          "name": "2.2 ✅ Saldo Usuario B ($50)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{TOKEN_A}}" }],
+            "url": { "raw": "{{ACCOUNTS_URL}}/accounts/2", "host": ["{{ACCOUNTS_URL}}"], "path": ["accounts", "2"] }
+          }
+        },
+        {
+          "name": "2.3 ✅ Saldo Usuario C ($0)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{TOKEN_A}}" }],
+            "url": { "raw": "{{ACCOUNTS_URL}}/accounts/3", "host": ["{{ACCOUNTS_URL}}"], "path": ["accounts", "3"] }
+          }
+        },
+        {
+          "name": "2.4 ❌ Usuario no existe (404)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{TOKEN_A}}" }],
+            "url": { "raw": "{{ACCOUNTS_URL}}/accounts/999", "host": ["{{ACCOUNTS_URL}}"], "path": ["accounts", "999"] }
+          }
+        },
+        {
+          "name": "2.5 ❌ Sin token JWT (401)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{ACCOUNTS_URL}}/accounts/1", "host": ["{{ACCOUNTS_URL}}"], "path": ["accounts", "1"] }
+          }
+        },
+        {
+          "name": "2.6 ❌ Token inválido (401)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer token-invalido-xxx" }],
+            "url": { "raw": "{{ACCOUNTS_URL}}/accounts/1", "host": ["{{ACCOUNTS_URL}}"], "path": ["accounts", "1"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. RF-002: Recargar Saldo",
+      "item": [
+        {
+          "name": "3.1 ✅ Recarga exitosa Usuario C (0 → $500)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{TOKEN_A}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"userId\":3,\"amount\":500.00,\"paymentMethod\":\"CREDIT_CARD\"}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{ACCOUNTS_URL}}/api/recharge", "host": ["{{ACCOUNTS_URL}}"], "path": ["api", "recharge"] }
+          }
+        },
+        {
+          "name": "3.2 ✅ Recarga con monto decimal",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{TOKEN_A}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"userId\":1,\"amount\":99.99,\"paymentMethod\":\"DEBIT_CARD\"}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{ACCOUNTS_URL}}/api/recharge", "host": ["{{ACCOUNTS_URL}}"], "path": ["api", "recharge"] }
+          }
+        },
+        {
+          "name": "3.3 ❌ Monto negativo (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{TOKEN_A}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"userId\":1,\"amount\":-50.00,\"paymentMethod\":\"CARD\"}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{ACCOUNTS_URL}}/api/recharge", "host": ["{{ACCOUNTS_URL}}"], "path": ["api", "recharge"] }
+          }
+        },
+        {
+          "name": "3.4 ❌ Monto cero (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{TOKEN_A}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"userId\":1,\"amount\":0,\"paymentMethod\":\"CARD\"}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{ACCOUNTS_URL}}/api/recharge", "host": ["{{ACCOUNTS_URL}}"], "path": ["api", "recharge"] }
+          }
+        },
+        {
+          "name": "3.5 ❌ Usuario inexistente (404)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{TOKEN_A}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"userId\":999,\"amount\":100.00,\"paymentMethod\":\"CARD\"}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{ACCOUNTS_URL}}/api/recharge", "host": ["{{ACCOUNTS_URL}}"], "path": ["api", "recharge"] }
+          }
+        },
+        {
+          "name": "3.6 ❌ Monto excede el máximo (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{TOKEN_A}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"userId\":1,\"amount\":60000.00,\"paymentMethod\":\"CARD\"}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{ACCOUNTS_URL}}/api/recharge", "host": ["{{ACCOUNTS_URL}}"], "path": ["api", "recharge"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. RF-004: Update Balance (Interno)",
+      "item": [
+        {
+          "name": "4.1 ✅ Débito exitoso con API Key interna",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "X-Internal-Api-Key", "value": "{{INTERNAL_KEY}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"userId\":1,\"amount\":50.00,\"operation\":\"debit\"}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{ACCOUNTS_URL}}/accounts/update-balance", "host": ["{{ACCOUNTS_URL}}"], "path": ["accounts", "update-balance"] }
+          }
+        },
+        {
+          "name": "4.2 ✅ Crédito exitoso con API Key interna",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "X-Internal-Api-Key", "value": "{{INTERNAL_KEY}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"userId\":2,\"amount\":50.00,\"operation\":\"credit\"}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{ACCOUNTS_URL}}/accounts/update-balance", "host": ["{{ACCOUNTS_URL}}"], "path": ["accounts", "update-balance"] }
+          }
+        },
+        {
+          "name": "4.3 ❌ Sin API Key interna (403)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"userId\":1,\"amount\":50.00,\"operation\":\"debit\"}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{ACCOUNTS_URL}}/accounts/update-balance", "host": ["{{ACCOUNTS_URL}}"], "path": ["accounts", "update-balance"] }
+          }
+        },
+        {
+          "name": "4.4 ❌ Fondos insuficientes en débito (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "X-Internal-Api-Key", "value": "{{INTERNAL_KEY}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"userId\":2,\"amount\":9999.00,\"operation\":\"debit\"}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{ACCOUNTS_URL}}/accounts/update-balance", "host": ["{{ACCOUNTS_URL}}"], "path": ["accounts", "update-balance"] }
+          }
+        },
+        {
+          "name": "4.5 ❌ Operación inválida (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "X-Internal-Api-Key", "value": "{{INTERNAL_KEY}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"userId\":1,\"amount\":50.00,\"operation\":\"transfer\"}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{ACCOUNTS_URL}}/accounts/update-balance", "host": ["{{ACCOUNTS_URL}}"], "path": ["accounts", "update-balance"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. RF-003: Transferencia P2P",
+      "item": [
+        {
+          "name": "5.1 ✅ CU-001: Transferencia exitosa A→B ($100)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{TOKEN_A}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"senderId\":1,\"receiverId\":2,\"amount\":100.00}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{PROCESSOR_URL}}/api/transfer", "host": ["{{PROCESSOR_URL}}"], "path": ["api", "transfer"] }
+          }
+        },
+        {
+          "name": "5.2 ✅ Verificar saldo actualizado de A",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{TOKEN_A}}" }],
+            "url": { "raw": "{{ACCOUNTS_URL}}/accounts/1", "host": ["{{ACCOUNTS_URL}}"], "path": ["accounts", "1"] }
+          }
+        },
+        {
+          "name": "5.3 ✅ Verificar saldo actualizado de B",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{TOKEN_A}}" }],
+            "url": { "raw": "{{ACCOUNTS_URL}}/accounts/2", "host": ["{{ACCOUNTS_URL}}"], "path": ["accounts", "2"] }
+          }
+        },
+        {
+          "name": "5.4 ❌ CU-002: Fondos insuficientes (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{TOKEN_B}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"senderId\":2,\"receiverId\":1,\"amount\":1000.00}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{PROCESSOR_URL}}/api/transfer", "host": ["{{PROCESSOR_URL}}"], "path": ["api", "transfer"] }
+          }
+        },
+        {
+          "name": "5.5 ❌ CU-003: Auto-transferencia (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{TOKEN_A}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"senderId\":1,\"receiverId\":1,\"amount\":50.00}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{PROCESSOR_URL}}/api/transfer", "host": ["{{PROCESSOR_URL}}"], "path": ["api", "transfer"] }
+          }
+        },
+        {
+          "name": "5.6 ❌ Monto negativo (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{TOKEN_A}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"senderId\":1,\"receiverId\":2,\"amount\":-100.00}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{PROCESSOR_URL}}/api/transfer", "host": ["{{PROCESSOR_URL}}"], "path": ["api", "transfer"] }
+          }
+        },
+        {
+          "name": "5.7 ❌ Monto cero (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{TOKEN_A}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"senderId\":1,\"receiverId\":2,\"amount\":0}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{PROCESSOR_URL}}/api/transfer", "host": ["{{PROCESSOR_URL}}"], "path": ["api", "transfer"] }
+          }
+        },
+        {
+          "name": "5.8 ❌ Sender no existe (404)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{TOKEN_A}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"senderId\":999,\"receiverId\":2,\"amount\":50.00}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{PROCESSOR_URL}}/api/transfer", "host": ["{{PROCESSOR_URL}}"], "path": ["api", "transfer"] }
+          }
+        },
+        {
+          "name": "5.9 ❌ Receiver no existe (404)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{TOKEN_A}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"senderId\":1,\"receiverId\":999,\"amount\":50.00}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{PROCESSOR_URL}}/api/transfer", "host": ["{{PROCESSOR_URL}}"], "path": ["api", "transfer"] }
+          }
+        },
+        {
+          "name": "5.10 ❌ Sin autenticación (401)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"senderId\":1,\"receiverId\":2,\"amount\":50.00}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{PROCESSOR_URL}}/api/transfer", "host": ["{{PROCESSOR_URL}}"], "path": ["api", "transfer"] }
+          }
+        },
+        {
+          "name": "5.11 ✅ Transferencia con monto decimal ($0.01)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{TOKEN_A}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"senderId\":1,\"receiverId\":3,\"amount\":0.01}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{PROCESSOR_URL}}/api/transfer", "host": ["{{PROCESSOR_URL}}"], "path": ["api", "transfer"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. RF-005: Historial de Transacciones",
+      "item": [
+        {
+          "name": "6.1 ✅ Historial de Usuario A",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{TOKEN_A}}" }],
+            "url": { "raw": "{{PROCESSOR_URL}}/api/transactions/1", "host": ["{{PROCESSOR_URL}}"], "path": ["api", "transactions", "1"] }
+          }
+        },
+        {
+          "name": "6.2 ✅ Historial de Usuario B",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{TOKEN_A}}" }],
+            "url": { "raw": "{{PROCESSOR_URL}}/api/transactions/2", "host": ["{{PROCESSOR_URL}}"], "path": ["api", "transactions", "2"] }
+          }
+        },
+        {
+          "name": "6.3 ✅ Historial de Usuario C (sin transacciones)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{TOKEN_A}}" }],
+            "url": { "raw": "{{PROCESSOR_URL}}/api/transactions/3", "host": ["{{PROCESSOR_URL}}"], "path": ["api", "transactions", "3"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Health Checks",
+      "item": [
+        {
+          "name": "7.1 ✅ Accounts Service Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{ACCOUNTS_URL}}/actuator/health", "host": ["{{ACCOUNTS_URL}}"], "path": ["actuator", "health"] }
+          }
+        },
+        {
+          "name": "7.2 ✅ Processor Service Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{PROCESSOR_URL}}/actuator/health", "host": ["{{PROCESSOR_URL}}"], "path": ["actuator", "health"] }
+          }
+        }
+      ]
+    }
+  ]
+}
