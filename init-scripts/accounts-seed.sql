@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 INSERT INTO users (name, email, balance) VALUES
-    ('Usuario A (Rico)', 'usuario.a@neowallet.com', 1000.00),
-    ('Usuario B (Pobre)', 'usuario.b@neowallet.com', 50.00),
-    ('Usuario C (Nuevo)', 'usuario.c@neowallet.com', 0.00)
+    ('María García', 'maria.garcia@neowallet.com', 1000.00),
+    ('Carlos Rodríguez', 'carlos.rodriguez@neowallet.com', 50.00),
+    ('Ana Martínez', 'ana.martinez@neowallet.com', 0.00)
 ON CONFLICT (email) DO NOTHING;
