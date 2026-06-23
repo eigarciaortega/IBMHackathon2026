@@ -86,6 +86,49 @@ CREATE INDEX IF NOT EXISTS idx_reservas_espacio_fecha ON reservas (espacio_id, f
 -- Acelera "Mis Reservas" (filtra por usuario autenticado).
 CREATE INDEX IF NOT EXISTS idx_reservas_usuario ON reservas (usuario_email);
 
+-- ---------------------------------------------------------------------
+-- Tabla: notificaciones (bonus — alertas en tiempo real para el admin)
+-- ---------------------------------------------------------------------
+-- Bitácora de eventos de negocio (reservas y CRUD de espacios). Es un registro
+-- de eventos compartido, no una tabla de dominio que se consulte para decidir
+-- lógica de negocio: catalog-service y booking-service solo AGREGAN filas aquí.
+-- Sin FKs a propósito: una notificación de "espacio eliminado" debe sobrevivir al
+-- borrado del espacio.
+CREATE TABLE IF NOT EXISTS notificaciones (
+    id          BIGSERIAL PRIMARY KEY,
+    tipo        TEXT NOT NULL,            -- RESERVA_CREADA | RESERVA_CANCELADA | ESPACIO_CREADO | ESPACIO_ACTUALIZADO | ESPACIO_ELIMINADO
+    mensaje     TEXT NOT NULL,
+    actor_email TEXT NOT NULL DEFAULT '', -- quién originó la acción
+    recurso     TEXT NOT NULL DEFAULT '', -- referencia legible (nombre del espacio)
+    leida       BOOLEAN NOT NULL DEFAULT FALSE,
+    creado_en   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_notificaciones_creado ON notificaciones (creado_en DESC);
+
+-- Entrega en tiempo real vía LISTEN/NOTIFY: cada INSERT publica la notificación
+-- (ya en su forma JSON final) en el canal 'notificaciones'. booking-service
+-- mantiene un LISTEN y la reenvía a los administradores conectados por SSE. Así
+-- los productores (catalog y booking) quedan desacoplados del hub: solo insertan.
+CREATE OR REPLACE FUNCTION fn_publicar_notificacion() RETURNS trigger AS $$
+BEGIN
+    PERFORM pg_notify('notificaciones', json_build_object(
+        'id',          NEW.id,
+        'tipo',        NEW.tipo,
+        'mensaje',     NEW.mensaje,
+        'actor_email', NEW.actor_email,
+        'recurso',     NEW.recurso,
+        'leida',       NEW.leida,
+        'creado_en',   NEW.creado_en
+    )::text);
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_notificaciones_publicar ON notificaciones;
+CREATE TRIGGER trg_notificaciones_publicar
+AFTER INSERT ON notificaciones
+FOR EACH ROW EXECUTE FUNCTION fn_publicar_notificacion();
+
 -- =====================================================================
 -- SEMILLA
 -- =====================================================================
@@ -140,3 +183,9 @@ FROM espacios e WHERE e.nombre = 'Sala Cancún';
 INSERT INTO reservas (espacio_id, usuario_email, fecha, hora_inicio, hora_fin, asistentes, estado)
 SELECT e.id, 'carlos.mendez@corporativoalpha.com', CURRENT_DATE + 2, '09:00', '10:00', 4, 'CANCELADA'
 FROM espacios e WHERE e.nombre = 'Sala Monterrey';
+
+-- --- Notificaciones de ejemplo (para que el centro de alertas del admin no
+--     arranque vacío en la demo) ---
+INSERT INTO notificaciones (tipo, mensaje, actor_email, recurso) VALUES
+    ('RESERVA_CREADA',   'carlos.mendez@corporativoalpha.com reservó Sala Monterrey mañana de 09:00 a 10:00', 'carlos.mendez@corporativoalpha.com', 'Sala Monterrey'),
+    ('RESERVA_CREADA',   'ana.torres@corporativoalpha.com reservó Sala Cancún hoy de 14:00 a 15:00',          'ana.torres@corporativoalpha.com',    'Sala Cancún');
