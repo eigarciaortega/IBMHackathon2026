@@ -5,7 +5,7 @@
 # ══════════════════════════════════════════════════════════════════════
 
 # ── Stage 1: Build ──────────────────────────────────────────────────
-FROM eclipse-temurin:21-jre-noble
+FROM eclipse-temurin:21-jdk-noble
 
 WORKDIR /app
 
@@ -18,7 +18,7 @@ COPY src ./src
 RUN mvn clean package -DskipTests -B --no-transfer-progress
 
 # ── Stage 2: Runtime ─────────────────────────────────────────────────
-FROM tomcat:10.1-jre21-alpine AS runtime
+FROM eclipse-temurin:21-jdk-noble AS runtime
 
 # Eliminar webapps por defecto
 RUN rm -rf /usr/local/tomcat/webapps/*
