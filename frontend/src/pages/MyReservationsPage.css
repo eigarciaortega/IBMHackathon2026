@@ -1,21 +1,69 @@
-/* Estilos de "Mis Reservas". */
+/* "Mis Reservas". */
 
-.page--my-reservations {
-  padding: 1.25rem;
+.page--my-reservations h1 {
+  font-size: 1.6rem;
 }
 
+/* Mensajes */
+.mr-feedback {
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  margin: 0 0 1rem;
+}
+
+.mr-feedback--exito {
+  background: var(--ok-bg);
+  color: var(--ok);
+}
+
+.mr-feedback--error {
+  background: var(--danger-bg);
+  color: #9b1c1c;
+}
+
+.mr-error {
+  background: var(--danger-bg);
+  color: #9b1c1c;
+  padding: 1rem;
+  border-radius: 10px;
+}
+
+/* Tabla dentro de una tarjeta */
 .mr-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   margin-top: 1rem;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
 }
 
-.mr-table th,
-.mr-table td {
-  border: 1px solid #e4e7eb;
-  padding: 0.5rem 0.65rem;
+.mr-table thead th {
+  background: #f0f4ff;
+  color: var(--muted);
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
   text-align: left;
+  padding: 0.7rem 0.8rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.mr-table tbody td {
+  padding: 0.7rem 0.8rem;
+  border-bottom: 1px solid var(--line);
   vertical-align: top;
+}
+
+.mr-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.mr-table tbody tr:hover {
+  background: #fafbff;
 }
 
 .mr-table__actions {
@@ -28,54 +76,83 @@
   color: #9aa5b1;
 }
 
+/* Botones de acción */
+.mr-table__actions button {
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 8px;
+  padding: 0.4rem 0.7rem;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.mr-table__actions button:hover:not(:disabled) {
+  border-color: var(--brand);
+}
+
+/* Badges de estado de reserva */
 .estado {
   display: inline-block;
-  padding: 0.1rem 0.5rem;
+  padding: 0.15rem 0.6rem;
   border-radius: 999px;
-  font-size: 0.85rem;
-  font-weight: 600;
+  font-size: 0.8rem;
+  font-weight: 700;
 }
 
 .estado--Activo,
 .estado--ocupado {
-  background: #def7ec;
-  color: #03543f;
+  background: var(--ok-bg);
+  color: var(--ok);
 }
 
 .estado--Cancelado,
 .estado--libre {
-  background: #fde8e8;
+  background: var(--danger-bg);
   color: #9b1c1c;
 }
 
+/* Botón peligro (cancelar/eliminar) */
 .boton--peligro {
-  background: #e12d39;
+  background: var(--danger);
   color: #fff;
-  border: none;
-  border-radius: 6px;
-  padding: 0.35rem 0.7rem;
+  border: none !important;
+  border-radius: 8px;
+  padding: 0.4rem 0.7rem;
   cursor: pointer;
+  font-weight: 600;
 }
 
 .boton--peligro:hover:not(:disabled) {
-  background: #cf1124;
+  background: #a8121f;
 }
 
+/* Formulario de edición inline */
 .mr-edit {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
   margin-top: 0.6rem;
-  padding: 0.6rem;
-  background: #f5f7fa;
-  border-radius: 6px;
+  padding: 0.75rem;
+  background: var(--brand-50);
+  border: 1px solid #d8e3ff;
+  border-radius: 10px;
 }
 
 .mr-edit label {
   display: flex;
   flex-direction: column;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   gap: 0.2rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.mr-edit input {
+  padding: 0.4rem 0.5rem;
+  border: 1px solid #cbd2d9;
+  border-radius: 8px;
 }
 
 .mr-edit__actions {
@@ -84,28 +161,22 @@
   width: 100%;
 }
 
-.mr-feedback {
-  padding: 0.5rem 0.75rem;
-  border-radius: 6px;
+.mr-edit__actions button {
+  border-radius: 8px;
+  padding: 0.45rem 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--line);
+  background: #fff;
 }
 
-.mr-feedback--exito {
-  background: #def7ec;
-  color: #03543f;
+.mr-edit__actions button[type='submit'] {
+  background: var(--brand);
+  color: #fff;
+  border-color: var(--brand);
 }
 
-.mr-feedback--error {
-  background: #fde8e8;
-  color: #9b1c1c;
-}
-
-.campo-error {
-  color: #cf1124;
-  font-size: 0.85rem;
-  width: 100%;
-}
-
-/* Control de registro de asistencia (dentro de la ventana horaria). */
+/* Control de registro de asistencia */
 .mr-asistencia {
   display: flex;
   flex-wrap: wrap;
@@ -115,13 +186,20 @@
 
 .mr-asistencia button {
   font-size: 0.78rem;
-  padding: 0.25rem 0.5rem;
+  padding: 0.28rem 0.55rem;
   border: 1px solid #cbd2d9;
-  border-radius: 6px;
+  border-radius: 8px;
   background: #fff;
   cursor: pointer;
+  font-weight: 600;
 }
 
 .mr-asistencia button:hover:not(:disabled) {
-  border-color: #2563eb;
+  border-color: var(--brand);
+}
+
+.campo-error {
+  color: var(--danger);
+  font-size: 0.85rem;
+  width: 100%;
 }

@@ -133,8 +133,8 @@ describe('Tarea 9.8 - render de las cuatro pantallas y presencia de controles', 
     render(<AdminPage />);
 
     expect(await screen.findByRole('heading', { name: 'Administración' })).toBeInTheDocument();
-    const ocupacion = (await screen.findByRole('heading', { name: 'Tablero de ocupación (hoy)' })).closest('section');
-    expect(within(ocupacion).getByText('ocupado')).toBeInTheDocument();
+    const ocupacion = (await screen.findByRole('heading', { name: 'Tablero de ocupación' })).closest('section');
+    expect(within(ocupacion).getByText('Libre')).toBeInTheDocument();
     expect(within(ocupacion).getByText('Ala norte')).toBeInTheDocument();
 
     const espacios = (await screen.findByRole('heading', { name: 'Espacios' })).closest('section');

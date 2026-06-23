@@ -18,7 +18,7 @@ import {
   deleteEspacio,
 } from '../api/catalogApi';
 import { todasLasReservas, cancelarReserva, actualizarReserva } from '../api/bookingApi';
-import { presentarAsistencia } from '../lib/asistencia';
+import { presentarAsistencia, ahoraWallClockMs } from '../lib/asistencia';
 import './AdminPage.css';
 
 /** Valores válidos de Tipo_Espacio (R3.3). */
@@ -111,6 +111,36 @@ function horaUTC(valor) {
   const d = new Date(valor);
   return Number.isNaN(d.getTime()) ? '' : d.toISOString().slice(11, 16);
 }
+
+/**
+ * Calcula el estado dinámico de ocupación de un espacio a partir de las reservas
+ * reales: "ocupado" (una reserva en curso ahora), "proxima" (hay una reserva
+ * futura) o "libre". Devuelve también la próxima reserva (la más cercana).
+ * @param {number|string} idEspacio
+ * @param {Array<object>} reservas
+ * @param {number} ahoraMs
+ * @returns {{ estado: 'ocupado'|'proxima'|'libre', proxima: object|null }}
+ */
+function estadoOcupacion(idEspacio, reservas, ahoraMs) {
+  let enCurso = false;
+  let proxima = null;
+  for (const r of reservas) {
+    if (String(r.id_espacio) !== String(idEspacio) || r.estado_reserva === 'Cancelado') continue;
+    const ini = new Date(r.fecha_inicio).getTime();
+    const fin = new Date(r.fecha_fin).getTime();
+    if (!Number.isNaN(ini) && !Number.isNaN(fin) && ahoraMs >= ini && ahoraMs < fin) {
+      enCurso = true;
+    }
+    if (!Number.isNaN(ini) && ini > ahoraMs) {
+      if (!proxima || ini < new Date(proxima.fecha_inicio).getTime()) proxima = r;
+    }
+  }
+  const estado = enCurso ? 'ocupado' : proxima ? 'proxima' : 'libre';
+  return { estado, proxima };
+}
+
+/** Etiqueta legible del estado de ocupación. */
+const ETIQUETA_ESTADO = { ocupado: 'En curso', proxima: 'Próxima reserva', libre: 'Libre' };
 
 export default function AdminPage() {
   const [espacios, setEspacios] = useState([]);
@@ -432,7 +462,7 @@ export default function AdminPage() {
         <>
           {/* --- Tablero de Ocupación (R11.1) --- */}
           <section className="admin-section" aria-labelledby="titulo-ocupacion">
-            <h2 id="titulo-ocupacion">Tablero de ocupación (hoy)</h2>
+            <h2 id="titulo-ocupacion">Tablero de ocupación</h2>
             {ocupacion.length === 0 ? (
               <p>No hay espacios registrados.</p>
             ) : (
@@ -443,19 +473,34 @@ export default function AdminPage() {
                     <th scope="col">Piso</th>
                     <th scope="col">Ubicación</th>
                     <th scope="col">Estado</th>
+                    <th scope="col">Siguiente reserva</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {ocupacion.map((item) => (
-                    <tr key={item.id_espacio}>
-                      <td>{item.nombre}</td>
-                      <td>{item.piso}</td>
-                      <td>{item.ubicacion}</td>
-                      <td>
-                        <span className={`estado estado--${item.estado}`}>{item.estado}</span>
-                      </td>
-                    </tr>
-                  ))}
+                  {ocupacion.map((item) => {
+                    const { estado, proxima } = estadoOcupacion(
+                      item.id_espacio,
+                      reservas,
+                      ahoraWallClockMs(),
+                    );
+                    return (
+                      <tr key={item.id_espacio}>
+                        <td>{item.nombre}</td>
+                        <td>{item.piso}</td>
+                        <td>{item.ubicacion}</td>
+                        <td>
+                          <span className={`estado estado--${estado}`}>
+                            {ETIQUETA_ESTADO[estado]}
+                          </span>
+                        </td>
+                        <td>
+                          {proxima
+                            ? `${formatFecha(proxima.fecha_inicio)} – ${horaUTC(proxima.fecha_fin)}`
+                            : '—'}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             )}
@@ -651,7 +696,17 @@ export default function AdminPage() {
       {formVisible && (
         <section className="admin-form" aria-labelledby="titulo-form">
           <h2 id="titulo-form">{editandoId != null ? 'Editar espacio' : 'Crear espacio'}</h2>
-          <form onSubmit={enviarFormulario} noValidate>
+          <form
+            onSubmit={enviarFormulario}
+            onKeyDown={(e) => {
+              // Evita el envío implícito del formulario al presionar Enter en un
+              // campo: el alta/edición solo se confía al botón "Guardar".
+              if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+                e.preventDefault();
+              }
+            }}
+            noValidate
+          >
             <div className="campo">
               <label htmlFor="campo-nombre">Nombre/identificador *</label>
               <input

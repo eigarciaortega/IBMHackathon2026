@@ -75,12 +75,27 @@ describe('AdminPage', () => {
   });
 
   it('muestra el Tablero_Ocupacion con el estado de cada espacio (R11.1)', async () => {
+    // Espacio 1 con una reserva futura → "Próxima reserva"; espacio 2 sin reservas → "Libre".
+    bookingApi.todasLasReservas.mockResolvedValue({
+      reservas: [
+        {
+          id_reserva: 50,
+          id_espacio: 1,
+          espacio_nombre: 'Sala Alfa',
+          fecha_inicio: '2099-01-01T09:00:00Z',
+          fecha_fin: '2099-01-01T10:00:00Z',
+          cantidad_asistentes: 2,
+          estado_reserva: 'Activo',
+          estado_asistencia: null,
+        },
+      ],
+    });
     render(<AdminPage />);
 
-    const titulo = await screen.findByText('Tablero de ocupación (hoy)');
+    const titulo = await screen.findByText('Tablero de ocupación');
     const seccion = titulo.closest('section');
-    expect(within(seccion).getByText('ocupado')).toBeInTheDocument();
-    expect(within(seccion).getByText('libre')).toBeInTheDocument();
+    expect(within(seccion).getByText('Próxima reserva')).toBeInTheDocument();
+    expect(within(seccion).getByText('Libre')).toBeInTheDocument();
     // Identifica el espacio por nombre, piso y ubicación.
     expect(within(seccion).getByText('Ala norte')).toBeInTheDocument();
   });
