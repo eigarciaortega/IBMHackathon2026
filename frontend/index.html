@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OfficeSpace | Alpha</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Playfair+Display:wght@400;600&display=swap" rel="stylesheet">
+    
+    <style>
+        .font-serif { font-family: 'Playfair Display', serif; }
+        .font-sans { font-family: 'Inter', sans-serif; }
+        /* El color de fondo suave de las tarjetas de tu imagen */
+        .bg-card-soft { background-color: #F8F9FA; }
+    </style>
+</head>
+<body class="bg-white font-sans text-gray-800 h-screen flex flex-col">
+
+    <nav class="bg-[#4A4A4A] text-white py-4 px-8 flex justify-between items-center rounded-b-lg mx-2 mt-1">
+        <div class="text-xl font-serif tracking-wider">OfficeSpace <span class="text-sm font-sans opacity-70">by Alpha</span></div>
+        <button class="bg-white text-[#4A4A4A] px-6 py-1.5 rounded-full text-sm font-medium hover:bg-gray-100 transition">
+            SOPORTE
+        </button>
+    </nav>
+
+    <main class="flex-grow flex flex-col items-center justify-center p-6">
+        
+        <div class="text-center mb-10">
+            <h1 class="text-5xl font-serif text-[#2C3E50] mb-4">Bienvenido al espacio</h1>
+            <p class="text-lg text-gray-500 max-w-md mx-auto">Ingresa tus credenciales para gestionar tus reservas y visualizar los espacios disponibles.</p>
+        </div>
+
+        <div class="bg-card-soft w-full max-w-md p-8 rounded-3xl border border-gray-100">
+            
+            <form id="loginForm" class="space-y-6">
+                <div>
+                    <label class="block text-sm text-gray-600 mb-2">Correo Electrónico</label>
+                    <input type="email" id="email" required 
+                           class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:border-blue-400 bg-white"
+                           placeholder="ejemplo@corporativoalpha.com">
+                </div>
+                
+                <div>
+                    <label class="block text-sm text-gray-600 mb-2">Contraseña</label>
+                    <input type="password" id="password" required 
+                           class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:border-blue-400 bg-white"
+                           placeholder="••••••••">
+                </div>
+
+                <div id="errorMessage" class="hidden text-red-500 text-sm text-center">
+                    Credenciales inválidas. Intenta de nuevo.
+                </div>
+
+                <button type="submit" 
+                        class="w-full bg-[#4A4A4A] text-white py-3 rounded-full font-medium hover:bg-[#333333] transition mt-4">
+                    Iniciar Sesión
+                </button>
+            </form>
+        </div>
+    </main>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault(); // Evita que la página se recargue
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('errorMessage');
+
+            try {
+                // Hacemos la petición a tu auth-service (Puerto 8083)
+                const response = await fetch('http://localhost:8083/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    // Guardamos el token y el rol en el navegador (Local Storage)
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('role', data.role);
+                    localStorage.setItem('userId', data.userId);
+
+                    // Redirigimos según el rol (Crearemos este archivo a continuación)
+                    window.location.href = 'dashboard.html';
+                } else {
+                    errorDiv.classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error("Error de conexión:", error);
+                errorDiv.innerText = "Error de conexión con el servidor.";
+                errorDiv.classList.remove('hidden');
+            }
+        });
+    </script>
+</body>
+</html>

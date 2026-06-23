@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | OfficeSpace</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Playfair+Display:wght@400;600&display=swap" rel="stylesheet">
+    
+    <style>
+        .font-serif { font-family: 'Playfair Display', serif; }
+        .font-sans { font-family: 'Inter', sans-serif; }
+        .bg-card-soft { background-color: #F8F9FA; }
+    </style>
+</head>
+<body class="bg-white font-sans text-gray-800 min-h-screen flex flex-col">
+
+    <nav class="bg-[#4A4A4A] text-white py-4 px-8 flex justify-between items-center rounded-b-lg mx-2 mt-1">
+        <div class="text-xl font-serif tracking-wider">OfficeSpace</div>
+        <div class="flex items-center gap-6">
+            <span id="userRoleBadge" class="text-xs uppercase tracking-widest bg-white/20 px-3 py-1 rounded-full">Cargando...</span>
+            <button onclick="logout()" class="text-sm font-medium hover:text-gray-300 transition">Cerrar Sesión</button>
+        </div>
+    </nav>
+
+    <main class="flex-grow p-8 max-w-6xl mx-auto w-full">
+        
+        <header class="mb-10 flex justify-between items-end">
+            <div>
+                <h1 class="text-4xl font-serif text-[#2C3E50] mb-2">Catálogo de Espacios</h1>
+                <p class="text-gray-500">Explora y reserva las salas o escritorios disponibles.</p>
+            </div>
+            <button id="btnCreateSpace" class="hidden bg-[#4A4A4A] text-white px-6 py-2 rounded-full font-medium hover:bg-[#333333] transition">
+                + Nuevo Espacio
+            </button>
+        </header>
+
+        <div id="spacesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            </div>
+
+    </main>
+
+    <script>
+        // 1. Verificación de Seguridad del Frontend
+        const token = localStorage.getItem('token');
+        const role = localStorage.getItem('role');
+
+        if (!token) {
+            // Si alguien intenta entrar a dashboard.html sin loguearse, lo pateamos al index
+            window.location.href = 'index.html';
+        }
+
+        // 2. Configurar la interfaz según el rol
+        document.getElementById('userRoleBadge').innerText = role;
+        if (role === 'ADMINISTRADOR') {
+            document.getElementById('btnCreateSpace').classList.remove('hidden');
+        }
+
+        // 3. Función para traer los espacios del catalog-service
+        async function loadSpaces() {
+            try {
+                // Hacemos GET al catalog-service enviando nuestro Token en los Headers
+                const response = await fetch('http://localhost:8081/api/spaces', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const spaces = await response.json();
+                    renderSpaces(spaces);
+                } else if (response.status === 401) {
+                    alert('Tu sesión ha expirado');
+                    logout();
+                }
+            } catch (error) {
+                console.error("Error cargando espacios:", error);
+                document.getElementById('spacesGrid').innerHTML = '<p class="text-red-500">Error conectando con el servidor de catálogo.</p>';
+            }
+        }
+
+        // 4. Función para dibujar las tarjetas con el estilo elegante
+        function renderSpaces(spaces) {
+            const grid = document.getElementById('spacesGrid');
+            grid.innerHTML = '';
+
+            spaces.forEach(space => {
+                const card = `
+                    <div class="bg-card-soft p-6 rounded-3xl border border-gray-100 flex flex-col h-full">
+                        <div class="flex justify-between items-start mb-4">
+                            <span class="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-md uppercase">${space.type}</span>
+                            <span class="text-sm text-gray-500">Capacidad: ${space.capacity}</span>
+                        </div>
+                        <h3 class="text-2xl font-serif text-[#2C3E50] mb-2">${space.name}</h3>
+                        <p class="text-sm text-gray-600 mb-1">📍 ${space.location}</p>
+                        <p class="text-sm text-gray-500 mb-6 flex-grow">🛠️ ${space.resources}</p>
+                        
+                        <button onclick="openBookingModal(${space.id}, '${space.name}', ${space.capacity})" 
+                                class="w-full border-2 border-[#4A4A4A] text-[#4A4A4A] py-2 rounded-full font-medium hover:bg-[#4A4A4A] hover:text-white transition">
+                            Reservar Espacio
+                        </button>
+                    </div>
+                `;
+                grid.innerHTML += card;
+            });
+        }
+
+        // 5. Cerrar Sesión
+        function logout() {
+            localStorage.clear();
+            window.location.href = 'index.html';
+        }
+
+        // 6. Preparar función de reserva (siguiente paso)
+        function openBookingModal(spaceId, spaceName, spaceCapacity) {
+            alert(`Pronto abriremos el formulario para reservar: ${spaceName}`);
+        }
+
+        // Arrancar la carga al iniciar
+        loadSpaces();
+    </script>
+</body>
+</html>
