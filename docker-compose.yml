@@ -1,0 +1,50 @@
+version: "3.9"
+
+services:
+  accounts-db:
+    image: postgres:16-alpine
+    container_name: neowallet-accounts-db
+    environment:
+      POSTGRES_USER: ${ACCOUNTS_DB_USER:-neowallet}
+      POSTGRES_PASSWORD: ${ACCOUNTS_DB_PASSWORD:-neowallet_dev}
+      POSTGRES_DB: ${ACCOUNTS_DB_NAME:-accounts_db}
+    ports:
+      - "${ACCOUNTS_DB_PORT:-5432}:5432"
+    volumes:
+      - accounts-data:/var/lib/postgresql/data
+      - ./shared-infra/init-accounts-db.sql:/docker-entrypoint-initdb.d/01-init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${ACCOUNTS_DB_USER:-neowallet} -d ${ACCOUNTS_DB_NAME:-accounts_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - neowallet-net
+
+  processor-db:
+    image: postgres:16-alpine
+    container_name: neowallet-processor-db
+    environment:
+      POSTGRES_USER: ${PROCESSOR_DB_USER:-neowallet}
+      POSTGRES_PASSWORD: ${PROCESSOR_DB_PASSWORD:-neowallet_dev}
+      POSTGRES_DB: ${PROCESSOR_DB_NAME:-processor_db}
+    ports:
+      - "${PROCESSOR_DB_PORT:-5433}:5432"
+    volumes:
+      - processor-data:/var/lib/postgresql/data
+      - ./shared-infra/init-processor-db.sql:/docker-entrypoint-initdb.d/01-init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PROCESSOR_DB_USER:-neowallet} -d ${PROCESSOR_DB_NAME:-processor_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - neowallet-net
+
+volumes:
+  accounts-data:
+  processor-data:
+
+networks:
+  neowallet-net:
+    driver: bridge
