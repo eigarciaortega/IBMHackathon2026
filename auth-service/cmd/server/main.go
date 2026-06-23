@@ -23,7 +23,9 @@ import (
 	"github.com/go-chi/chi/v5"
 	chimw "github.com/go-chi/chi/v5/middleware"
 	"github.com/jackc/pgx/v5/pgxpool"
+	httpSwagger "github.com/swaggo/http-swagger"
 
+	_ "github.com/i0dk1/OfficeSpace/auth-service/docs"
 	"github.com/i0dk1/OfficeSpace/auth-service/internal/config"
 	"github.com/i0dk1/OfficeSpace/auth-service/internal/handlers"
 	appmw "github.com/i0dk1/OfficeSpace/auth-service/internal/middleware"
@@ -114,6 +116,12 @@ func construirRouter(cfg *config.Config, authHandler *handlers.AuthHandler) http
 		r.Post("/login", authHandler.Login)
 		r.With(appmw.RequiereJWT([]byte(cfg.JWTSecret))).Get("/me", authHandler.Me)
 	})
+
+	// Swagger UI servido en /api-docs (requisito del brief).
+	r.Get("/api-docs", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/api-docs/index.html", http.StatusMovedPermanently)
+	})
+	r.Get("/api-docs/*", httpSwagger.Handler(httpSwagger.URL("/api-docs/doc.json")))
 
 	return r
 }
