@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { bookingApi } from '../services/booking'
 import { catalogApi } from '../services/catalog'
-import type { Espacio, Reserva } from '../types'
+import type { EstadoReserva, Espacio, Reserva } from '../types'
 import { ApiError } from '../lib/api'
 import { fechaLegible, hoyISO } from '../lib/format'
 import { useRefrescoAlEnfocar } from '../hooks/useAutoRefresh'
@@ -15,6 +15,14 @@ import { Modal } from '../components/Modal'
 import { IconCalendario, IconReloj, IconReservas, IconUsuarios } from '../components/icons'
 import { Spinner } from '../components/ui'
 
+type FiltroEstado = 'TODAS' | EstadoReserva
+
+const FILTROS: { valor: FiltroEstado; etiqueta: string }[] = [
+  { valor: 'TODAS', etiqueta: 'Todas' },
+  { valor: 'CONFIRMADA', etiqueta: 'Confirmadas' },
+  { valor: 'CANCELADA', etiqueta: 'Canceladas' },
+]
+
 export function MisReservasPage() {
   const [reservas, setReservas] = useState<Reserva[]>([])
   const [espacios, setEspacios] = useState<Record<number, Espacio>>({})
@@ -22,6 +30,7 @@ export function MisReservasPage() {
   const [error, setError] = useState<string | null>(null)
   const [aCancelar, setACancelar] = useState<Reserva | null>(null)
   const [cancelando, setCancelando] = useState(false)
+  const [filtro, setFiltro] = useState<FiltroEstado>('TODAS')
 
   const cargar = useCallback(async (silencioso = false) => {
     if (!silencioso) setCargando(true)
@@ -49,16 +58,26 @@ export function MisReservasPage() {
   // Refresca al volver a la pestaña (en segundo plano).
   useRefrescoAlEnfocar(() => void cargar(true))
 
+  // Conteo por estado para etiquetar los filtros.
+  const conteos = useMemo(
+    () => ({
+      TODAS: reservas.length,
+      CONFIRMADA: reservas.filter((r) => r.estado === 'CONFIRMADA').length,
+      CANCELADA: reservas.filter((r) => r.estado === 'CANCELADA').length,
+    }),
+    [reservas],
+  )
+
   const hoy = hoyISO()
-  const { proximas, pasadas } = useMemo(() => {
-    const ordenadas = [...reservas].sort((a, b) =>
+  const { proximas, pasadas, total } = useMemo(() => {
+    const filtradas = filtro === 'TODAS' ? reservas : reservas.filter((r) => r.estado === filtro)
+    const ordenadas = [...filtradas].sort((a, b) =>
       a.fecha === b.fecha ? a.hora_inicio.localeCompare(b.hora_inicio) : a.fecha.localeCompare(b.fecha),
     )
-    return {
-      proximas: ordenadas.filter((r) => r.fecha >= hoy),
-      pasadas: ordenadas.filter((r) => r.fecha < hoy).reverse(),
-    }
-  }, [reservas, hoy])
+    const proximas = ordenadas.filter((r) => r.fecha >= hoy)
+    const pasadas = ordenadas.filter((r) => r.fecha < hoy).reverse()
+    return { proximas, pasadas, total: filtradas.length }
+  }, [reservas, hoy, filtro])
 
   async function confirmarCancelacion() {
     if (!aCancelar) return
@@ -100,37 +119,66 @@ export function MisReservasPage() {
           accion={<Link to="/buscar" className="btn-primary btn-sm">Buscar espacios</Link>}
         />
       ) : (
-        <div className="space-y-8">
-          <Seccion titulo="Próximas" cantidad={proximas.length}>
-            {proximas.length === 0 ? (
-              <p className="rounded-[0.625rem] border border-dashed border-border-strong bg-surface-muted px-4 py-6 text-center text-sm text-muted">
-                No tienes reservas próximas.
-              </p>
-            ) : (
-              <ul className="space-y-3 anim-lista">
-                {proximas.map((r) => (
-                  <FilaReserva
-                    key={r.id}
-                    reserva={r}
-                    espacio={espacios[r.espacio_id]}
-                    cancelable={r.estado === 'CONFIRMADA'}
-                    onCancelar={() => setACancelar(r)}
-                  />
-                ))}
-              </ul>
-            )}
-          </Seccion>
+        <>
+          {/* Filtro por estado */}
+          <div className="mb-6 inline-flex flex-wrap gap-1 rounded-[0.625rem] border border-border bg-surface-muted p-1" role="group" aria-label="Filtrar por estado">
+            {FILTROS.map((f) => {
+              const activo = filtro === f.valor
+              return (
+                <button
+                  key={f.valor}
+                  type="button"
+                  onClick={() => setFiltro(f.valor)}
+                  aria-pressed={activo}
+                  className={`rounded-[0.4rem] px-3 py-1.5 text-sm font-medium transition-colors ${
+                    activo ? 'bg-surface text-azul-strong shadow-sm' : 'text-muted hover:text-body'
+                  }`}
+                >
+                  {f.etiqueta}
+                  <span className="ml-1.5 font-mono text-xs tabular text-muted">{conteos[f.valor]}</span>
+                </button>
+              )
+            })}
+          </div>
 
-          {pasadas.length > 0 && (
-            <Seccion titulo="Pasadas" cantidad={pasadas.length}>
-              <ul className="space-y-3">
-                {pasadas.map((r) => (
-                  <FilaReserva key={r.id} reserva={r} espacio={espacios[r.espacio_id]} cancelable={false} />
-                ))}
-              </ul>
-            </Seccion>
+          {total === 0 ? (
+            <p className="rounded-[0.625rem] border border-dashed border-border-strong bg-surface-muted px-4 py-8 text-center text-sm text-muted">
+              No tienes reservas {filtro === 'CONFIRMADA' ? 'confirmadas' : 'canceladas'}.
+            </p>
+          ) : (
+            <div className="space-y-8">
+              <Seccion titulo="Próximas" cantidad={proximas.length}>
+                {proximas.length === 0 ? (
+                  <p className="rounded-[0.625rem] border border-dashed border-border-strong bg-surface-muted px-4 py-6 text-center text-sm text-muted">
+                    No tienes reservas próximas{filtro !== 'TODAS' ? ` ${filtro === 'CONFIRMADA' ? 'confirmadas' : 'canceladas'}` : ''}.
+                  </p>
+                ) : (
+                  <ul className="space-y-3 anim-lista">
+                    {proximas.map((r) => (
+                      <FilaReserva
+                        key={r.id}
+                        reserva={r}
+                        espacio={espacios[r.espacio_id]}
+                        cancelable={r.estado === 'CONFIRMADA'}
+                        onCancelar={() => setACancelar(r)}
+                      />
+                    ))}
+                  </ul>
+                )}
+              </Seccion>
+
+              {pasadas.length > 0 && (
+                <Seccion titulo="Pasadas" cantidad={pasadas.length}>
+                  <ul className="space-y-3">
+                    {pasadas.map((r) => (
+                      <FilaReserva key={r.id} reserva={r} espacio={espacios[r.espacio_id]} cancelable={false} />
+                    ))}
+                  </ul>
+                </Seccion>
+              )}
+            </div>
           )}
-        </div>
+        </>
       )}
 
       <Modal
