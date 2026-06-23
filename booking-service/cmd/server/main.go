@@ -23,7 +23,9 @@ import (
 	"github.com/go-chi/chi/v5"
 	chimw "github.com/go-chi/chi/v5/middleware"
 	"github.com/jackc/pgx/v5/pgxpool"
+	httpSwagger "github.com/swaggo/http-swagger"
 
+	_ "github.com/i0dk1/OfficeSpace/booking-service/docs"
 	"github.com/i0dk1/OfficeSpace/booking-service/internal/clients"
 	"github.com/i0dk1/OfficeSpace/booking-service/internal/config"
 	"github.com/i0dk1/OfficeSpace/booking-service/internal/handlers"
@@ -125,6 +127,12 @@ func construirRouter(cfg *config.Config, h *handlers.ReservaHandler) http.Handle
 		r.Delete("/bookings/{id}", h.Cancelar)
 		r.Get("/occupancy", h.Ocupacion)
 	})
+
+	// Swagger UI servido en /api-docs (requisito del brief).
+	r.Get("/api-docs", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/api-docs/index.html", http.StatusMovedPermanently)
+	})
+	r.Get("/api-docs/*", httpSwagger.Handler(httpSwagger.URL("/api-docs/doc.json")))
 
 	return r
 }

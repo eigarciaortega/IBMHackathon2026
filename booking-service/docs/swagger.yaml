@@ -1,0 +1,271 @@
+basePath: /
+definitions:
+  github_com_i0dk1_OfficeSpace_booking-service_internal_apperror.AppError:
+    properties:
+      codigo:
+        type: string
+      mensaje:
+        type: string
+      status:
+        type: integer
+    type: object
+  github_com_i0dk1_OfficeSpace_booking-service_internal_models.CrearReservaRequest:
+    properties:
+      asistentes:
+        example: 4
+        type: integer
+      espacio_id:
+        example: 1
+        type: integer
+      fecha:
+        example: "2026-06-24"
+        type: string
+      hora_fin:
+        example: "12:00"
+        type: string
+      hora_inicio:
+        example: "11:00"
+        type: string
+    type: object
+  github_com_i0dk1_OfficeSpace_booking-service_internal_models.DisponibilidadResponse:
+    properties:
+      disponible:
+        example: true
+        type: boolean
+      espacio_id:
+        example: 1
+        type: integer
+      fecha:
+        example: "2026-06-24"
+        type: string
+      hora_fin:
+        example: "12:00"
+        type: string
+      hora_inicio:
+        example: "11:00"
+        type: string
+    type: object
+  github_com_i0dk1_OfficeSpace_booking-service_internal_models.Reserva:
+    properties:
+      asistentes:
+        example: 4
+        type: integer
+      creado_en:
+        type: string
+      espacio_id:
+        example: 1
+        type: integer
+      estado:
+        example: CONFIRMADA
+        type: string
+      fecha:
+        example: "2026-06-24"
+        type: string
+      hora_fin:
+        example: "10:00"
+        type: string
+      hora_inicio:
+        example: "09:00"
+        type: string
+      id:
+        example: 1
+        type: integer
+      usuario_email:
+        example: carlos.mendez@corporativoalpha.com
+        type: string
+    type: object
+  internal_handlers.SaludResponse:
+    properties:
+      servicio:
+        example: booking-service
+        type: string
+      status:
+        example: ok
+        type: string
+    type: object
+info:
+  contact: {}
+  description: 'Motor de reservas: valida solapamiento, fechas y capacidad (vía HTTP
+    a catalog). Expone la ocupación del día.'
+  title: OfficeSpace — Booking Service
+  version: "1.0"
+paths:
+  /bookings:
+    post:
+      consumes:
+      - application/json
+      description: Valida consistencia temporal, que no sea en el pasado (TZ America/Mexico_City),
+        capacidad (vía HTTP a catalog) y no solapamiento. Devuelve 409 si el horario
+        ya está ocupado.
+      parameters:
+      - description: Datos de la reserva
+        in: body
+        name: reserva
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_i0dk1_OfficeSpace_booking-service_internal_models.CrearReservaRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_i0dk1_OfficeSpace_booking-service_internal_models.Reserva'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_i0dk1_OfficeSpace_booking-service_internal_apperror.AppError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_i0dk1_OfficeSpace_booking-service_internal_apperror.AppError'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/github_com_i0dk1_OfficeSpace_booking-service_internal_apperror.AppError'
+      security:
+      - BearerAuth: []
+      summary: Crear reserva
+      tags:
+      - reservas
+  /bookings/{id}:
+    delete:
+      description: Cancela una reserva propia (estado → CANCELADA). Una reserva ajena
+        devuelve 403.
+      parameters:
+      - description: ID de la reserva
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_i0dk1_OfficeSpace_booking-service_internal_models.Reserva'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_i0dk1_OfficeSpace_booking-service_internal_apperror.AppError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/github_com_i0dk1_OfficeSpace_booking-service_internal_apperror.AppError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_i0dk1_OfficeSpace_booking-service_internal_apperror.AppError'
+      security:
+      - BearerAuth: []
+      summary: Cancelar reserva
+      tags:
+      - reservas
+  /bookings/availability:
+    get:
+      parameters:
+      - description: ID del espacio
+        in: query
+        name: espacio_id
+        required: true
+        type: integer
+      - description: Fecha YYYY-MM-DD
+        in: query
+        name: fecha
+        required: true
+        type: string
+      - description: Hora inicio HH:MM
+        in: query
+        name: inicio
+        required: true
+        type: string
+      - description: Hora fin HH:MM
+        in: query
+        name: fin
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_i0dk1_OfficeSpace_booking-service_internal_models.DisponibilidadResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_i0dk1_OfficeSpace_booking-service_internal_apperror.AppError'
+      security:
+      - BearerAuth: []
+      summary: Disponibilidad de un espacio
+      tags:
+      - reservas
+  /bookings/mine:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_i0dk1_OfficeSpace_booking-service_internal_models.Reserva'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_i0dk1_OfficeSpace_booking-service_internal_apperror.AppError'
+      security:
+      - BearerAuth: []
+      summary: Mis reservas
+      tags:
+      - reservas
+  /health:
+    get:
+      description: Indica si el servicio está operativo.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_handlers.SaludResponse'
+      summary: Sonda de salud
+      tags:
+      - salud
+  /occupancy:
+    get:
+      description: Reservas confirmadas de una fecha. Alimenta el dashboard de ocupación
+        del administrador.
+      parameters:
+      - description: Fecha YYYY-MM-DD
+        in: query
+        name: fecha
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_i0dk1_OfficeSpace_booking-service_internal_models.Reserva'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_i0dk1_OfficeSpace_booking-service_internal_apperror.AppError'
+      security:
+      - BearerAuth: []
+      summary: Ocupación del día
+      tags:
+      - reservas
+securityDefinitions:
+  BearerAuth:
+    description: 'Escribe: Bearer {token}'
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
