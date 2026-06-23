@@ -23,6 +23,13 @@ Feature: Motor de reservas de espacios
     Cuando intento reservarla para 5 personas
     Entonces la API debe responder 400
     Y debe indicar que la cantidad de asistentes excede la capacidad
+
+  Scenario: Rechazar reserva hoy con hora pasada
+    Dado que la fecha de la reserva es hoy
+    Y la hora actual del servidor es posterior o igual a la hora de inicio solicitada
+    Cuando intento consultar disponibilidad o crear una reserva con ese horario
+    Entonces la API debe responder 400
+    Y debe indicar "La hora de inicio debe ser posterior a la hora actual."
 ```
 
 ```gherkin

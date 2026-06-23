@@ -20,3 +20,4 @@
 | TC-016 | Logout oculta vistas protegidas | Usuario autenticado | 1. Cerrar sesion. | Se limpia `localStorage`, solo queda Login visible y Alpha Assistant se oculta. | Alta |
 | TC-017 | Dashboard muestra metricas del asistente | Admin autenticado y al menos una busqueda del asistente registrada | 1. Abrir Dashboard. 2. Consultar `/dashboard/analytics`. | Se ven `assistantSearchesTotal`, recursos solicitados y busquedas recientes. | Media |
 | TC-018 | Swagger disponible por servicio | Docker levantado | 1. Abrir `/api-docs` en auth, catalog y booking. | Swagger UI carga con documentacion basica. | Media |
+| TC-019 | Rechazar reserva hoy con hora pasada | Usuario autenticado y fecha actual del servidor conocida | 1. Enviar `GET /availability` o `POST /bookings` con `date` igual a hoy y `startTime` menor o igual a la hora actual. | Respuesta 400 con mensaje `La hora de inicio debe ser posterior a la hora actual.` | Alta |
