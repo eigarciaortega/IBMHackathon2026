@@ -1,0 +1,366 @@
+basePath: /
+definitions:
+  apperror.AppError:
+    properties:
+      codigo:
+        type: string
+      mensaje:
+        type: string
+      status:
+        type: integer
+    type: object
+  handlers.SaludResponse:
+    properties:
+      servicio:
+        example: catalog-service
+        type: string
+      status:
+        example: ok
+        type: string
+    type: object
+  models.Espacio:
+    properties:
+      capacidad:
+        example: 8
+        type: integer
+      creado_en:
+        type: string
+      id:
+        example: 1
+        type: integer
+      nombre:
+        example: Sala Monterrey
+        type: string
+      piso:
+        example: Piso 1
+        type: string
+      recursos:
+        items:
+          $ref: '#/definitions/models.Recurso'
+        type: array
+      tipo:
+        example: SALA
+        type: string
+    type: object
+  models.EspacioRequest:
+    properties:
+      capacidad:
+        example: 8
+        type: integer
+      nombre:
+        example: Sala Monterrey
+        type: string
+      piso:
+        example: Piso 1
+        type: string
+      recurso_ids:
+        example:
+        - 1
+        - 2
+        items:
+          type: integer
+        type: array
+      tipo:
+        example: SALA
+        type: string
+    type: object
+  models.Recurso:
+    properties:
+      creado_en:
+        type: string
+      id:
+        example: 1
+        type: integer
+      nombre:
+        example: Proyector
+        type: string
+    type: object
+  models.RecursoRequest:
+    properties:
+      nombre:
+        example: Proyector
+        type: string
+    type: object
+info:
+  contact: {}
+  description: Gestión de espacios (CRUD) y búsqueda con filtros. Escritura solo para
+    ADMINISTRADOR.
+  title: OfficeSpace — Catalog Service
+  version: "1.0"
+paths:
+  /health:
+    get:
+      description: Indica si el servicio está operativo.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.SaludResponse'
+      summary: Sonda de salud
+      tags:
+      - salud
+  /resources:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Recurso'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/apperror.AppError'
+      security:
+      - BearerAuth: []
+      summary: Listar recursos
+      tags:
+      - recursos
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Datos del recurso
+        in: body
+        name: recurso
+        required: true
+        schema:
+          $ref: '#/definitions/models.RecursoRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Recurso'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.AppError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/apperror.AppError'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/apperror.AppError'
+      security:
+      - BearerAuth: []
+      summary: Crear recurso
+      tags:
+      - recursos
+  /resources/{id}:
+    delete:
+      parameters:
+      - description: ID del recurso
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Sin contenido
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/apperror.AppError'
+      security:
+      - BearerAuth: []
+      summary: Eliminar recurso
+      tags:
+      - recursos
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID del recurso
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Datos del recurso
+        in: body
+        name: recurso
+        required: true
+        schema:
+          $ref: '#/definitions/models.RecursoRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Recurso'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/apperror.AppError'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/apperror.AppError'
+      security:
+      - BearerAuth: []
+      summary: Actualizar recurso
+      tags:
+      - recursos
+  /spaces:
+    get:
+      description: Lista los espacios. Soporta filtros por tipo y capacidad mínima,
+        aplicados en la consulta.
+      parameters:
+      - description: Filtra por tipo (SALA o DESK)
+        in: query
+        name: tipo
+        type: string
+      - description: Capacidad mínima
+        in: query
+        name: capacidad_min
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Espacio'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/apperror.AppError'
+      security:
+      - BearerAuth: []
+      summary: Listar espacios
+      tags:
+      - espacios
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Datos del espacio
+        in: body
+        name: espacio
+        required: true
+        schema:
+          $ref: '#/definitions/models.EspacioRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Espacio'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.AppError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/apperror.AppError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/apperror.AppError'
+      security:
+      - BearerAuth: []
+      summary: Crear espacio
+      tags:
+      - espacios
+  /spaces/{id}:
+    delete:
+      parameters:
+      - description: ID del espacio
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Sin contenido
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/apperror.AppError'
+      security:
+      - BearerAuth: []
+      summary: Eliminar espacio
+      tags:
+      - espacios
+    get:
+      parameters:
+      - description: ID del espacio
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Espacio'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/apperror.AppError'
+      security:
+      - BearerAuth: []
+      summary: Obtener espacio
+      tags:
+      - espacios
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID del espacio
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Datos del espacio
+        in: body
+        name: espacio
+        required: true
+        schema:
+          $ref: '#/definitions/models.EspacioRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Espacio'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.AppError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/apperror.AppError'
+      security:
+      - BearerAuth: []
+      summary: Actualizar espacio
+      tags:
+      - espacios
+securityDefinitions:
+  BearerAuth:
+    description: 'Escribe: Bearer {token}'
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

@@ -1,0 +1,559 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Motor de reservas: valida solapamiento, fechas y capacidad (vía HTTP a catalog). Expone la ocupación del día.",
+        "title": "OfficeSpace — Booking Service",
+        "contact": {},
+        "version": "1.0"
+    },
+    "basePath": "/",
+    "paths": {
+        "/bookings": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Valida consistencia temporal, que no sea en el pasado (TZ America/Mexico_City), capacidad (vía HTTP a catalog) y no solapamiento. Devuelve 409 si el horario ya está ocupado.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "reservas"
+                ],
+                "summary": "Crear reserva",
+                "parameters": [
+                    {
+                        "description": "Datos de la reserva",
+                        "name": "reserva",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.CrearReservaRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/models.Reserva"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.AppError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.AppError"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.AppError"
+                        }
+                    }
+                }
+            }
+        },
+        "/bookings/availability": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "reservas"
+                ],
+                "summary": "Disponibilidad de un espacio",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID del espacio",
+                        "name": "espacio_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Fecha YYYY-MM-DD",
+                        "name": "fecha",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Hora inicio HH:MM",
+                        "name": "inicio",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Hora fin HH:MM",
+                        "name": "fin",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.DisponibilidadResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.AppError"
+                        }
+                    }
+                }
+            }
+        },
+        "/bookings/mine": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "reservas"
+                ],
+                "summary": "Mis reservas",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Reserva"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.AppError"
+                        }
+                    }
+                }
+            }
+        },
+        "/bookings/{id}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Cancela una reserva propia (estado → CANCELADA). Una reserva ajena devuelve 403.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "reservas"
+                ],
+                "summary": "Cancelar reserva",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID de la reserva",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Reserva"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.AppError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.AppError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.AppError"
+                        }
+                    }
+                }
+            }
+        },
+        "/health": {
+            "get": {
+                "description": "Indica si el servicio está operativo.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "salud"
+                ],
+                "summary": "Sonda de salud",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.SaludResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/notifications": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Historial reciente de notificaciones y conteo de no leídas (solo ADMINISTRADOR).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "notificaciones"
+                ],
+                "summary": "Listar notificaciones",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.ListaNotificaciones"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.AppError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.AppError"
+                        }
+                    }
+                }
+            }
+        },
+        "/notifications/read": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "notificaciones"
+                ],
+                "summary": "Marcar notificaciones como leídas",
+                "responses": {
+                    "204": {
+                        "description": "Sin contenido"
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.AppError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.AppError"
+                        }
+                    }
+                }
+            }
+        },
+        "/notifications/stream": {
+            "get": {
+                "description": "Server-Sent Events. Autenticación por query param `token` (un JWT de ADMINISTRADOR), ya que EventSource no envía headers.",
+                "produces": [
+                    "text/event-stream"
+                ],
+                "tags": [
+                    "notificaciones"
+                ],
+                "summary": "Flujo de notificaciones en tiempo real (SSE)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "JWT de un administrador",
+                        "name": "token",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Flujo de eventos"
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.AppError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.AppError"
+                        }
+                    }
+                }
+            }
+        },
+        "/occupancy": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Reservas confirmadas de una fecha. Alimenta el dashboard de ocupación del administrador.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "reservas"
+                ],
+                "summary": "Ocupación del día",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Fecha YYYY-MM-DD",
+                        "name": "fecha",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Reserva"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.AppError"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "apperror.AppError": {
+            "type": "object",
+            "properties": {
+                "codigo": {
+                    "type": "string"
+                },
+                "mensaje": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
+                }
+            }
+        },
+        "handlers.SaludResponse": {
+            "type": "object",
+            "properties": {
+                "servicio": {
+                    "type": "string",
+                    "example": "booking-service"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "ok"
+                }
+            }
+        },
+        "models.CrearReservaRequest": {
+            "type": "object",
+            "properties": {
+                "asistentes": {
+                    "type": "integer",
+                    "example": 4
+                },
+                "espacio_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "fecha": {
+                    "type": "string",
+                    "example": "2026-06-24"
+                },
+                "hora_fin": {
+                    "type": "string",
+                    "example": "12:00"
+                },
+                "hora_inicio": {
+                    "type": "string",
+                    "example": "11:00"
+                }
+            }
+        },
+        "models.DisponibilidadResponse": {
+            "type": "object",
+            "properties": {
+                "disponible": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "espacio_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "fecha": {
+                    "type": "string",
+                    "example": "2026-06-24"
+                },
+                "hora_fin": {
+                    "type": "string",
+                    "example": "12:00"
+                },
+                "hora_inicio": {
+                    "type": "string",
+                    "example": "11:00"
+                }
+            }
+        },
+        "models.ListaNotificaciones": {
+            "type": "object",
+            "properties": {
+                "no_leidas": {
+                    "type": "integer",
+                    "example": 3
+                },
+                "notificaciones": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Notificacion"
+                    }
+                }
+            }
+        },
+        "models.Notificacion": {
+            "type": "object",
+            "properties": {
+                "actor_email": {
+                    "type": "string",
+                    "example": "carlos.mendez@corporativoalpha.com"
+                },
+                "creado_en": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "leida": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "mensaje": {
+                    "type": "string",
+                    "example": "carlos.mendez@corporativoalpha.com reservó Sala Monterrey de 09:00 a 10:00"
+                },
+                "recurso": {
+                    "type": "string",
+                    "example": "Sala Monterrey"
+                },
+                "tipo": {
+                    "type": "string",
+                    "example": "RESERVA_CREADA"
+                }
+            }
+        },
+        "models.Reserva": {
+            "type": "object",
+            "properties": {
+                "asistentes": {
+                    "type": "integer",
+                    "example": 4
+                },
+                "creado_en": {
+                    "type": "string"
+                },
+                "espacio_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "estado": {
+                    "type": "string",
+                    "example": "CONFIRMADA"
+                },
+                "fecha": {
+                    "type": "string",
+                    "example": "2026-06-24"
+                },
+                "hora_fin": {
+                    "type": "string",
+                    "example": "10:00"
+                },
+                "hora_inicio": {
+                    "type": "string",
+                    "example": "09:00"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "usuario_email": {
+                    "type": "string",
+                    "example": "carlos.mendez@corporativoalpha.com"
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "description": "Escribe: Bearer {token}",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
+    }
+}

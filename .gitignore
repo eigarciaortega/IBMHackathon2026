@@ -1,17 +1,38 @@
-# Java / Maven
-target/
-*.class
-
-# IntelliJ
-.idea/
-*.iml
-
-# Environment
+# Variables de entorno (valores reales y de ejemplo fuera del repositorio)
 .env
+.env.*
 
-# OS
-.DS_Store
-Thumbs.db
+# Go
+/bin/
+*.exe
+*.test
+*.out
+vendor/
+go.work.sum
+
+# Node / Frontend
+node_modules/
+dist/
+dist-ssr/
+build/
+.vite/
+*.tsbuildinfo
 
 # Logs
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Editores e IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Cobertura y temporales
+coverage/
+*.coverprofile
+tmp/

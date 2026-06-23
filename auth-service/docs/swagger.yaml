@@ -1,0 +1,131 @@
+basePath: /
+definitions:
+  github_com_i0dk1_OfficeSpace_auth-service_internal_apperror.AppError:
+    properties:
+      codigo:
+        type: string
+      mensaje:
+        type: string
+      status:
+        type: integer
+    type: object
+  github_com_i0dk1_OfficeSpace_auth-service_internal_models.LoginRequest:
+    properties:
+      email:
+        example: admin@corporativoalpha.com
+        type: string
+      password:
+        example: Admin123
+        type: string
+    type: object
+  github_com_i0dk1_OfficeSpace_auth-service_internal_models.LoginResponse:
+    properties:
+      rol:
+        example: ADMINISTRADOR
+        type: string
+      token:
+        type: string
+    type: object
+  github_com_i0dk1_OfficeSpace_auth-service_internal_models.MeResponse:
+    properties:
+      email:
+        example: admin@corporativoalpha.com
+        type: string
+      nombre:
+        example: Administrador Alpha
+        type: string
+      rol:
+        example: ADMINISTRADOR
+        type: string
+    type: object
+  internal_handlers.SaludResponse:
+    properties:
+      servicio:
+        example: auth-service
+        type: string
+      status:
+        example: ok
+        type: string
+    type: object
+info:
+  contact: {}
+  description: 'Servicio de autenticación: login con bcrypt y emisión/validación de
+    JWT.'
+  title: OfficeSpace — Auth Service
+  version: "1.0"
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Valida email y contraseña contra la base de datos y devuelve un
+        JWT con el rol del usuario.
+      parameters:
+      - description: Credenciales de acceso
+        in: body
+        name: credenciales
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_i0dk1_OfficeSpace_auth-service_internal_models.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_i0dk1_OfficeSpace_auth-service_internal_models.LoginResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_i0dk1_OfficeSpace_auth-service_internal_apperror.AppError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_i0dk1_OfficeSpace_auth-service_internal_apperror.AppError'
+      summary: Iniciar sesión
+      tags:
+      - autenticación
+  /auth/me:
+    get:
+      description: Devuelve los datos del usuario asociado al token JWT enviado.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_i0dk1_OfficeSpace_auth-service_internal_models.MeResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_i0dk1_OfficeSpace_auth-service_internal_apperror.AppError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_i0dk1_OfficeSpace_auth-service_internal_apperror.AppError'
+      security:
+      - BearerAuth: []
+      summary: Usuario autenticado
+      tags:
+      - autenticación
+  /health:
+    get:
+      description: Indica si el servicio está operativo (usado por los healthchecks
+        de docker-compose).
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_handlers.SaludResponse'
+      summary: Sonda de salud
+      tags:
+      - salud
+securityDefinitions:
+  BearerAuth:
+    description: 'Escribe: Bearer {token}'
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

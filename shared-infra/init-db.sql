@@ -1,45 +1,223 @@
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
+-- =====================================================================
+-- OfficeSpace — Esquema, índices, restricciones y semilla
+-- Fuente ÚNICA de verdad del modelo de datos (regla de arranque del proyecto).
+-- PostgreSQL lo ejecuta una sola vez, al inicializar el contenedor con el
+-- volumen de datos vacío (/docker-entrypoint-initdb.d). No se usan herramientas
+-- de migración por servicio: tres servicios migrando la misma base generan
+-- condiciones de carrera al arrancar.
+-- =====================================================================
 
-CREATE TABLE IF NOT EXISTS users (
-                                     id BIGSERIAL PRIMARY KEY,
-                                     name VARCHAR(120) NOT NULL,
-    email VARCHAR(160) NOT NULL UNIQUE,
-    password VARCHAR(255) NOT NULL,
-    role VARCHAR(30) NOT NULL,
-    active BOOLEAN NOT NULL DEFAULT TRUE,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+-- ---------------------------------------------------------------------
+-- Extensiones
+-- ---------------------------------------------------------------------
+-- btree_gist permite combinar igualdad de enteros (espacio_id WITH =) con el
+-- operador de solapamiento de rangos (&&) en una misma restricción de exclusión.
+CREATE EXTENSION IF NOT EXISTS btree_gist;
 
-    CONSTRAINT chk_users_role
-    CHECK (role IN ('ADMINISTRADOR', 'COLABORADOR'))
-    );
+-- ---------------------------------------------------------------------
+-- Tabla: usuarios
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS usuarios (
+    id            SERIAL PRIMARY KEY,
+    email         TEXT NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL,                 -- hash bcrypt, nunca texto plano
+    rol           TEXT NOT NULL CHECK (rol IN ('ADMINISTRADOR', 'COLABORADOR')),
+    nombre        TEXT NOT NULL,
+    creado_en     TIMESTAMPTZ NOT NULL DEFAULT now()
+);
 
-INSERT INTO users (id, name, email, password, role, active)
-VALUES
-    (
-        1,
-        'Mario Juarez',
-        'admin@corporativoalpha.com',
-        crypt('Admin123', gen_salt('bf', 10)),
-        'ADMINISTRADOR',
-        TRUE
-    ),
-    (
-        2,
-        'Carlos Méndez',
-        'carlos.mendez@corporativoalpha.com',
-        crypt('User123', gen_salt('bf', 10)),
-        'COLABORADOR',
-        TRUE
-    ),
-    (
-        3,
-        'Ana Torres',
-        'ana.torres@corporativoalpha.com',
-        crypt('User123', gen_salt('bf', 10)),
-        'COLABORADOR',
-        TRUE
-    )
-    ON CONFLICT (email) DO NOTHING;
+-- ---------------------------------------------------------------------
+-- Tabla: espacios
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS espacios (
+    id              SERIAL PRIMARY KEY,
+    nombre          TEXT NOT NULL,
+    tipo            TEXT NOT NULL CHECK (tipo IN ('SALA', 'DESK')),
+    capacidad       INT  NOT NULL CHECK (capacidad > 0),
+    piso            TEXT NOT NULL DEFAULT '',
+    creado_en       TIMESTAMPTZ NOT NULL DEFAULT now()
+);
 
-SELECT setval('users_id_seq', GREATEST((SELECT MAX(id) FROM users), 1));
+-- ---------------------------------------------------------------------
+-- Tablas: recursos y espacio_recursos (catálogo de recursos gestionable)
+-- ---------------------------------------------------------------------
+-- Los recursos (proyector, aire, pizarrón, videoconferencia...) son un catálogo
+-- que el ADMINISTRADOR administra (CRUD), en vez de banderas fijas en espacios.
+-- La relación espacio↔recurso es N:M.
+CREATE TABLE IF NOT EXISTS recursos (
+    id        SERIAL PRIMARY KEY,
+    nombre    TEXT NOT NULL UNIQUE,
+    creado_en TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS espacio_recursos (
+    espacio_id INT NOT NULL REFERENCES espacios(id) ON DELETE CASCADE,
+    recurso_id INT NOT NULL REFERENCES recursos(id) ON DELETE CASCADE,
+    PRIMARY KEY (espacio_id, recurso_id)
+);
+-- Acelera la búsqueda inversa "qué espacios tienen este recurso".
+CREATE INDEX IF NOT EXISTS idx_espacio_recursos_recurso ON espacio_recursos (recurso_id);
+
+-- ---------------------------------------------------------------------
+-- Tabla: reservas
+-- ---------------------------------------------------------------------
+-- Las FKs se mantienen por integridad referencial de la base compartida
+-- (evitan reservas que apunten a un espacio o usuario inexistente). La lógica
+-- de negocio (capacidad, existencia) la valida booking-service por HTTP contra
+-- catalog-service; la FK NO sustituye esa validación, solo blinda la integridad.
+CREATE TABLE IF NOT EXISTS reservas (
+    id            SERIAL PRIMARY KEY,
+    espacio_id    INT  NOT NULL REFERENCES espacios(id) ON DELETE CASCADE,
+    usuario_email TEXT NOT NULL REFERENCES usuarios(email) ON UPDATE CASCADE,
+    fecha         DATE NOT NULL,
+    hora_inicio   TIME NOT NULL,
+    hora_fin      TIME NOT NULL,
+    asistentes    INT  NOT NULL CHECK (asistentes > 0),
+    estado        TEXT NOT NULL DEFAULT 'CONFIRMADA'
+                       CHECK (estado IN ('CONFIRMADA', 'CANCELADA')),
+    creado_en     TIMESTAMPTZ NOT NULL DEFAULT now(),
+    -- Consistencia temporal garantizada también a nivel de base.
+    CONSTRAINT reservas_horario_valido CHECK (hora_fin > hora_inicio)
+);
+
+-- ---------------------------------------------------------------------
+-- Garantía anti-solapamiento a nivel de base de datos (criterio diferenciador)
+-- ---------------------------------------------------------------------
+-- La validación en la app (consultar y luego insertar) sufre una condición de
+-- carrera: dos peticiones simultáneas para el mismo intervalo pueden pasar ambas
+-- el chequeo. Esta restricción de exclusión la garantiza atómicamente el motor.
+--   * Rango '[)' (inferior inclusivo, superior exclusivo): implementa la regla de
+--     límites exclusivos → 10:00-11:00 y 11:00-12:00 NO se solapan.
+--   * WHERE (estado = 'CONFIRMADA'): restricción parcial → las reservas canceladas
+--     dejan de bloquear el horario.
+ALTER TABLE reservas ADD CONSTRAINT reservas_sin_solapamiento
+EXCLUDE USING gist (
+    espacio_id WITH =,
+    tsrange( (fecha + hora_inicio), (fecha + hora_fin), '[)' ) WITH &&
+) WHERE (estado = 'CONFIRMADA');
+
+-- ---------------------------------------------------------------------
+-- Índices
+-- ---------------------------------------------------------------------
+-- Acelera la verificación de disponibilidad/solapamiento por espacio y fecha.
+CREATE INDEX IF NOT EXISTS idx_reservas_espacio_fecha ON reservas (espacio_id, fecha);
+-- Acelera "Mis Reservas" (filtra por usuario autenticado).
+CREATE INDEX IF NOT EXISTS idx_reservas_usuario ON reservas (usuario_email);
+
+-- ---------------------------------------------------------------------
+-- Tabla: notificaciones (bonus — alertas en tiempo real para el admin)
+-- ---------------------------------------------------------------------
+-- Bitácora de eventos de negocio (reservas y CRUD de espacios). Es un registro
+-- de eventos compartido, no una tabla de dominio que se consulte para decidir
+-- lógica de negocio: catalog-service y booking-service solo AGREGAN filas aquí.
+-- Sin FKs a propósito: una notificación de "espacio eliminado" debe sobrevivir al
+-- borrado del espacio.
+CREATE TABLE IF NOT EXISTS notificaciones (
+    id          BIGSERIAL PRIMARY KEY,
+    tipo        TEXT NOT NULL,            -- RESERVA_CREADA | RESERVA_CANCELADA | ESPACIO_CREADO | ESPACIO_ACTUALIZADO | ESPACIO_ELIMINADO
+    mensaje     TEXT NOT NULL,
+    actor_email TEXT NOT NULL DEFAULT '', -- quién originó la acción
+    recurso     TEXT NOT NULL DEFAULT '', -- referencia legible (nombre del espacio)
+    leida       BOOLEAN NOT NULL DEFAULT FALSE,
+    creado_en   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_notificaciones_creado ON notificaciones (creado_en DESC);
+
+-- Entrega en tiempo real vía LISTEN/NOTIFY: cada INSERT publica la notificación
+-- (ya en su forma JSON final) en el canal 'notificaciones'. booking-service
+-- mantiene un LISTEN y la reenvía a los administradores conectados por SSE. Así
+-- los productores (catalog y booking) quedan desacoplados del hub: solo insertan.
+CREATE OR REPLACE FUNCTION fn_publicar_notificacion() RETURNS trigger AS $$
+BEGIN
+    PERFORM pg_notify('notificaciones', json_build_object(
+        'id',          NEW.id,
+        'tipo',        NEW.tipo,
+        'mensaje',     NEW.mensaje,
+        'actor_email', NEW.actor_email,
+        'recurso',     NEW.recurso,
+        'leida',       NEW.leida,
+        'creado_en',   NEW.creado_en
+    )::text);
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_notificaciones_publicar ON notificaciones;
+CREATE TRIGGER trg_notificaciones_publicar
+AFTER INSERT ON notificaciones
+FOR EACH ROW EXECUTE FUNCTION fn_publicar_notificacion();
+
+-- =====================================================================
+-- SEMILLA
+-- =====================================================================
+
+-- --- Usuarios (contraseñas hasheadas con bcrypt, costo 10) ---
+--   admin@corporativoalpha.com         / Admin123 / ADMINISTRADOR
+--   carlos.mendez@corporativoalpha.com / User123  / COLABORADOR
+--   ana.torres@corporativoalpha.com    / User123  / COLABORADOR
+INSERT INTO usuarios (email, password_hash, rol, nombre) VALUES
+    ('admin@corporativoalpha.com',         '$2a$10$qSHCkFOse/ObOI/WI1M9EObPpKk3aafmggh3QFHuneuam3xnmHS.G', 'ADMINISTRADOR', 'Administrador Alpha'),
+    ('carlos.mendez@corporativoalpha.com', '$2a$10$5XF7pV.M69Orzk8s6PLmT.xIiQElCtDogF/D9EoQxU4YFjav6eslK', 'COLABORADOR',  'Carlos Méndez'),
+    ('ana.torres@corporativoalpha.com',    '$2a$10$pjdklVehA68ECs1UfjbcUeSMwv.CwAqzXMTrwXct3Vp5zu0XPUqhu', 'COLABORADOR',  'Ana Torres')
+ON CONFLICT (email) DO NOTHING;
+
+-- --- Espacios ---
+INSERT INTO espacios (nombre, tipo, capacidad, piso) VALUES
+    ('Sala Monterrey', 'SALA', 8,  'Piso 1'),
+    ('Sala Cancún',    'SALA', 4,  'Piso 2'),
+    ('Sala Oaxaca',    'SALA', 12, 'Piso 3'),
+    ('Desk A1',        'DESK', 1,  'Piso 1'),
+    ('Desk A2',        'DESK', 1,  'Piso 1'),
+    ('Desk B1',        'DESK', 1,  'Piso 2')
+ON CONFLICT DO NOTHING;
+
+-- --- Recursos (catálogo gestionable por el administrador) ---
+INSERT INTO recursos (nombre) VALUES
+    ('Proyector'), ('Aire acondicionado'), ('Pizarrón'), ('Videoconferencia'), ('TV')
+ON CONFLICT (nombre) DO NOTHING;
+
+-- --- Asignación de recursos a los espacios de ejemplo (por nombre) ---
+INSERT INTO espacio_recursos (espacio_id, recurso_id)
+SELECT e.id, r.id FROM espacios e, recursos r
+WHERE (e.nombre = 'Sala Monterrey' AND r.nombre IN ('Proyector', 'Aire acondicionado', 'Videoconferencia'))
+   OR (e.nombre = 'Sala Cancún'    AND r.nombre IN ('Aire acondicionado', 'TV'))
+   OR (e.nombre = 'Sala Oaxaca'    AND r.nombre IN ('Proyector', 'Aire acondicionado', 'Pizarrón', 'Videoconferencia'))
+   OR (e.nombre = 'Desk A2'        AND r.nombre IN ('Aire acondicionado'))
+ON CONFLICT DO NOTHING;
+
+-- --- Reservas de ejemplo (fechas RELATIVAS a CURRENT_DATE) ---
+-- Se referencian los espacios por nombre (no por id fijo) para no depender del
+-- valor de la secuencia y mantener la semilla robusta.
+
+-- (1) CONFLICTO PREPARADO PARA LA DEMO: Sala Monterrey, MAÑANA 09:00-10:00.
+--     Intentar reservar encima de este horario debe devolver 409.
+INSERT INTO reservas (espacio_id, usuario_email, fecha, hora_inicio, hora_fin, asistentes, estado)
+SELECT e.id, 'carlos.mendez@corporativoalpha.com', CURRENT_DATE + 1, '09:00', '10:00', 5, 'CONFIRMADA'
+FROM espacios e WHERE e.nombre = 'Sala Monterrey';
+
+-- (2) Reserva CONSECUTIVA en el mismo espacio (10:00-11:00): demuestra que los
+--     límites exclusivos permiten reservas pegadas sin marcar solapamiento.
+INSERT INTO reservas (espacio_id, usuario_email, fecha, hora_inicio, hora_fin, asistentes, estado)
+SELECT e.id, 'ana.torres@corporativoalpha.com', CURRENT_DATE + 1, '10:00', '11:00', 3, 'CONFIRMADA'
+FROM espacios e WHERE e.nombre = 'Sala Monterrey';
+
+-- (3) y (4) Ocupación de HOY: alimentan el dashboard de ocupación del admin.
+INSERT INTO reservas (espacio_id, usuario_email, fecha, hora_inicio, hora_fin, asistentes, estado)
+SELECT e.id, 'carlos.mendez@corporativoalpha.com', CURRENT_DATE, '09:00', '13:00', 1, 'CONFIRMADA'
+FROM espacios e WHERE e.nombre = 'Desk A1';
+
+INSERT INTO reservas (espacio_id, usuario_email, fecha, hora_inicio, hora_fin, asistentes, estado)
+SELECT e.id, 'ana.torres@corporativoalpha.com', CURRENT_DATE, '14:00', '15:00', 2, 'CONFIRMADA'
+FROM espacios e WHERE e.nombre = 'Sala Cancún';
+
+-- (5) Reserva CANCELADA: demuestra que el estado 'CANCELADA' libera el horario
+--     (la restricción de exclusión es parcial y no la considera).
+INSERT INTO reservas (espacio_id, usuario_email, fecha, hora_inicio, hora_fin, asistentes, estado)
+SELECT e.id, 'carlos.mendez@corporativoalpha.com', CURRENT_DATE + 2, '09:00', '10:00', 4, 'CANCELADA'
+FROM espacios e WHERE e.nombre = 'Sala Monterrey';
+
+-- --- Notificaciones de ejemplo (para que el centro de alertas del admin no
+--     arranque vacío en la demo) ---
+INSERT INTO notificaciones (tipo, mensaje, actor_email, recurso) VALUES
+    ('RESERVA_CREADA',   'carlos.mendez@corporativoalpha.com reservó Sala Monterrey mañana de 09:00 a 10:00', 'carlos.mendez@corporativoalpha.com', 'Sala Monterrey'),
+    ('RESERVA_CREADA',   'ana.torres@corporativoalpha.com reservó Sala Cancún hoy de 14:00 a 15:00',          'ana.torres@corporativoalpha.com',    'Sala Cancún');

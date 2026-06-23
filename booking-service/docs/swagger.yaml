@@ -1,0 +1,375 @@
+basePath: /
+definitions:
+  apperror.AppError:
+    properties:
+      codigo:
+        type: string
+      mensaje:
+        type: string
+      status:
+        type: integer
+    type: object
+  handlers.SaludResponse:
+    properties:
+      servicio:
+        example: booking-service
+        type: string
+      status:
+        example: ok
+        type: string
+    type: object
+  models.CrearReservaRequest:
+    properties:
+      asistentes:
+        example: 4
+        type: integer
+      espacio_id:
+        example: 1
+        type: integer
+      fecha:
+        example: "2026-06-24"
+        type: string
+      hora_fin:
+        example: "12:00"
+        type: string
+      hora_inicio:
+        example: "11:00"
+        type: string
+    type: object
+  models.DisponibilidadResponse:
+    properties:
+      disponible:
+        example: true
+        type: boolean
+      espacio_id:
+        example: 1
+        type: integer
+      fecha:
+        example: "2026-06-24"
+        type: string
+      hora_fin:
+        example: "12:00"
+        type: string
+      hora_inicio:
+        example: "11:00"
+        type: string
+    type: object
+  models.ListaNotificaciones:
+    properties:
+      no_leidas:
+        example: 3
+        type: integer
+      notificaciones:
+        items:
+          $ref: '#/definitions/models.Notificacion'
+        type: array
+    type: object
+  models.Notificacion:
+    properties:
+      actor_email:
+        example: carlos.mendez@corporativoalpha.com
+        type: string
+      creado_en:
+        type: string
+      id:
+        example: 1
+        type: integer
+      leida:
+        example: false
+        type: boolean
+      mensaje:
+        example: carlos.mendez@corporativoalpha.com reservó Sala Monterrey de 09:00
+          a 10:00
+        type: string
+      recurso:
+        example: Sala Monterrey
+        type: string
+      tipo:
+        example: RESERVA_CREADA
+        type: string
+    type: object
+  models.Reserva:
+    properties:
+      asistentes:
+        example: 4
+        type: integer
+      creado_en:
+        type: string
+      espacio_id:
+        example: 1
+        type: integer
+      estado:
+        example: CONFIRMADA
+        type: string
+      fecha:
+        example: "2026-06-24"
+        type: string
+      hora_fin:
+        example: "10:00"
+        type: string
+      hora_inicio:
+        example: "09:00"
+        type: string
+      id:
+        example: 1
+        type: integer
+      usuario_email:
+        example: carlos.mendez@corporativoalpha.com
+        type: string
+    type: object
+info:
+  contact: {}
+  description: 'Motor de reservas: valida solapamiento, fechas y capacidad (vía HTTP
+    a catalog). Expone la ocupación del día.'
+  title: OfficeSpace — Booking Service
+  version: "1.0"
+paths:
+  /bookings:
+    post:
+      consumes:
+      - application/json
+      description: Valida consistencia temporal, que no sea en el pasado (TZ America/Mexico_City),
+        capacidad (vía HTTP a catalog) y no solapamiento. Devuelve 409 si el horario
+        ya está ocupado.
+      parameters:
+      - description: Datos de la reserva
+        in: body
+        name: reserva
+        required: true
+        schema:
+          $ref: '#/definitions/models.CrearReservaRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Reserva'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.AppError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/apperror.AppError'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/apperror.AppError'
+      security:
+      - BearerAuth: []
+      summary: Crear reserva
+      tags:
+      - reservas
+  /bookings/{id}:
+    delete:
+      description: Cancela una reserva propia (estado → CANCELADA). Una reserva ajena
+        devuelve 403.
+      parameters:
+      - description: ID de la reserva
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Reserva'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/apperror.AppError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/apperror.AppError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/apperror.AppError'
+      security:
+      - BearerAuth: []
+      summary: Cancelar reserva
+      tags:
+      - reservas
+  /bookings/availability:
+    get:
+      parameters:
+      - description: ID del espacio
+        in: query
+        name: espacio_id
+        required: true
+        type: integer
+      - description: Fecha YYYY-MM-DD
+        in: query
+        name: fecha
+        required: true
+        type: string
+      - description: Hora inicio HH:MM
+        in: query
+        name: inicio
+        required: true
+        type: string
+      - description: Hora fin HH:MM
+        in: query
+        name: fin
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.DisponibilidadResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.AppError'
+      security:
+      - BearerAuth: []
+      summary: Disponibilidad de un espacio
+      tags:
+      - reservas
+  /bookings/mine:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Reserva'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/apperror.AppError'
+      security:
+      - BearerAuth: []
+      summary: Mis reservas
+      tags:
+      - reservas
+  /health:
+    get:
+      description: Indica si el servicio está operativo.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.SaludResponse'
+      summary: Sonda de salud
+      tags:
+      - salud
+  /notifications:
+    get:
+      description: Historial reciente de notificaciones y conteo de no leídas (solo
+        ADMINISTRADOR).
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.ListaNotificaciones'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/apperror.AppError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/apperror.AppError'
+      security:
+      - BearerAuth: []
+      summary: Listar notificaciones
+      tags:
+      - notificaciones
+  /notifications/read:
+    post:
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Sin contenido
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/apperror.AppError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/apperror.AppError'
+      security:
+      - BearerAuth: []
+      summary: Marcar notificaciones como leídas
+      tags:
+      - notificaciones
+  /notifications/stream:
+    get:
+      description: Server-Sent Events. Autenticación por query param `token` (un JWT
+        de ADMINISTRADOR), ya que EventSource no envía headers.
+      parameters:
+      - description: JWT de un administrador
+        in: query
+        name: token
+        required: true
+        type: string
+      produces:
+      - text/event-stream
+      responses:
+        "200":
+          description: Flujo de eventos
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/apperror.AppError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/apperror.AppError'
+      summary: Flujo de notificaciones en tiempo real (SSE)
+      tags:
+      - notificaciones
+  /occupancy:
+    get:
+      description: Reservas confirmadas de una fecha. Alimenta el dashboard de ocupación
+        del administrador.
+      parameters:
+      - description: Fecha YYYY-MM-DD
+        in: query
+        name: fecha
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Reserva'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/apperror.AppError'
+      security:
+      - BearerAuth: []
+      summary: Ocupación del día
+      tags:
+      - reservas
+securityDefinitions:
+  BearerAuth:
+    description: 'Escribe: Bearer {token}'
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

@@ -1,0 +1,211 @@
+@import "tailwindcss";
+@import "@fontsource-variable/inter";
+
+/* ==========================================================================
+   Sistema de diseño OfficeSpace
+   Estrategia de color: Restrained (producto). Azul azure como color de marca y
+   de acción; ámbar como acento complementario para ocupación/realces. Superficies
+   blancas sobre un lienzo azul-frío muy tenue. Neutros tintados hacia el azul.
+   ========================================================================== */
+@theme {
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "JetBrains Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+
+  /* Superficies y texto (neutros tintados hacia el azul de marca) */
+  --color-canvas: #eef1f6;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f5f7fb;
+  --color-border: #dde3ec;
+  --color-border-strong: #c6cfdd;
+  --color-ink: #131a26;
+  --color-body: #283243;
+  --color-muted: #566175;
+
+  /* Marca: azul azure */
+  --color-azul: #1b50b3;
+  --color-azul-hover: #173f8f;
+  --color-azul-strong: #16357a;
+  --color-azul-soft: #e7edfc;
+
+  /* Acento: ámbar (complementario del azul) */
+  --color-ambar: #a8631a;
+  --color-ambar-soft: #f6ead6;
+
+  /* Semánticos */
+  --color-exito: #1b6e49;
+  --color-exito-soft: #e3f1e9;
+  --color-peligro: #a93b33;
+  --color-peligro-soft: #fae9e7;
+  --color-peligro-fuerte: #b23b32; /* relleno con texto blanco (badge de no leídas) */
+  --color-aviso: #8c5b12;
+
+  --radius-md: 0.625rem;
+  --radius-lg: 0.875rem;
+
+  --shadow-sutil: 0 1px 2px rgba(19, 26, 38, 0.06), 0 1px 3px rgba(19, 26, 38, 0.05);
+  --shadow-elevada: 0 12px 32px -12px rgba(19, 26, 38, 0.30);
+
+  /* Escala de z-index semántica */
+  --z-sticky: 30;
+  --z-backdrop: 40;
+  --z-modal: 50;
+  --z-toast: 60;
+
+  /* Curva de salida exponencial para la motion */
+  --ease-salida: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ==========================================================================
+   Modo oscuro. La app usa tokens semánticos, así que el tema oscuro es sobre
+   todo un remapeo de variables: las superficies pasan a un azul-carbón y los
+   neutros/marca se aclaran. Contrastes verificados (cuerpo ≥4.5:1). El selector
+   html.dark gana en especificidad a :root del @theme sin importar el orden.
+   ========================================================================== */
+html.dark {
+  color-scheme: dark;
+
+  --color-canvas: #0d1320;
+  --color-surface: #161d2b;
+  --color-surface-muted: #1f2735;
+  --color-border: #2b3445;
+  --color-border-strong: #3c4658;
+  --color-ink: #f2f5fb;
+  --color-body: #ccd4e1;
+  --color-muted: #9aa6ba;
+
+  /* Marca: azul claro para texto/iconos sobre fondo oscuro. */
+  --color-azul: #6f9bf3;
+  --color-azul-hover: #5d8cf0;
+  --color-azul-strong: #aec6f9; /* texto sobre azul-soft (nav activo, selección) */
+  --color-azul-soft: #1e2b49;   /* fondo tenue de píldoras/nav */
+
+  --color-ambar: #d99a4e;
+  --color-ambar-soft: #2e2415;
+
+  --color-exito: #56c98f;
+  --color-exito-soft: #15301f;
+  --color-peligro: #fb938b;
+  --color-peligro-soft: #36201e;
+  --color-peligro-fuerte: #d2453f;
+  --color-aviso: #e3aa57;
+
+  /* Sombras más marcadas: sobre fondo oscuro el borde por sí solo no separa. */
+  --shadow-sutil: 0 1px 2px rgba(0, 0, 0, 0.4), 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-elevada: 0 16px 40px -12px rgba(0, 0, 0, 0.65);
+}
+
+/* El botón primario va relleno con texto blanco; en oscuro el token --color-azul
+   se aclara (para texto), así que su fondo se fija aparte con contraste AA. */
+html.dark .btn-primary {
+  background-color: #2f5fd0;
+}
+html.dark .btn-primary:hover {
+  background-color: #284fb0;
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+  }
+  body {
+    @apply bg-canvas text-body font-sans antialiased;
+    font-synthesis-weight: none;
+  }
+  h1, h2, h3, h4 {
+    @apply text-ink font-semibold tracking-tight;
+    text-wrap: balance;
+  }
+  /* Foco de teclado siempre visible (requisito de accesibilidad). */
+  :focus-visible {
+    outline: 2px solid var(--color-azul);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  ::selection {
+    background: var(--color-azul-soft);
+    color: var(--color-azul-strong);
+  }
+  /* Números tabulares para horas/datos en mono. */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+  /* Respeta prefers-reduced-motion: sin animaciones para quien las desactiva. */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  /* --- Botones (misma forma en toda la app) --- */
+  .btn, .btn-primary, .btn-secondary, .btn-danger, .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-[0.5rem] px-4 py-2
+           text-sm font-medium transition-colors duration-150 select-none
+           disabled:opacity-50 disabled:pointer-events-none;
+  }
+  .btn-sm { @apply px-3 py-1.5 text-[0.8125rem]; }
+  .btn-primary { @apply bg-azul text-white hover:bg-azul-hover; }
+  .btn-secondary {
+    @apply bg-surface text-body border border-border-strong hover:bg-surface-muted;
+  }
+  .btn-danger {
+    @apply bg-surface text-peligro border border-peligro/30 hover:bg-peligro-soft;
+  }
+  .btn-ghost { @apply text-muted hover:bg-surface-muted hover:text-body; }
+
+  /* --- Formularios --- */
+  .label { @apply block text-sm font-medium text-body mb-1.5; }
+  .input, .select {
+    @apply w-full rounded-[0.5rem] border border-border-strong bg-surface px-3 py-2
+           text-sm text-body placeholder:text-muted transition-colors
+           focus:border-azul focus:ring-2 focus:ring-azul/20 focus:outline-none;
+  }
+  .field-error { @apply text-[0.8125rem] text-peligro mt-1.5; }
+
+  /* --- Tarjetas y superficies --- */
+  .card {
+    @apply rounded-[var(--radius-lg)] border border-border bg-surface shadow-sutil;
+  }
+
+  /* --- Píldoras de estado --- */
+  .pill {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium;
+  }
+}
+
+/* ==========================================================================
+   Motion (intencional, con curvas de salida). Toda anim tiene su alternativa
+   instantánea bajo prefers-reduced-motion (ver @layer base).
+   ========================================================================== */
+@keyframes aparecer {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes entrar-toast {
+  from { opacity: 0; transform: translateX(12px) scale(0.98); }
+  to   { opacity: 1; transform: translateX(0) scale(1); }
+}
+@keyframes pulso-pista {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
+.anim-aparecer {
+  animation: aparecer 0.32s var(--ease-salida) both;
+}
+.anim-toast {
+  animation: entrar-toast 0.28s var(--ease-salida) both;
+}
+/* Escalonado sutil para listas de resultados. */
+.anim-lista > * {
+  animation: aparecer 0.34s var(--ease-salida) both;
+}
+.anim-lista > *:nth-child(2) { animation-delay: 0.04s; }
+.anim-lista > *:nth-child(3) { animation-delay: 0.08s; }
+.anim-lista > *:nth-child(4) { animation-delay: 0.12s; }
+.anim-lista > *:nth-child(5) { animation-delay: 0.16s; }
+.anim-lista > *:nth-child(n+6) { animation-delay: 0.2s; }

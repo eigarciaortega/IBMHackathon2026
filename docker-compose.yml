@@ -1,17 +1,164 @@
+# Orquestación local (desarrollo): PostgreSQL + los tres microservicios Go + el
+# frontend. Los servicios se comunican por la red interna usando los nombres de
+# servicio como host; los puertos publicados son para acceso desde el equipo.
+#
+# Las URLs VITE_* del frontend apuntan a localhost porque las consume el navegador
+# del usuario (fuera de la red de Docker). CATALOG_BASE_URL, en cambio, es interno
+# (booking → catalog) y usa el nombre de servicio.
+#
+# Arranque sin configuración: cada variable trae un valor por defecto de desarrollo
+# (sintaxis ${VAR:-default}), así que `docker compose up -d` funciona en una máquina
+# recién clonada sin crear ningún archivo. Para personalizar puertos o credenciales,
+# o para producción, crea un `.env` (no versionado) y sobrescribe lo que necesites.
+# Los valores por defecto son SOLO para desarrollo; nunca uses estas claves en producción.
+
 services:
   postgres:
-    image: postgres:15
+    image: postgres:16-alpine
     container_name: officespace-postgres
-    restart: always
+    restart: unless-stopped
     environment:
-      POSTGRES_DB: ${OFFICESPACE_DB_NAME}
-      POSTGRES_USER: ${OFFICESPACE_DB_USER}
-      POSTGRES_PASSWORD: ${OFFICESPACE_DB_PASSWORD}
+      POSTGRES_USER: ${POSTGRES_USER:-officespace}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-officespace_dev_2026}
+      POSTGRES_DB: ${POSTGRES_DB:-officespace}
+      TZ: ${TZ:-America/Mexico_City}
+      PGTZ: ${TZ:-America/Mexico_City}
     ports:
-      - "${OFFICESPACE_DB_PORT}:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
-      - officespace_postgres_data:/var/lib/postgresql/data
-      - ./shared-infra/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+      - pgdata:/var/lib/postgresql/data
+      # Esquema, índices, restricción anti-solapamiento y semilla. Solo se ejecuta
+      # cuando el volumen de datos está vacío (primer arranque).
+      - ./shared-infra/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-officespace} -d ${POSTGRES_DB:-officespace}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - officespace
+
+  auth-service:
+    build:
+      context: ./auth-service
+    container_name: officespace-auth
+    restart: unless-stopped
+    environment:
+      PORT: "8081"
+      DATABASE_URL: ${DATABASE_URL:-postgres://officespace:officespace_dev_2026@postgres:5432/officespace?sslmode=disable}
+      JWT_SECRET: ${JWT_SECRET:-secreto_local_de_desarrollo_no_usar_en_produccion_2026}
+      JWT_EXPIRA_HORAS: ${JWT_EXPIRA_HORAS:-8}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:8080,http://localhost:8090,http://localhost:5173}
+      TZ: ${TZ:-America/Mexico_City}
+    ports:
+      - "${AUTH_PORT:-8081}:8081"
+    # Healthcheck explícito (no depende del HEALTHCHECK de la imagen): así
+    # 'service_healthy' funciona aunque exista una imagen cacheada antigua.
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8081/health || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 20s
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - officespace
+
+  catalog-service:
+    build:
+      context: ./catalog-service
+    container_name: officespace-catalog
+    restart: unless-stopped
+    environment:
+      PORT: "8082"
+      DATABASE_URL: ${DATABASE_URL:-postgres://officespace:officespace_dev_2026@postgres:5432/officespace?sslmode=disable}
+      JWT_SECRET: ${JWT_SECRET:-secreto_local_de_desarrollo_no_usar_en_produccion_2026}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:8080,http://localhost:8090,http://localhost:5173}
+      TZ: ${TZ:-America/Mexico_City}
+    ports:
+      - "${CATALOG_PORT:-8082}:8082"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8082/health || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 20s
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - officespace
+
+  booking-service:
+    build:
+      context: ./booking-service
+    container_name: officespace-booking
+    restart: unless-stopped
+    environment:
+      PORT: "8083"
+      DATABASE_URL: ${DATABASE_URL:-postgres://officespace:officespace_dev_2026@postgres:5432/officespace?sslmode=disable}
+      JWT_SECRET: ${JWT_SECRET:-secreto_local_de_desarrollo_no_usar_en_produccion_2026}
+      # Comunicación interna booking → catalog por HTTP (nombre de servicio).
+      CATALOG_BASE_URL: http://catalog-service:8082
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:8080,http://localhost:8090,http://localhost:5173}
+      TZ: ${TZ:-America/Mexico_City}
+    ports:
+      - "${BOOKING_PORT:-8083}:8083"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8083/health || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 20s
+    depends_on:
+      postgres:
+        condition: service_healthy
+      # booking solo necesita a catalog en tiempo de petición (HTTP), no al arrancar.
+      # 'service_started' evita que un catalog que tarde en sanar bloquee a booking.
+      catalog-service:
+        condition: service_started
+    networks:
+      - officespace
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # Rutas relativas: nginx (puerta de enlace) proxea /api/* a los servicios.
+        # Mismo origen para el navegador, sin CORS y con un solo host expuesto.
+        VITE_AUTH_URL: /api/auth
+        VITE_CATALOG_URL: /api/catalog
+        VITE_BOOKING_URL: /api/booking
+    container_name: officespace-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-8080}:80"
+    healthcheck:
+      # 127.0.0.1 explícito: nginx escucha en IPv4 y "localhost" resolvería a ::1.
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/ || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 20s
+    # El frontend (nginx) solo sirve la SPA y proxea; no necesita que los backends
+    # estén sanos para arrancar. 'service_started' garantiza que la UI y, por tanto,
+    # los Swagger de cada servicio queden accesibles aunque uno tarde en sanar.
+    depends_on:
+      auth-service:
+        condition: service_started
+      catalog-service:
+        condition: service_started
+      booking-service:
+        condition: service_started
+    networks:
+      - officespace
 
 volumes:
-  officespace_postgres_data:
+  pgdata:
+
+networks:
+  officespace:
+    name: officespace
+    driver: bridge
