@@ -9,6 +9,35 @@ function badRequest(response, error, message) {
   });
 }
 
+function formatTransferResponse(transaction, idempotentReplay) {
+  return {
+    message: transaction.status === "COMPLETED"
+      ? "Transfer completed successfully"
+      : "Transfer already processed with this idempotency key",
+    transaction_id: transaction.transaction_id,
+    sender_id: transaction.sender_id,
+    receiver_id: transaction.receiver_id,
+    amount: transaction.amount,
+    status: transaction.status,
+    idempotent_replay: idempotentReplay
+  };
+}
+
+async function findTransactionByIdempotencyKey(idempotencyKey) {
+  if (!idempotencyKey) {
+    return null;
+  }
+
+  const result = await pool.query(
+    `SELECT transaction_id, sender_id, receiver_id, amount, status
+     FROM transactions
+     WHERE idempotency_key = $1`,
+    [idempotencyKey]
+  );
+
+  return result.rows[0] || null;
+}
+
 async function updateTransactionStatus(transactionId, status, errorMessage = null) {
   await pool.query(
     `UPDATE transactions
@@ -25,6 +54,7 @@ async function createTransfer(request, response, next) {
   const receiverId = parsePositiveInteger(request.body.receiver_id);
   const amount = parseMoneyAmount(request.body.amount);
   const idempotencyKey = request.header("X-Idempotency-Key") || null;
+  const simulateCreditFailure = request.header("X-Simulate-Credit-Failure") === "true";
 
   if (!senderId) {
     return badRequest(response, "invalid_sender_id", "sender_id is required and must be a positive integer.");
@@ -43,6 +73,12 @@ async function createTransfer(request, response, next) {
   }
 
   try {
+    const existingTransaction = await findTransactionByIdempotencyKey(idempotencyKey);
+
+    if (existingTransaction) {
+      return response.status(200).json(formatTransferResponse(existingTransaction, true));
+    }
+
     const sender = await getAccount(senderId);
 
     if (sender.status === 404) {
@@ -73,12 +109,24 @@ async function createTransfer(request, response, next) {
       return badRequest(response, "insufficient_funds", "Sender does not have enough balance for this transfer.");
     }
 
-    const transactionResult = await pool.query(
-      `INSERT INTO transactions (sender_id, receiver_id, amount, status, idempotency_key)
-       VALUES ($1, $2, $3, 'PENDING', $4)
-       RETURNING transaction_id, amount, status`,
-      [senderId, receiverId, amount, idempotencyKey]
-    );
+    let transactionResult;
+
+    try {
+      transactionResult = await pool.query(
+        `INSERT INTO transactions (sender_id, receiver_id, amount, status, idempotency_key)
+         VALUES ($1, $2, $3, 'PENDING', $4)
+         RETURNING transaction_id, sender_id, receiver_id, amount, status`,
+        [senderId, receiverId, amount, idempotencyKey]
+      );
+    } catch (error) {
+      if (error.code === "23505" && idempotencyKey) {
+        const replayTransaction = await findTransactionByIdempotencyKey(idempotencyKey);
+        return response.status(200).json(formatTransferResponse(replayTransaction, true));
+      }
+
+      throw error;
+    }
+
     const transaction = transactionResult.rows[0];
 
     const debit = await updateBalance({
@@ -99,6 +147,28 @@ async function createTransfer(request, response, next) {
 
     await updateTransactionStatus(transaction.transaction_id, "DEBITED");
 
+    if (simulateCreditFailure) {
+      const compensation = await updateBalance({
+        userId: senderId,
+        amount,
+        operation: "credit"
+      });
+
+      if (compensation.ok) {
+        await updateTransactionStatus(transaction.transaction_id, "ROLLED_BACK", "simulated_credit_failure");
+        return response.status(502).json({
+          error: "credit_failed_rolled_back",
+          message: "Credit failed after debit. Sender debit was compensated.",
+          transaction_id: transaction.transaction_id,
+          status: "ROLLED_BACK",
+          idempotent_replay: false
+        });
+      }
+
+      await updateTransactionStatus(transaction.transaction_id, "FAILED", "simulated_credit_failure_compensation_failed");
+      throw new Error("Credit failed after debit and compensation failed");
+    }
+
     const credit = await updateBalance({
       userId: receiverId,
       amount,
@@ -106,8 +176,25 @@ async function createTransfer(request, response, next) {
     });
 
     if (!credit.ok) {
-      await updateTransactionStatus(transaction.transaction_id, "FAILED", credit.body.error || "credit_failed");
-      throw new Error(`accounts-service returned ${credit.status} while crediting receiver`);
+      const compensation = await updateBalance({
+        userId: senderId,
+        amount,
+        operation: "credit"
+      });
+
+      if (compensation.ok) {
+        await updateTransactionStatus(transaction.transaction_id, "ROLLED_BACK", credit.body.error || "credit_failed");
+        return response.status(502).json({
+          error: "credit_failed_rolled_back",
+          message: "Credit failed after debit. Sender debit was compensated.",
+          transaction_id: transaction.transaction_id,
+          status: "ROLLED_BACK",
+          idempotent_replay: false
+        });
+      }
+
+      await updateTransactionStatus(transaction.transaction_id, "FAILED", credit.body.error || "credit_failed_compensation_failed");
+      throw new Error(`accounts-service returned ${credit.status} while crediting receiver and compensation failed`);
     }
 
     await updateTransactionStatus(transaction.transaction_id, "COMPLETED");
@@ -118,7 +205,8 @@ async function createTransfer(request, response, next) {
       sender_id: senderId,
       receiver_id: receiverId,
       amount: transaction.amount,
-      status: "COMPLETED"
+      status: "COMPLETED",
+      idempotent_replay: false
     });
   } catch (error) {
     return next(error);

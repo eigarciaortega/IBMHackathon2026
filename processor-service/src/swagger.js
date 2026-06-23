@@ -10,8 +10,8 @@ const swaggerDocument = {
   openapi: "3.0.3",
   info: {
     title: "NeoWallet Processor Service API",
-    version: "0.3.0",
-    description: "Service for P2P transfer orchestration and transaction history."
+    version: "0.4.0",
+    description: "Service for resilient P2P transfer orchestration, transaction history, idempotency, Saga compensation, and money conservation audit."
   },
   servers: [
     {
@@ -24,29 +24,31 @@ const swaggerDocument = {
       get: {
         summary: "Service health check",
         responses: {
-          "200": {
-            description: "Service and processor database are reachable"
-          },
-          "503": {
-            description: "Processor database is not reachable"
-          }
+          "200": { description: "Service and processor database are reachable" },
+          "503": { description: "Processor database is not reachable" }
         }
       }
     },
     "/api/transfer": {
       post: {
-        summary: "Create a P2P transfer",
-        description: "Transfers money from sender to receiver through accounts-service. The transaction is recorded as PENDING, DEBITED, then COMPLETED. X-Idempotency-Key is stored when provided, but full retry idempotency is planned for a later phase.",
+        summary: "Create a resilient P2P transfer",
+        description: "Transfers money from sender to receiver through accounts-service. Supports X-Idempotency-Key replay protection and Saga-style compensation when credit fails after debit.",
         parameters: [
           {
             name: "X-Idempotency-Key",
             in: "header",
             required: false,
-            schema: {
-              type: "string"
-            },
-            example: "demo-transfer-001",
-            description: "Optional key stored with the transaction for future duplicate-processing protection."
+            schema: { type: "string" },
+            example: "idem-001",
+            description: "Optional key used to return the existing transaction without moving money again."
+          },
+          {
+            name: "X-Simulate-Credit-Failure",
+            in: "header",
+            required: false,
+            schema: { type: "string", enum: ["true"] },
+            example: "true",
+            description: "Development/demo-only header. Debits sender, simulates credit failure, compensates sender, and marks transaction ROLLED_BACK."
           }
         ],
         requestBody: {
@@ -81,7 +83,24 @@ const swaggerDocument = {
                   sender_id: 1,
                   receiver_id: 2,
                   amount: "100.00",
-                  status: "COMPLETED"
+                  status: "COMPLETED",
+                  idempotent_replay: false
+                }
+              }
+            }
+          },
+          "200": {
+            description: "Idempotent replay. Existing transaction returned and no money moved again.",
+            content: {
+              "application/json": {
+                example: {
+                  message: "Transfer completed successfully",
+                  transaction_id: "9d87f3b3-1811-40c5-b3db-62f255a8407c",
+                  sender_id: 1,
+                  receiver_id: 2,
+                  amount: "100.00",
+                  status: "COMPLETED",
+                  idempotent_replay: true
                 }
               }
             }
@@ -136,25 +155,34 @@ const swaggerDocument = {
               }
             }
           },
-          "500": {
-            description: "Internal server error"
-          }
+          "502": {
+            description: "Credit failed after debit and compensation was executed",
+            content: {
+              "application/json": {
+                example: {
+                  error: "credit_failed_rolled_back",
+                  message: "Credit failed after debit. Sender debit was compensated.",
+                  transaction_id: "9d87f3b3-1811-40c5-b3db-62f255a8407c",
+                  status: "ROLLED_BACK",
+                  idempotent_replay: false
+                }
+              }
+            }
+          },
+          "500": { description: "Internal server error" }
         }
       }
     },
     "/api/transactions/{user_id}": {
       get: {
         summary: "Get transaction history for a user",
-        description: "Returns transactions where the user is sender or receiver, ordered by newest first. The type field is sent when user_id matches sender_id and received when user_id matches receiver_id.",
+        description: "Returns transactions where the user is sender or receiver, ordered by newest first. Shows COMPLETED, FAILED, and ROLLED_BACK records when present.",
         parameters: [
           {
             name: "user_id",
             in: "path",
             required: true,
-            schema: {
-              type: "integer",
-              minimum: 1
-            },
+            schema: { type: "integer", minimum: 1 },
             example: 1
           }
         ],
@@ -174,6 +202,15 @@ const swaggerDocument = {
                       amount: "100.00",
                       status: "COMPLETED",
                       created_at: "2026-06-23T17:45:00.000Z"
+                    },
+                    {
+                      transaction_id: "2fb808f3-eafd-4e39-938c-182dc99fb7d0",
+                      type: "sent",
+                      sender_id: 1,
+                      receiver_id: 2,
+                      amount: "10.00",
+                      status: "ROLLED_BACK",
+                      created_at: "2026-06-23T17:46:00.000Z"
                     }
                   ]
                 }
@@ -204,9 +241,30 @@ const swaggerDocument = {
               }
             }
           },
-          "500": {
-            description: "Internal server error"
-          }
+          "500": { description: "Internal server error" }
+        }
+      }
+    },
+    "/api/audit/money-conservation": {
+      get: {
+        summary: "Audit money conservation across seed accounts",
+        description: "Demo/QA endpoint that sums balances for seed users 1, 2, and 3. The expected official seed total is 1050.00.",
+        responses: {
+          "200": {
+            description: "Money conservation audit completed",
+            content: {
+              "application/json": {
+                example: {
+                  message: "Money conservation audit completed",
+                  total_balance: "1050.00",
+                  users_checked: 3,
+                  expected_seed_total: "1050.00",
+                  status: "CONSISTENT"
+                }
+              }
+            }
+          },
+          "500": { description: "Internal server error" }
         }
       }
     }

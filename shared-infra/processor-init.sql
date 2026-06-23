@@ -16,6 +16,10 @@ CREATE TABLE IF NOT EXISTS transactions (
     )
 );
 
+CREATE UNIQUE INDEX IF NOT EXISTS idx_transactions_idempotency_key
+ON transactions (idempotency_key)
+WHERE idempotency_key IS NOT NULL;
+
 CREATE OR REPLACE FUNCTION set_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN

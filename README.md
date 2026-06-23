@@ -128,8 +128,11 @@ Esta fase incluye:
 - Validacion de usuarios existentes consultando `accounts-service`.
 - Validacion de fondos suficientes antes de debitar.
 - Bloqueo de auto-transferencias.
-- Estados de transaccion `PENDING`, `DEBITED` y `COMPLETED`.
-- Registro de `X-Idempotency-Key` cuando se recibe, preparado para idempotencia completa en una fase posterior.
+- Estados de transaccion `PENDING`, `DEBITED`, `COMPLETED`, `FAILED` y `ROLLED_BACK`.
+- Idempotencia real con `X-Idempotency-Key`: si se repite la misma key, se devuelve la transaccion existente con `idempotent_replay: true` y no se mueve dinero otra vez.
+- Compensacion tipo Saga: si falla el credito despues del debito, el sender recibe una compensacion y la transaccion queda `ROLLED_BACK`.
+- Simulacion demo de fallo de credito con `X-Simulate-Credit-Failure: true`.
+- Endpoint `GET /api/audit/money-conservation` para verificar que el total de dinero en usuarios seed sigue siendo `1050.00`.
 - Comunicacion HTTP de `processor-service` hacia `accounts-service`.
 - Endpoint `GET /api/transactions/:user_id` funcional para historial enviado/recibido.
 
@@ -142,11 +145,41 @@ Esta fase incluye:
 - Integracion con Stripe, PayPal, SPEI, Pix, PSE, tarjetas u otros procesadores.
 - Multiples monedas.
 - Retiros bancarios.
-- Saga avanzada con rollback completo.
-- Idempotencia final.
 - Job de reconciliacion.
 - Tests completos.
 - Coleccion final de Postman.
+
+## Pruebas de resiliencia fintech
+
+Idempotencia:
+
+```bash
+curl -X POST http://localhost:3001/api/transfer \
+  -H "Content-Type: application/json" \
+  -H "X-Idempotency-Key: idem-001" \
+  -d "{\"sender_id\":1,\"receiver_id\":2,\"amount\":100.00}"
+```
+
+Repetir la misma peticion debe devolver `idempotent_replay: true` y no debe mover dinero dos veces.
+
+Compensacion Saga:
+
+```bash
+curl -X POST http://localhost:3001/api/transfer \
+  -H "Content-Type: application/json" \
+  -H "X-Simulate-Credit-Failure: true" \
+  -d "{\"sender_id\":1,\"receiver_id\":2,\"amount\":10.00}"
+```
+
+El sistema debita, simula fallo de credito, compensa al sender y marca la transaccion como `ROLLED_BACK`.
+
+Auditoria:
+
+```bash
+curl http://localhost:3001/api/audit/money-conservation
+```
+
+Debe devolver `CONSISTENT` cuando el total de balances de usuarios seed sea `1050.00`.
 
 ## Bonus planeados
 
