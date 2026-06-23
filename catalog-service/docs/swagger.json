@@ -1,0 +1,364 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Gestión de espacios (CRUD) y búsqueda con filtros. Escritura solo para ADMINISTRADOR.",
+        "title": "OfficeSpace — Catalog Service",
+        "contact": {},
+        "version": "1.0"
+    },
+    "basePath": "/",
+    "paths": {
+        "/health": {
+            "get": {
+                "description": "Indica si el servicio está operativo.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "salud"
+                ],
+                "summary": "Sonda de salud",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handlers.SaludResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/spaces": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Lista los espacios. Soporta filtros por tipo y capacidad mínima, aplicados en la consulta.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "espacios"
+                ],
+                "summary": "Listar espacios",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filtra por tipo (SALA o DESK)",
+                        "name": "tipo",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Capacidad mínima",
+                        "name": "capacidad_min",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_catalog-service_internal_models.Espacio"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_catalog-service_internal_apperror.AppError"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "espacios"
+                ],
+                "summary": "Crear espacio",
+                "parameters": [
+                    {
+                        "description": "Datos del espacio",
+                        "name": "espacio",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_catalog-service_internal_models.EspacioRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_catalog-service_internal_models.Espacio"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_catalog-service_internal_apperror.AppError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_catalog-service_internal_apperror.AppError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_catalog-service_internal_apperror.AppError"
+                        }
+                    }
+                }
+            }
+        },
+        "/spaces/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "espacios"
+                ],
+                "summary": "Obtener espacio",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID del espacio",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_catalog-service_internal_models.Espacio"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_catalog-service_internal_apperror.AppError"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "espacios"
+                ],
+                "summary": "Actualizar espacio",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID del espacio",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Datos del espacio",
+                        "name": "espacio",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_catalog-service_internal_models.EspacioRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_catalog-service_internal_models.Espacio"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_catalog-service_internal_apperror.AppError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_catalog-service_internal_apperror.AppError"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "espacios"
+                ],
+                "summary": "Eliminar espacio",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID del espacio",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Sin contenido"
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_catalog-service_internal_apperror.AppError"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "github_com_i0dk1_OfficeSpace_catalog-service_internal_apperror.AppError": {
+            "type": "object",
+            "properties": {
+                "codigo": {
+                    "type": "string"
+                },
+                "mensaje": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_i0dk1_OfficeSpace_catalog-service_internal_models.Espacio": {
+            "type": "object",
+            "properties": {
+                "capacidad": {
+                    "type": "integer",
+                    "example": 8
+                },
+                "creado_en": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "nombre": {
+                    "type": "string",
+                    "example": "Sala Monterrey"
+                },
+                "piso": {
+                    "type": "string",
+                    "example": "Piso 1"
+                },
+                "tiene_aire": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "tiene_proyector": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "tipo": {
+                    "type": "string",
+                    "example": "SALA"
+                }
+            }
+        },
+        "github_com_i0dk1_OfficeSpace_catalog-service_internal_models.EspacioRequest": {
+            "type": "object",
+            "properties": {
+                "capacidad": {
+                    "type": "integer",
+                    "example": 8
+                },
+                "nombre": {
+                    "type": "string",
+                    "example": "Sala Monterrey"
+                },
+                "piso": {
+                    "type": "string",
+                    "example": "Piso 1"
+                },
+                "tiene_aire": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "tiene_proyector": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "tipo": {
+                    "type": "string",
+                    "example": "SALA"
+                }
+            }
+        },
+        "internal_handlers.SaludResponse": {
+            "type": "object",
+            "properties": {
+                "servicio": {
+                    "type": "string",
+                    "example": "catalog-service"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "ok"
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "description": "Escribe: Bearer {token}",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
+    }
+}

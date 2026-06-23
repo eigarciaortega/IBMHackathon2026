@@ -1,0 +1,239 @@
+basePath: /
+definitions:
+  github_com_i0dk1_OfficeSpace_catalog-service_internal_apperror.AppError:
+    properties:
+      codigo:
+        type: string
+      mensaje:
+        type: string
+      status:
+        type: integer
+    type: object
+  github_com_i0dk1_OfficeSpace_catalog-service_internal_models.Espacio:
+    properties:
+      capacidad:
+        example: 8
+        type: integer
+      creado_en:
+        type: string
+      id:
+        example: 1
+        type: integer
+      nombre:
+        example: Sala Monterrey
+        type: string
+      piso:
+        example: Piso 1
+        type: string
+      tiene_aire:
+        example: true
+        type: boolean
+      tiene_proyector:
+        example: true
+        type: boolean
+      tipo:
+        example: SALA
+        type: string
+    type: object
+  github_com_i0dk1_OfficeSpace_catalog-service_internal_models.EspacioRequest:
+    properties:
+      capacidad:
+        example: 8
+        type: integer
+      nombre:
+        example: Sala Monterrey
+        type: string
+      piso:
+        example: Piso 1
+        type: string
+      tiene_aire:
+        example: true
+        type: boolean
+      tiene_proyector:
+        example: true
+        type: boolean
+      tipo:
+        example: SALA
+        type: string
+    type: object
+  internal_handlers.SaludResponse:
+    properties:
+      servicio:
+        example: catalog-service
+        type: string
+      status:
+        example: ok
+        type: string
+    type: object
+info:
+  contact: {}
+  description: Gestión de espacios (CRUD) y búsqueda con filtros. Escritura solo para
+    ADMINISTRADOR.
+  title: OfficeSpace — Catalog Service
+  version: "1.0"
+paths:
+  /health:
+    get:
+      description: Indica si el servicio está operativo.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_handlers.SaludResponse'
+      summary: Sonda de salud
+      tags:
+      - salud
+  /spaces:
+    get:
+      description: Lista los espacios. Soporta filtros por tipo y capacidad mínima,
+        aplicados en la consulta.
+      parameters:
+      - description: Filtra por tipo (SALA o DESK)
+        in: query
+        name: tipo
+        type: string
+      - description: Capacidad mínima
+        in: query
+        name: capacidad_min
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_i0dk1_OfficeSpace_catalog-service_internal_models.Espacio'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_i0dk1_OfficeSpace_catalog-service_internal_apperror.AppError'
+      security:
+      - BearerAuth: []
+      summary: Listar espacios
+      tags:
+      - espacios
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Datos del espacio
+        in: body
+        name: espacio
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_i0dk1_OfficeSpace_catalog-service_internal_models.EspacioRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_i0dk1_OfficeSpace_catalog-service_internal_models.Espacio'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_i0dk1_OfficeSpace_catalog-service_internal_apperror.AppError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_i0dk1_OfficeSpace_catalog-service_internal_apperror.AppError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/github_com_i0dk1_OfficeSpace_catalog-service_internal_apperror.AppError'
+      security:
+      - BearerAuth: []
+      summary: Crear espacio
+      tags:
+      - espacios
+  /spaces/{id}:
+    delete:
+      parameters:
+      - description: ID del espacio
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Sin contenido
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_i0dk1_OfficeSpace_catalog-service_internal_apperror.AppError'
+      security:
+      - BearerAuth: []
+      summary: Eliminar espacio
+      tags:
+      - espacios
+    get:
+      parameters:
+      - description: ID del espacio
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_i0dk1_OfficeSpace_catalog-service_internal_models.Espacio'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_i0dk1_OfficeSpace_catalog-service_internal_apperror.AppError'
+      security:
+      - BearerAuth: []
+      summary: Obtener espacio
+      tags:
+      - espacios
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID del espacio
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Datos del espacio
+        in: body
+        name: espacio
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_i0dk1_OfficeSpace_catalog-service_internal_models.EspacioRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_i0dk1_OfficeSpace_catalog-service_internal_models.Espacio'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_i0dk1_OfficeSpace_catalog-service_internal_apperror.AppError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_i0dk1_OfficeSpace_catalog-service_internal_apperror.AppError'
+      security:
+      - BearerAuth: []
+      summary: Actualizar espacio
+      tags:
+      - espacios
+securityDefinitions:
+  BearerAuth:
+    description: 'Escribe: Bearer {token}'
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
