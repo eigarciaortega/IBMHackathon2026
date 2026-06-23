@@ -11,7 +11,7 @@ type SaludResponse struct {
 // Salud responde la sonda de salud del servicio.
 //
 //	@Summary		Sonda de salud
-//	@Description	Indica si el servicio está operativo (usado por docker-compose y Dokploy).
+//	@Description	Indica si el servicio está operativo (usado por los healthchecks de docker-compose).
 //	@Tags			salud
 //	@Produce		json
 //	@Success		200	{object}	SaludResponse

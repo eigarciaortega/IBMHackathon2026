@@ -7,7 +7,7 @@ COPY package.json package-lock.json ./
 RUN npm ci
 
 # Las URLs de los servicios se inyectan en tiempo de build (Vite las hornea en el
-# bundle). docker-compose / Dokploy las pasan como build args.
+# bundle). docker-compose las pasa como build args.
 ARG VITE_AUTH_URL
 ARG VITE_CATALOG_URL
 ARG VITE_BOOKING_URL
