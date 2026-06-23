@@ -1,0 +1,117 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: meeting-rooms-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+      POSTGRES_DB: meeting_rooms
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - meeting-rooms-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # User Service
+  user-service:
+    build:
+      context: .
+      dockerfile: user-service/Dockerfile
+    container_name: user-service
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres123@postgres:5432/meeting_rooms
+      JWT_SECRET_KEY: your-secret-key-change-in-production-use-strong-random-string
+      JWT_ALGORITHM: HS256
+      JWT_EXPIRATION_MINUTES: 30
+    ports:
+      - "8001:8001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - meeting-rooms-network
+    restart: unless-stopped
+    volumes:
+      - ./database:/app/database
+      - ./user-service:/app/user-service
+
+  # Room Service
+  room-service:
+    build:
+      context: .
+      dockerfile: room-service/Dockerfile
+    container_name: room-service
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres123@postgres:5432/meeting_rooms
+      JWT_SECRET_KEY: your-secret-key-change-in-production-use-strong-random-string
+      JWT_ALGORITHM: HS256
+    ports:
+      - "8002:8002"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - meeting-rooms-network
+    restart: unless-stopped
+    volumes:
+      - ./database:/app/database
+      - ./room-service:/app/room-service
+
+  # Reservation Service
+  reservation-service:
+    build:
+      context: .
+      dockerfile: reservation-service/Dockerfile
+    container_name: reservation-service
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres123@postgres:5432/meeting_rooms
+      JWT_SECRET_KEY: your-secret-key-change-in-production-use-strong-random-string
+      JWT_ALGORITHM: HS256
+    ports:
+      - "8003:8003"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - meeting-rooms-network
+    restart: unless-stopped
+    volumes:
+      - ./database:/app/database
+      - ./reservation-service:/app/reservation-service
+
+  # Frontend Service
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - user-service
+      - room-service
+      - reservation-service
+    networks:
+      - meeting-rooms-network
+    restart: unless-stopped
+
+networks:
+  meeting-rooms-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
+
+# Made with Bob

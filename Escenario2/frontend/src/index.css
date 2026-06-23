@@ -1,0 +1,199 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: #f4f5f7;
+  color: #1a1a2e;
+}
+
+.app {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+header h1 {
+  font-size: 1.4rem;
+  margin-bottom: 1rem;
+}
+
+.error-banner {
+  background: #fde2e1;
+  color: #8a1f11;
+  border: 1px solid #f3a29c;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.error-banner button {
+  background: none;
+  border: none;
+  color: #8a1f11;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 1.5rem;
+}
+
+.panel {
+  background: white;
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.25rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.panel h2 {
+  font-size: 1.05rem;
+  margin: 0 0 0.75rem;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.panel label {
+  display: block;
+  font-size: 0.85rem;
+  margin-bottom: 0.6rem;
+  color: #444;
+}
+
+.panel input,
+.panel select {
+  display: block;
+  width: 100%;
+  margin-top: 0.25rem;
+  padding: 0.45rem 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.panel button {
+  background: #3b5bdb;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.panel button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.accounts-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.accounts-list li {
+  padding: 0.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-bottom: 0.3rem;
+}
+
+.accounts-list li:hover {
+  background: #eef1ff;
+}
+
+.accounts-list li.selected {
+  background: #dbe4ff;
+}
+
+.account-name {
+  font-weight: 600;
+}
+
+.account-balance {
+  font-size: 0.9rem;
+  color: #2f9e44;
+  font-weight: 600;
+}
+
+.muted {
+  color: #888;
+  font-size: 0.85rem;
+}
+
+.forms-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid #eee;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.status-completed,
+.status-compensated {
+  background: #d3f9d8;
+  color: #2b8a3e;
+}
+
+.status-pending,
+.status-debit_completed,
+.status-compensating {
+  background: #fff3bf;
+  color: #946800;
+}
+
+.status-failed,
+.status-failed_compensation {
+  background: #ffe3e3;
+  color: #c92a2a;
+}
+
+.error-detail {
+  font-weight: 400;
+  color: #c92a2a;
+}
+
+.selected-summary strong {
+  font-size: 1.2rem;
+}
+
+@media (max-width: 800px) {
+  .layout,
+  .forms-row {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,108 @@
+services:
+  accounts-db:
+    image: postgres:16-alpine
+    container_name: accounts-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${ACCOUNTS_DB_NAME:-accounts_db}
+    volumes:
+      - accounts_db_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${ACCOUNTS_DB_NAME:-accounts_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - fintech-net
+
+  processor-db:
+    image: postgres:16-alpine
+    container_name: processor-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${PROCESSOR_DB_NAME:-processor_db}
+    volumes:
+      - processor_db_data:/var/lib/postgresql/data
+    ports:
+      - "5434:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${PROCESSOR_DB_NAME:-processor_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - fintech-net
+
+  accounts-service:
+    build: ./accounts-service
+    container_name: accounts-service
+    restart: unless-stopped
+    environment:
+      ACCOUNTS_DATABASE_URL: ${ACCOUNTS_DATABASE_URL}
+    ports:
+      - "8011:8001"
+    depends_on:
+      accounts-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health/live')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - fintech-net
+
+  processor-service:
+    build: ./processor-service
+    container_name: processor-service
+    restart: unless-stopped
+    environment:
+      PROCESSOR_DATABASE_URL: ${PROCESSOR_DATABASE_URL}
+      ACCOUNTS_SERVICE_URL: ${ACCOUNTS_SERVICE_URL}
+      RECONCILIATION_INTERVAL_SECONDS: ${RECONCILIATION_INTERVAL_SECONDS:-30}
+      PENDING_TIMEOUT_SECONDS: ${PENDING_TIMEOUT_SECONDS:-60}
+    ports:
+      - "8012:8002"
+    depends_on:
+      processor-db:
+        condition: service_healthy
+      accounts-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8002/health/live')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - fintech-net
+
+  frontend:
+    build: ./frontend
+    container_name: fintech-frontend
+    restart: unless-stopped
+    environment:
+      VITE_ACCOUNTS_API_URL: http://localhost:8011
+      VITE_PROCESSOR_API_URL: http://localhost:8012
+    ports:
+      - "5173:5173"
+    depends_on:
+      - accounts-service
+      - processor-service
+    networks:
+      - fintech-net
+
+networks:
+  fintech-net:
+    driver: bridge
+
+volumes:
+  accounts_db_data:
+  processor_db_data:
