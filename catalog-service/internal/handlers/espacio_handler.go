@@ -8,6 +8,7 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"github.com/i0dk1/OfficeSpace/catalog-service/internal/apperror"
+	"github.com/i0dk1/OfficeSpace/catalog-service/internal/middleware"
 	"github.com/i0dk1/OfficeSpace/catalog-service/internal/models"
 	"github.com/i0dk1/OfficeSpace/catalog-service/internal/services"
 )
@@ -95,7 +96,7 @@ func (h *EspacioHandler) Crear(w http.ResponseWriter, r *http.Request) {
 		apperror.Escribir(w, err)
 		return
 	}
-	espacio, err := h.svc.Crear(r.Context(), req)
+	espacio, err := h.svc.Crear(r.Context(), req, actorDe(r))
 	if err != nil {
 		apperror.Escribir(w, err)
 		return
@@ -127,7 +128,7 @@ func (h *EspacioHandler) Actualizar(w http.ResponseWriter, r *http.Request) {
 		apperror.Escribir(w, err)
 		return
 	}
-	espacio, err := h.svc.Actualizar(r.Context(), id, req)
+	espacio, err := h.svc.Actualizar(r.Context(), id, req, actorDe(r))
 	if err != nil {
 		apperror.Escribir(w, err)
 		return
@@ -151,11 +152,20 @@ func (h *EspacioHandler) Eliminar(w http.ResponseWriter, r *http.Request) {
 		apperror.Escribir(w, err)
 		return
 	}
-	if err := h.svc.Eliminar(r.Context(), id); err != nil {
+	if err := h.svc.Eliminar(r.Context(), id, actorDe(r)); err != nil {
 		apperror.Escribir(w, err)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// actorDe extrae el email del usuario autenticado para registrar la autoría de la
+// acción en la notificación. Devuelve "" si no hay claims (p. ej. en pruebas).
+func actorDe(r *http.Request) string {
+	if claims, ok := middleware.ClaimsDesdeContexto(r.Context()); ok {
+		return claims.Subject
+	}
+	return ""
 }
 
 func idDeRuta(r *http.Request) (int, error) {
