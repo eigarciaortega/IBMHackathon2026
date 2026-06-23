@@ -1,4 +1,4 @@
-# 🏢 OfficeSpace - Gestión Híbrida Inteligente
+#  OfficeSpace - Gestión Híbrida Inteligente
 
 Sistema de gestión de espacios de trabajo para empresas con modelo híbrido (presencial/remoto). Permite reservar salas de juntas y escritorios individuales de manera eficiente, evitando conflictos de horarios y optimizando el uso de espacios.
 
@@ -8,7 +8,7 @@ Sistema de gestión de espacios de trabajo para empresas con modelo híbrido (pr
 
 ---
 
-## 📋 Tabla de Contenidos
+##  Tabla de Contenidos
 
 - [Características Principales](#-características-principales)
 - [Arquitectura del Sistema](#-arquitectura-del-sistema)
@@ -23,37 +23,37 @@ Sistema de gestión de espacios de trabajo para empresas con modelo híbrido (pr
 
 ---
 
-## ✨ Características Principales
+##  Características Principales
 
 ### Para Colaboradores
-- 🔍 **Búsqueda Inteligente:** Encuentra espacios disponibles con filtros avanzados (fecha, hora, tipo, capacidad, piso)
-- 📅 **Reservas Rápidas:** Proceso de reserva en 3 pasos con confirmación inmediata
-- 📊 **Mis Reservas:** Visualiza y gestiona tu historial de reservas
-- ❌ **Cancelación Flexible:** Cancela reservas futuras con un clic
+-  **Búsqueda Inteligente:** Encuentra espacios disponibles con filtros avanzados (fecha, hora, tipo, capacidad, piso)
+-  **Reservas Rápidas:** Proceso de reserva en 3 pasos con confirmación inmediata
+-  **Mis Reservas:** Visualiza y gestiona tu historial de reservas
+-  **Cancelación Flexible:** Cancela reservas futuras con un clic
 
 ### Para Administradores
-- 🏗️ **Gestión de Espacios:** CRUD completo de salas y escritorios
-- 📈 **Dashboard en Tiempo Real:** Visualiza ocupación actual y estadísticas
-- 📊 **Analytics:** Métricas de uso por tipo, piso y estado
-- 👥 **Vista de Espacios:** Monitoreo detallado de todos los espacios
+-**Gestión de Espacios:** CRUD completo de salas y escritorios
+-  **Dashboard en Tiempo Real:** Visualiza ocupación actual y estadísticas
+-  **Analytics:** Métricas de uso por tipo, piso y estado
+-  **Vista de Espacios:** Monitoreo detallado de todos los espacios
 
 ### Validaciones Críticas
-- ✅ **Prevención de Solapamientos:** Imposible reservar un espacio ya ocupado
-- ✅ **Validación de Capacidad:** No exceder el límite de personas por espacio
-- ✅ **Validación Temporal:** No permitir reservas en el pasado o con horarios inválidos
-- ✅ **Control de Acceso:** Autenticación JWT y autorización por roles
+-  **Prevención de Solapamientos:** Imposible reservar un espacio ya ocupado
+-  **Validación de Capacidad:** No exceder el límite de personas por espacio
+-  **Validación Temporal:** No permitir reservas en el pasado o con horarios inválidos
+-  **Control de Acceso:** Autenticación JWT y autorización por roles
 
 ---
 
-## 🏗️ Arquitectura del Sistema
+## Arquitectura del Sistema
 
 ### Decisión Arquitectónica: Microservicios con Base de Datos Compartida
 
 Implementamos una **arquitectura híbrida de microservicios** que balancea:
-- ✅ Separación de responsabilidades por dominio
-- ✅ Despliegue independiente de servicios
-- ✅ Simplicidad en transacciones (DB compartida)
-- ✅ Escalabilidad horizontal
+-  Separación de responsabilidades por dominio
+-  Despliegue independiente de servicios
+-  Simplicidad en transacciones (DB compartida)
+-  Escalabilidad horizontal
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -96,7 +96,7 @@ Implementamos una **arquitectura híbrida de microservicios** que balancea:
 
 ---
 
-## 📦 Requisitos Previos
+##  Requisitos Previos
 
 Antes de comenzar, asegúrate de tener instalado:
 
@@ -115,7 +115,7 @@ docker-compose --version  # Debe mostrar 2.x.x o superior
 
 ---
 
-## 🚀 Instalación y Configuración
+##  Instalación y Configuración
 
 ### Opción 1: Instalación Rápida con Docker (Recomendado)
 
@@ -178,7 +178,7 @@ start http://localhost:5173  # Windows
 
 ---
 
-## 👤 Uso del Sistema
+##  Uso del Sistema
 
 ### Credenciales de Prueba
 
@@ -267,7 +267,7 @@ Permisos: Buscar, reservar y gestionar sus propias reservas
 
 ---
 
-## 📚 Documentación de API
+##  Documentación de API
 
 ### Swagger UI (Documentación Interactiva)
 
@@ -378,7 +378,7 @@ Content-Type: application/json
 
 ---
 
-## 🧪 Testing
+##  Testing
 
 ### Casos de Prueba Documentados
 
@@ -389,7 +389,7 @@ Hemos documentado 10 casos de prueba críticos que cubren:
 - CRUD de espacios
 - Seguridad y permisos
 
-📄 **Ver documento completo:** [docs/CASOS_DE_PRUEBA.md](docs/CASOS_DE_PRUEBA.md)
+**Ver documento completo:** [docs/CASOS_DE_PRUEBA.md](docs/CASOS_DE_PRUEBA.md)
 
 ### Ejecutar Pruebas Manuales
 
@@ -414,52 +414,51 @@ Importa la colección de Postman para probar la API:
 
 Escenarios críticos en formato Gherkin:
 
-📄 **Ver documento:** [docs/ESCENARIOS_GHERKIN.md](docs/ESCENARIOS_GHERKIN.md)
+ **Ver documento:** [docs/ESCENARIOS_GHERKIN.md](docs/ESCENARIOS_GHERKIN.md)
 
 ---
 
-## 🤔 Decisiones Técnicas
+## Decisiones Técnicas
 
 ### ¿Por qué Microservicios con DB Compartida?
 
 **Ventajas:**
-- ✅ Separación clara de responsabilidades por dominio
-- ✅ Despliegue y escalado independiente de servicios
-- ✅ Transacciones más simples (sin distributed transactions)
-- ✅ Menor complejidad operacional para un MVP
-- ✅ Facilita el debugging y desarrollo
+-  Separación clara de responsabilidades por dominio
+-  Despliegue y escalado independiente de servicios
+-  Transacciones más simples (sin distributed transactions)
+-  Menor complejidad operacional para un MVP
+-  Facilita el debugging y desarrollo
 
 **Trade-offs Aceptados:**
-- ⚠️ Acoplamiento a nivel de base de datos
-- ⚠️ Requiere coordinación en cambios de esquema
-- ⚠️ No es la arquitectura ideal para escala masiva
+-  Acoplamiento a nivel de base de datos
+-  Requiere coordinación en cambios de esquema
+-  No es la arquitectura ideal para escala masiva
 
-**Justificación:** Para un MVP de hackathon, priorizamos velocidad de desarrollo y simplicidad operacional sobre la pureza arquitectónica. En producción, se podría migrar a DB por servicio.
 
 ### ¿Por qué MongoDB?
 
-- ✅ Flexibilidad de esquema (útil para iteración rápida)
-- ✅ Fácil de configurar con Docker
-- ✅ Buen rendimiento para lecturas
-- ✅ Documentos JSON nativos (match con REST APIs)
+-  Flexibilidad de esquema (útil para iteración rápida)
+-  Fácil de configurar con Docker
+-  Buen rendimiento para lecturas
+-  Documentos JSON nativos (match con REST APIs)
 
 ### ¿Por qué React + Vite?
 
-- ✅ Hot Module Replacement ultra-rápido
-- ✅ Ecosistema maduro y amplia comunidad
-- ✅ Componentes reutilizables
-- ✅ Excelente experiencia de desarrollo
+-  Hot Module Replacement ultra-rápido
+-  Ecosistema maduro y amplia comunidad
+-  Componentes reutilizables
+-  Excelente experiencia de desarrollo
 
 ### ¿Por qué JWT para Autenticación?
 
-- ✅ Stateless (no requiere sesiones en servidor)
-- ✅ Fácil de implementar en microservicios
-- ✅ Incluye información del usuario (rol, email)
-- ✅ Estándar de la industria
+-  Stateless (no requiere sesiones en servidor)
+-  Fácil de implementar en microservicios
+-  Incluye información del usuario (rol, email)
+-  Estándar de la industria
 
 ---
 
-## 📁 Estructura del Proyecto
+##  Estructura del Proyecto
 
 ```
 officespace/
@@ -519,7 +518,7 @@ officespace/
 
 ---
 
-## 🤝 Contribución
+##  Contribución
 
 ### Reportar Bugs
 
@@ -541,28 +540,6 @@ Las pull requests son bienvenidas. Para cambios mayores:
 
 ---
 
-## 📄 Licencia
-
-Este proyecto está bajo la Licencia MIT. Ver archivo `LICENSE` para más detalles.
-
----
-
-## 👥 Equipo
-
-Desarrollado con ❤️ por el equipo OfficeSpace para el Hackathon 2026.
-
----
-
-## 📞 Soporte
-
-¿Necesitas ayuda? Contáctanos:
-- **Email:** support@officespace.com
-- **Issues:** [GitHub Issues](https://github.com/tu-usuario/officespace/issues)
-- **Documentación:** [Wiki](https://github.com/tu-usuario/officespace/wiki)
-
----
-
-## 🎯 Roadmap
 
 ### Versión 1.1 (Próxima)
 - [ ] Notificaciones push en tiempo real
@@ -578,4 +555,4 @@ Desarrollado con ❤️ por el equipo OfficeSpace para el Hackathon 2026.
 
 ---
 
-**¡Gracias por usar OfficeSpace! 🚀**
+**¡Gracias por usar OfficeSpace! **
