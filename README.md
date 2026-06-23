@@ -1,3 +1,5 @@
+ESCENARIO 1
+
 Contexto del escenario 
 El cliente llamado Corporativo Alpha es una empresa multinacional que esta transicionando a un método de trabajo hibrido, es decir su operación será de manera presencial y remota
 Actualmente gestiona la reserva  de salas de juntas y espacios de trabajo “Hot Desks” mediante un archivo de Excel compartido, esto ha causado una serie de problemas:
