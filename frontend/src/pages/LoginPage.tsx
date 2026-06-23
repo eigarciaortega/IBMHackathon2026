@@ -13,6 +13,12 @@ const VENTAJAS = [
   'Ocupación del día a la vista',
 ]
 
+// Cuentas de la semilla; un clic autocompleta el formulario para agilizar la demo.
+const CUENTAS_PRUEBA = [
+  { email: 'admin@corporativoalpha.com', password: 'Admin123', rol: 'Administrador' },
+  { email: 'carlos.mendez@corporativoalpha.com', password: 'User123', rol: 'Colaborador' },
+] as const
+
 export function LoginPage() {
   const { login } = useAuth()
   const navigate = useNavigate()
@@ -37,6 +43,12 @@ export function LoginPage() {
     } finally {
       setEnviando(false)
     }
+  }
+
+  function usarCuenta(cuenta: (typeof CUENTAS_PRUEBA)[number]) {
+    setEmail(cuenta.email)
+    setPassword(cuenta.password)
+    setError(null)
   }
 
   return (
@@ -157,10 +169,27 @@ export function LoginPage() {
           </form>
 
           <div className="mt-8 rounded-[0.625rem] border border-border bg-surface-muted px-4 py-3.5">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">Cuentas de prueba</p>
-            <ul className="space-y-1 font-mono text-xs text-body">
-              <li>admin@corporativoalpha.com · Admin123</li>
-              <li>carlos.mendez@corporativoalpha.com · User123</li>
+            <p className="mb-2 flex items-baseline justify-between gap-2 text-xs font-semibold uppercase tracking-wide text-muted">
+              Cuentas de prueba
+              <span className="font-normal normal-case tracking-normal text-muted/80">Toca para autocompletar</span>
+            </p>
+            <ul className="-mx-1.5 space-y-0.5">
+              {CUENTAS_PRUEBA.map((c) => (
+                <li key={c.email}>
+                  <button
+                    type="button"
+                    onClick={() => usarCuenta(c)}
+                    aria-label={`Autocompletar con la cuenta de ${c.rol}: ${c.email}`}
+                    className="flex w-full items-center justify-between gap-3 rounded-md px-1.5 py-1.5 text-left transition-colors hover:bg-surface focus-visible:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-azul/40"
+                  >
+                    <span className="min-w-0">
+                      <span className="block truncate font-mono text-xs text-body">{c.email}</span>
+                      <span className="font-mono text-[0.7rem] text-muted">{c.password}</span>
+                    </span>
+                    <span className="pill shrink-0 bg-azul-soft text-azul">{c.rol}</span>
+                  </button>
+                </li>
+              ))}
             </ul>
           </div>
 
