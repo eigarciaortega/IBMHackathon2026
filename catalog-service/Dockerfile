@@ -19,6 +19,6 @@ COPY --from=build /bin/catalog-service /usr/local/bin/catalog-service
 
 EXPOSE 8082
 HEALTHCHECK --interval=10s --timeout=3s --retries=5 \
-  CMD wget -q -O /dev/null http://localhost:8082/health || exit 1
+  CMD wget -q -O /dev/null http://127.0.0.1:8082/health || exit 1
 
 ENTRYPOINT ["catalog-service"]
