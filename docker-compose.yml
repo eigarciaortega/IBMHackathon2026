@@ -1,0 +1,37 @@
+# Orquestación local de desarrollo.
+# En la Fase 0 solo se levanta PostgreSQL; los microservicios Go y el frontend
+# se agregan en la Fase 6. La base carga su esquema y semilla desde
+# shared-infra/init-db.sql al inicializarse el contenedor por primera vez.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: officespace-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      TZ: ${TZ:-America/Mexico_City}
+      PGTZ: ${TZ:-America/Mexico_City}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # El esquema, índices, restricción anti-solapamiento y semilla viven aquí.
+      # Solo se ejecuta cuando el volumen de datos está vacío (primer arranque).
+      - ./shared-infra/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - officespace
+
+volumes:
+  pgdata:
+
+networks:
+  officespace:
+    driver: bridge
