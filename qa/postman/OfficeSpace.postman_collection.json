@@ -1,0 +1,399 @@
+{
+  "info": {
+    "name": "OfficeSpace — Contrato y casos de QA",
+    "description": "Colección Newman que valida el contrato de la API y cubre las clases de bugs del brief: solapamiento no detectado, capacidad sin validar, status code incorrecto en conflicto (409 vs 200), endpoints sin autenticación y borrado de reservas ajenas. La colección es autocontenida y re-ejecutable: crea su propio espacio y limpia lo que genera.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Fechas relativas para que los casos no queden en el pasado.",
+          "function ymd(d){const p=n=>String(n).padStart(2,'0');return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`;}",
+          "const manana=new Date();manana.setDate(manana.getDate()+1);",
+          "const ayer=new Date();ayer.setDate(ayer.getDate()-1);",
+          "pm.collectionVariables.set('manana', ymd(manana));",
+          "pm.collectionVariables.set('ayer', ymd(ayer));"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    { "key": "auth_url", "value": "http://localhost:8081" },
+    { "key": "catalog_url", "value": "http://localhost:8082" },
+    { "key": "booking_url", "value": "http://localhost:8083" }
+  ],
+  "item": [
+    {
+      "name": "Auth — login admin (200)",
+      "event": [
+        { "listen": "test", "script": { "exec": [
+          "pm.test('200', () => pm.response.to.have.status(200));",
+          "const j = pm.response.json();",
+          "pm.test('devuelve token y rol ADMIN', () => { pm.expect(j.token).to.be.a('string'); pm.expect(j.rol).to.eql('ADMINISTRADOR'); });",
+          "pm.collectionVariables.set('admin_token', j.token);"
+        ], "type": "text/javascript" } }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{auth_url}}/auth/login",
+        "body": { "mode": "raw", "raw": "{\"email\":\"admin@corporativoalpha.com\",\"password\":\"Admin123\"}" }
+      }
+    },
+    {
+      "name": "Auth — login colaborador Carlos (200)",
+      "event": [
+        { "listen": "test", "script": { "exec": [
+          "pm.test('200', () => pm.response.to.have.status(200));",
+          "const j = pm.response.json();",
+          "pm.test('rol COLABORADOR', () => pm.expect(j.rol).to.eql('COLABORADOR'));",
+          "pm.collectionVariables.set('carlos_token', j.token);"
+        ], "type": "text/javascript" } }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{auth_url}}/auth/login",
+        "body": { "mode": "raw", "raw": "{\"email\":\"carlos.mendez@corporativoalpha.com\",\"password\":\"User123\"}" }
+      }
+    },
+    {
+      "name": "Auth — login colaborador Ana (200)",
+      "event": [
+        { "listen": "test", "script": { "exec": [
+          "pm.test('200', () => pm.response.to.have.status(200));",
+          "pm.collectionVariables.set('ana_token', pm.response.json().token);"
+        ], "type": "text/javascript" } }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{auth_url}}/auth/login",
+        "body": { "mode": "raw", "raw": "{\"email\":\"ana.torres@corporativoalpha.com\",\"password\":\"User123\"}" }
+      }
+    },
+    {
+      "name": "Auth — credenciales inválidas (401)",
+      "event": [
+        { "listen": "test", "script": { "exec": [
+          "pm.test('401', () => pm.response.to.have.status(401));",
+          "pm.test('código CREDENCIALES_INVALIDAS', () => pm.expect(pm.response.json().error.codigo).to.eql('CREDENCIALES_INVALIDAS'));"
+        ], "type": "text/javascript" } }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{auth_url}}/auth/login",
+        "body": { "mode": "raw", "raw": "{\"email\":\"admin@corporativoalpha.com\",\"password\":\"incorrecta\"}" }
+      }
+    },
+    {
+      "name": "Catalog — listar sin token (401) [bug: endpoint sin auth]",
+      "event": [
+        { "listen": "test", "script": { "exec": [
+          "pm.test('401 sin token', () => pm.response.to.have.status(401));"
+        ], "type": "text/javascript" } }
+      ],
+      "request": { "method": "GET", "url": "{{catalog_url}}/spaces" }
+    },
+    {
+      "name": "Catalog — listar con token (200)",
+      "event": [
+        { "listen": "test", "script": { "exec": [
+          "pm.test('200', () => pm.response.to.have.status(200));",
+          "pm.test('devuelve un arreglo', () => pm.expect(pm.response.json()).to.be.an('array'));"
+        ], "type": "text/javascript" } }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{carlos_token}}" }],
+        "url": "{{catalog_url}}/spaces"
+      }
+    },
+    {
+      "name": "Catalog — filtro tipo=DESK y capacidad_min=1 (200)",
+      "event": [
+        { "listen": "test", "script": { "exec": [
+          "pm.test('200', () => pm.response.to.have.status(200));",
+          "const j = pm.response.json();",
+          "pm.test('todos son DESK', () => j.forEach(e => pm.expect(e.tipo).to.eql('DESK')));",
+          "pm.test('capacidad >= 1', () => j.forEach(e => pm.expect(e.capacidad).to.be.at.least(1)));"
+        ], "type": "text/javascript" } }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{carlos_token}}" }],
+        "url": "{{catalog_url}}/spaces?tipo=DESK&capacidad_min=1"
+      }
+    },
+    {
+      "name": "Catalog — crear espacio como COLABORADOR (403) [bug: permisos]",
+      "event": [
+        { "listen": "test", "script": { "exec": [
+          "pm.test('403', () => pm.response.to.have.status(403));",
+          "pm.test('código ACCESO_DENEGADO', () => pm.expect(pm.response.json().error.codigo).to.eql('ACCESO_DENEGADO'));"
+        ], "type": "text/javascript" } }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{carlos_token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": "{{catalog_url}}/spaces",
+        "body": { "mode": "raw", "raw": "{\"nombre\":\"Intento Colaborador\",\"tipo\":\"SALA\",\"capacidad\":4}" }
+      }
+    },
+    {
+      "name": "Catalog — crear espacio como ADMIN (201)",
+      "event": [
+        { "listen": "test", "script": { "exec": [
+          "pm.test('201', () => pm.response.to.have.status(201));",
+          "const j = pm.response.json();",
+          "pm.test('devuelve id y capacidad', () => { pm.expect(j.id).to.be.a('number'); pm.expect(j.capacidad).to.eql(6); });",
+          "pm.collectionVariables.set('espacio_qa', j.id);"
+        ], "type": "text/javascript" } }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": "{{catalog_url}}/spaces",
+        "body": { "mode": "raw", "raw": "{\"nombre\":\"Sala QA Newman\",\"tipo\":\"SALA\",\"capacidad\":6,\"tiene_proyector\":true,\"tiene_aire\":false,\"piso\":\"QA\"}" }
+      }
+    },
+    {
+      "name": "Catalog — crear espacio tipo inválido (400)",
+      "event": [
+        { "listen": "test", "script": { "exec": [
+          "pm.test('400', () => pm.response.to.have.status(400));",
+          "pm.test('código TIPO_INVALIDO', () => pm.expect(pm.response.json().error.codigo).to.eql('TIPO_INVALIDO'));"
+        ], "type": "text/javascript" } }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": "{{catalog_url}}/spaces",
+        "body": { "mode": "raw", "raw": "{\"nombre\":\"X\",\"tipo\":\"OFICINA\",\"capacidad\":2}" }
+      }
+    },
+    {
+      "name": "Booking — crear reserva sin token (401) [bug: endpoint sin auth]",
+      "event": [
+        { "listen": "test", "script": { "exec": [
+          "pm.test('401 sin token', () => pm.response.to.have.status(401));"
+        ], "type": "text/javascript" } }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{booking_url}}/bookings",
+        "body": { "mode": "raw", "raw": "{\"espacio_id\":{{espacio_qa}},\"fecha\":\"{{manana}}\",\"hora_inicio\":\"16:00\",\"hora_fin\":\"17:00\",\"asistentes\":2}" }
+      }
+    },
+    {
+      "name": "Booking — reserva válida (201)",
+      "event": [
+        { "listen": "test", "script": { "exec": [
+          "pm.test('201', () => pm.response.to.have.status(201));",
+          "const j = pm.response.json();",
+          "pm.test('estado CONFIRMADA', () => pm.expect(j.estado).to.eql('CONFIRMADA'));",
+          "pm.collectionVariables.set('reserva_qa', j.id);"
+        ], "type": "text/javascript" } }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{carlos_token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": "{{booking_url}}/bookings",
+        "body": { "mode": "raw", "raw": "{\"espacio_id\":{{espacio_qa}},\"fecha\":\"{{manana}}\",\"hora_inicio\":\"16:00\",\"hora_fin\":\"17:00\",\"asistentes\":4}" }
+      }
+    },
+    {
+      "name": "Booking — reserva solapada (409) [bug: solapamiento + status code]",
+      "event": [
+        { "listen": "test", "script": { "exec": [
+          "pm.test('NO es 200/201 (no debe aceptar el solape)', () => pm.expect(pm.response.code).to.not.be.oneOf([200,201]));",
+          "pm.test('es 409 Conflict', () => pm.response.to.have.status(409));",
+          "pm.test('código RESERVA_SOLAPADA', () => pm.expect(pm.response.json().error.codigo).to.eql('RESERVA_SOLAPADA'));"
+        ], "type": "text/javascript" } }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{carlos_token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": "{{booking_url}}/bookings",
+        "body": { "mode": "raw", "raw": "{\"espacio_id\":{{espacio_qa}},\"fecha\":\"{{manana}}\",\"hora_inicio\":\"16:30\",\"hora_fin\":\"17:30\",\"asistentes\":2}" }
+      }
+    },
+    {
+      "name": "Booking — abrazo: envuelve a la existente (409) [bug: solapamiento]",
+      "event": [
+        { "listen": "test", "script": { "exec": [
+          "pm.test('409', () => pm.response.to.have.status(409));"
+        ], "type": "text/javascript" } }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{carlos_token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": "{{booking_url}}/bookings",
+        "body": { "mode": "raw", "raw": "{\"espacio_id\":{{espacio_qa}},\"fecha\":\"{{manana}}\",\"hora_inicio\":\"15:00\",\"hora_fin\":\"18:00\",\"asistentes\":2}" }
+      }
+    },
+    {
+      "name": "Booking — reserva consecutiva, límites exclusivos (201)",
+      "event": [
+        { "listen": "test", "script": { "exec": [
+          "pm.test('201 (17:00-18:00 tras 16:00-17:00 no solapa)', () => pm.response.to.have.status(201));",
+          "pm.collectionVariables.set('reserva_consec_qa', pm.response.json().id);"
+        ], "type": "text/javascript" } }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{carlos_token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": "{{booking_url}}/bookings",
+        "body": { "mode": "raw", "raw": "{\"espacio_id\":{{espacio_qa}},\"fecha\":\"{{manana}}\",\"hora_inicio\":\"17:00\",\"hora_fin\":\"18:00\",\"asistentes\":2}" }
+      }
+    },
+    {
+      "name": "Booking — capacidad excedida (400) [bug: capacidad sin validar]",
+      "event": [
+        { "listen": "test", "script": { "exec": [
+          "pm.test('400', () => pm.response.to.have.status(400));",
+          "pm.test('código CAPACIDAD_EXCEDIDA', () => pm.expect(pm.response.json().error.codigo).to.eql('CAPACIDAD_EXCEDIDA'));"
+        ], "type": "text/javascript" } }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{carlos_token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": "{{booking_url}}/bookings",
+        "body": { "mode": "raw", "raw": "{\"espacio_id\":{{espacio_qa}},\"fecha\":\"{{manana}}\",\"hora_inicio\":\"08:00\",\"hora_fin\":\"09:00\",\"asistentes\":99}" }
+      }
+    },
+    {
+      "name": "Booking — fecha en el pasado (400)",
+      "event": [
+        { "listen": "test", "script": { "exec": [
+          "pm.test('400', () => pm.response.to.have.status(400));",
+          "pm.test('código FECHA_PASADA', () => pm.expect(pm.response.json().error.codigo).to.eql('FECHA_PASADA'));"
+        ], "type": "text/javascript" } }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{carlos_token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": "{{booking_url}}/bookings",
+        "body": { "mode": "raw", "raw": "{\"espacio_id\":{{espacio_qa}},\"fecha\":\"{{ayer}}\",\"hora_inicio\":\"09:00\",\"hora_fin\":\"10:00\",\"asistentes\":2}" }
+      }
+    },
+    {
+      "name": "Booking — fin <= inicio (400)",
+      "event": [
+        { "listen": "test", "script": { "exec": [
+          "pm.test('400', () => pm.response.to.have.status(400));",
+          "pm.test('código HORARIO_INVALIDO', () => pm.expect(pm.response.json().error.codigo).to.eql('HORARIO_INVALIDO'));"
+        ], "type": "text/javascript" } }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{carlos_token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": "{{booking_url}}/bookings",
+        "body": { "mode": "raw", "raw": "{\"espacio_id\":{{espacio_qa}},\"fecha\":\"{{manana}}\",\"hora_inicio\":\"10:00\",\"hora_fin\":\"09:00\",\"asistentes\":2}" }
+      }
+    },
+    {
+      "name": "Booking — disponibilidad de un slot ocupado (disponible=false)",
+      "event": [
+        { "listen": "test", "script": { "exec": [
+          "pm.test('200', () => pm.response.to.have.status(200));",
+          "pm.test('disponible=false', () => pm.expect(pm.response.json().disponible).to.eql(false));"
+        ], "type": "text/javascript" } }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{carlos_token}}" }],
+        "url": "{{booking_url}}/bookings/availability?espacio_id={{espacio_qa}}&fecha={{manana}}&inicio=16:00&fin=17:00"
+      }
+    },
+    {
+      "name": "Booking — cancelar reserva ajena (403) [bug: borrado ajeno]",
+      "event": [
+        { "listen": "test", "script": { "exec": [
+          "pm.test('403', () => pm.response.to.have.status(403));",
+          "pm.test('código ACCESO_DENEGADO', () => pm.expect(pm.response.json().error.codigo).to.eql('ACCESO_DENEGADO'));"
+        ], "type": "text/javascript" } }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [{ "key": "Authorization", "value": "Bearer {{ana_token}}" }],
+        "url": "{{booking_url}}/bookings/{{reserva_qa}}"
+      }
+    },
+    {
+      "name": "Booking — cancelar reserva propia (200)",
+      "event": [
+        { "listen": "test", "script": { "exec": [
+          "pm.test('200', () => pm.response.to.have.status(200));",
+          "pm.test('estado CANCELADA', () => pm.expect(pm.response.json().estado).to.eql('CANCELADA'));"
+        ], "type": "text/javascript" } }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [{ "key": "Authorization", "value": "Bearer {{carlos_token}}" }],
+        "url": "{{booking_url}}/bookings/{{reserva_qa}}"
+      }
+    },
+    {
+      "name": "Limpieza — cancelar reserva consecutiva",
+      "event": [
+        { "listen": "test", "script": { "exec": [
+          "pm.test('200', () => pm.response.to.have.status(200));"
+        ], "type": "text/javascript" } }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [{ "key": "Authorization", "value": "Bearer {{carlos_token}}" }],
+        "url": "{{booking_url}}/bookings/{{reserva_consec_qa}}"
+      }
+    },
+    {
+      "name": "Limpieza — eliminar espacio de QA (204)",
+      "event": [
+        { "listen": "test", "script": { "exec": [
+          "pm.test('204', () => pm.response.to.have.status(204));"
+        ], "type": "text/javascript" } }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+        "url": "{{catalog_url}}/spaces/{{espacio_qa}}"
+      }
+    }
+  ]
+}
