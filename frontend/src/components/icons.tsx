@@ -137,15 +137,18 @@ export const IconInfo = (p: P) => (
   </Base>
 )
 
-// Marca: glifo de cuadrícula (salas y escritorios).
-export const Logo = (p: P) => (
-  <svg width="28" height="28" viewBox="0 0 32 32" aria-hidden="true" {...p}>
-    <rect width="32" height="32" rx="7" fill="currentColor" />
-    <g fill="#ffffff">
-      <rect x="7" y="7" width="7" height="7" rx="1.5" />
-      <rect x="18" y="7" width="7" height="7" rx="1.5" />
-      <rect x="7" y="18" width="7" height="7" rx="1.5" />
-      <rect x="18" y="18" width="7" height="7" rx="1.5" fill="#e0a45a" />
-    </g>
-  </svg>
-)
+// Marca: franjas de una jornada reservada (evoca la pista de ocupación). El tono
+// 'marca' (azul) va sobre fondos claros; 'claro' (azulejo blanco) sobre fondos
+// oscuros como el panel del login.
+export const Logo = ({ tono = 'marca', ...p }: P & { tono?: 'marca' | 'claro' }) => {
+  const azulejo = tono === 'claro' ? '#ffffff' : '#1b50b3'
+  const franja = tono === 'claro' ? '#1b50b3' : '#ffffff'
+  return (
+    <svg width="28" height="28" viewBox="0 0 32 32" aria-hidden="true" {...p}>
+      <rect width="32" height="32" rx="8" fill={azulejo} />
+      <rect x="7" y="9" width="13" height="3.6" rx="1.8" fill={franja} />
+      <rect x="12" y="14.2" width="13" height="3.6" rx="1.8" fill="#f0a64e" />
+      <rect x="7" y="19.4" width="9" height="3.6" rx="1.8" fill={franja} fillOpacity="0.85" />
+    </svg>
+  )
+}

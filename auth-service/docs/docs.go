@@ -100,7 +100,7 @@ const docTemplate = `{
         },
         "/health": {
             "get": {
-                "description": "Indica si el servicio está operativo (usado por docker-compose y Dokploy).",
+                "description": "Indica si el servicio está operativo (usado por los healthchecks de docker-compose).",
                 "produces": [
                     "application/json"
                 ],

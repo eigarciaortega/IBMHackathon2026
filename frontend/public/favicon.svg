@@ -1,9 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="OfficeSpace">
-  <rect width="32" height="32" rx="7" fill="#1b50b3"/>
-  <g fill="#ffffff">
-    <rect x="7" y="7" width="7" height="7" rx="1.5"/>
-    <rect x="18" y="7" width="7" height="7" rx="1.5"/>
-    <rect x="7" y="18" width="7" height="7" rx="1.5"/>
-    <rect x="18" y="18" width="7" height="7" rx="1.5" fill="#e0a45a"/>
-  </g>
+  <rect width="32" height="32" rx="8" fill="#1b50b3"/>
+  <!-- Franjas de una jornada reservada (evoca la pista de ocupación). -->
+  <rect x="7" y="9"  width="13" height="3.6" rx="1.8" fill="#ffffff"/>
+  <rect x="12" y="14.2" width="13" height="3.6" rx="1.8" fill="#f0a64e"/>
+  <rect x="7" y="19.4" width="9" height="3.6" rx="1.8" fill="#ffffff" fill-opacity="0.85"/>
 </svg>
