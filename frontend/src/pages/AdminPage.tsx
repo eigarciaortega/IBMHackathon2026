@@ -288,7 +288,7 @@ function Stat({
     <div className="card p-4">
       <div className="flex items-center justify-between">
         <span className="text-sm text-muted">{etiqueta}</span>
-        <span className={`grid size-8 place-items-center rounded-full ${acento ? 'bg-ambar-soft text-aviso' : 'bg-pino-soft text-pino'}`}>
+        <span className={`grid size-8 place-items-center rounded-full ${acento ? 'bg-ambar-soft text-aviso' : 'bg-azul-soft text-azul'}`}>
           {icono}
         </span>
       </div>

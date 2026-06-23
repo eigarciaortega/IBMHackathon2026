@@ -175,11 +175,11 @@ function CasillaRecurso({
 }) {
   return (
     <label className={`flex cursor-pointer items-center gap-2.5 rounded-[0.5rem] border px-3 py-2.5 text-sm transition-colors ${
-      activo ? 'border-pino bg-pino-soft text-pino-strong' : 'border-border-strong bg-surface text-body hover:bg-surface-muted'
+      activo ? 'border-azul bg-azul-soft text-azul-strong' : 'border-border-strong bg-surface text-body hover:bg-surface-muted'
     }`}>
       <input
         type="checkbox"
-        className="size-4 accent-[var(--color-pino)]"
+        className="size-4 accent-[var(--color-azul)]"
         checked={activo}
         onChange={(e) => onChange(e.target.checked)}
       />
