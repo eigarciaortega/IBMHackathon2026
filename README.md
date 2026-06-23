@@ -220,12 +220,24 @@ cd auth-service && go test ./...
 cd catalog-service && go test ./...
 cd booking-service && go test ./...
 
-# Colección de contrato y QA contra el stack local (41 aserciones)
+# Colección de contrato y QA con Node instalado (41 aserciones)
 cd qa/postman
 npx newman run OfficeSpace.postman_collection.json -e OfficeSpace.postman_environment.json
 
 # La misma colección contra la demo en vivo (a través del túnel)
 npx newman run OfficeSpace.postman_collection.json -e OfficeSpace.postman_environment.tunnel.json
+```
+
+¿Sin Node.js? Córrela con la imagen oficial `postman/newman` (no instalas nada):
+
+```bash
+cd qa/postman
+# Stack local, uniéndose a la red interna 'officespace':
+docker run --rm --network officespace -v "$PWD:/etc/newman" postman/newman \
+  run OfficeSpace.postman_collection.json -e OfficeSpace.postman_environment.docker.json
+# Demo en vivo (no requiere la red interna):
+docker run --rm -v "$PWD:/etc/newman" postman/newman \
+  run OfficeSpace.postman_collection.json -e OfficeSpace.postman_environment.tunnel.json
 ```
 
 La colección es autocontenida (crea su propio espacio de prueba, ejerce el contrato

@@ -155,4 +155,5 @@ volumes:
 
 networks:
   officespace:
+    name: officespace
     driver: bridge
