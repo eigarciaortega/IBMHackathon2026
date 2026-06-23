@@ -29,6 +29,9 @@ Se usan dos bases de datos para respetar el principio de "database per service".
 neowallet-p2p-payments/
 ├── accounts-service/
 │   ├── src/
+│   │   ├── controllers/
+│   │   ├── routes/
+│   │   ├── utils/
 │   │   ├── db.js
 │   │   ├── index.js
 │   │   └── swagger.js
@@ -99,7 +102,7 @@ docker compose config
 - `POST /api/transfer`
 - `GET /api/transactions/:user_id`
 
-## Alcance actual: fase 1.1
+## Alcance actual: fase 1.2
 
 Esta fase incluye:
 
@@ -111,11 +114,16 @@ Esta fase incluye:
 - Datos semilla para usuarios.
 - Health checks con conexion real a base de datos.
 - Swagger basico en ambos servicios.
-- Endpoint `GET /accounts/:id` funcional para validar consulta de usuarios.
+- Endpoint `GET /accounts/:id` funcional para consulta de saldos.
+- Endpoint `POST /api/recharge` funcional para recargas simuladas atomicas.
+- Endpoint `POST /accounts/update-balance` funcional para debitos y creditos internos atomicos.
+- Validacion de montos positivos con maximo 2 decimales.
+- Prevencion de saldo negativo en debitos.
+- Bloqueo `SELECT ... FOR UPDATE` para reducir race conditions simples en operaciones de balance.
 - Endpoint `GET /api/transactions/:user_id` preparado para leer historial cuando existan transacciones.
-- Endpoints de recarga, actualizacion de balance y transferencia documentados como placeholders.
+- Endpoint `POST /api/transfer` documentado como placeholder.
 
-## Fuera de alcance en fase 1.1
+## Fuera de alcance en fase 1.2
 
 - Frontend.
 - JWT u OAuth.
@@ -138,4 +146,3 @@ Esta fase incluye:
 - Health checks.
 - Swagger/OpenAPI.
 - Coleccion Postman.
-

@@ -1,8 +1,16 @@
+const errorResponse = {
+  type: "object",
+  properties: {
+    error: { type: "string" },
+    message: { type: "string" }
+  }
+};
+
 const swaggerDocument = {
   openapi: "3.0.3",
   info: {
     title: "NeoWallet Accounts Service API",
-    version: "0.1.0",
+    version: "0.2.0",
     description: "Service for user balances, simulated recharges, and internal balance updates."
   },
   servers: [
@@ -28,6 +36,7 @@ const swaggerDocument = {
     "/accounts/{id}": {
       get: {
         summary: "Get an account balance by user id",
+        description: "Returns account data without modifying balance. The id must be a positive integer.",
         parameters: [
           {
             name: "id",
@@ -36,18 +45,50 @@ const swaggerDocument = {
             schema: {
               type: "integer",
               minimum: 1
-            }
+            },
+            example: 1
           }
         ],
         responses: {
           "200": {
-            description: "Account found"
+            description: "Account found",
+            content: {
+              "application/json": {
+                example: {
+                  id: 1,
+                  name: "Usuario A",
+                  email: "usuario.a@neowallet.com",
+                  balance: "1000.00"
+                }
+              }
+            }
           },
           "400": {
-            description: "Invalid user id"
+            description: "Invalid user id",
+            content: {
+              "application/json": {
+                schema: errorResponse,
+                example: {
+                  error: "invalid_user_id",
+                  message: "User id must be a positive integer."
+                }
+              }
+            }
           },
           "404": {
-            description: "Account not found"
+            description: "Account not found",
+            content: {
+              "application/json": {
+                schema: errorResponse,
+                example: {
+                  error: "user_not_found",
+                  message: "Account was not found."
+                }
+              }
+            }
+          },
+          "500": {
+            description: "Internal server error"
           }
         }
       }
@@ -55,26 +96,70 @@ const swaggerDocument = {
     "/api/recharge": {
       post: {
         summary: "Simulated account recharge",
-        description: "Phase 1.1 endpoint placeholder. Final business logic will be implemented later.",
+        description: "Adds funds to an account using an atomic SQL transaction. Amount must be positive and use at most 2 decimals.",
         requestBody: {
           required: true,
           content: {
             "application/json": {
               schema: {
                 type: "object",
-                required: ["user_id", "amount", "payment_method"],
+                required: ["user_id", "amount"],
                 properties: {
-                  user_id: { type: "integer", example: 1 },
-                  amount: { type: "number", format: "decimal", example: 100.0 },
-                  payment_method: { type: "string", example: "simulated_card" }
+                  user_id: { type: "integer", minimum: 1 },
+                  amount: { type: "number", minimum: 0.01 },
+                  payment_method: { type: "string" }
                 }
+              },
+              example: {
+                user_id: 1,
+                amount: 150.5,
+                payment_method: "SIMULATED_CARD"
               }
             }
           }
         },
         responses: {
-          "501": {
-            description: "Not implemented in phase 1.1"
+          "201": {
+            description: "Recharge completed successfully",
+            content: {
+              "application/json": {
+                example: {
+                  message: "Recharge completed successfully",
+                  user_id: 1,
+                  previous_balance: "1000.00",
+                  amount: "150.50",
+                  new_balance: "1150.50",
+                  payment_method: "SIMULATED_CARD"
+                }
+              }
+            }
+          },
+          "400": {
+            description: "Invalid input or amount",
+            content: {
+              "application/json": {
+                schema: errorResponse,
+                example: {
+                  error: "invalid_amount",
+                  message: "amount is required, must be greater than 0, and can have up to 2 decimals."
+                }
+              }
+            }
+          },
+          "404": {
+            description: "Account not found",
+            content: {
+              "application/json": {
+                schema: errorResponse,
+                example: {
+                  error: "user_not_found",
+                  message: "Account was not found."
+                }
+              }
+            }
+          },
+          "500": {
+            description: "Internal server error"
           }
         }
       }
@@ -82,7 +167,7 @@ const swaggerDocument = {
     "/accounts/update-balance": {
       post: {
         summary: "Internal balance update endpoint",
-        description: "Phase 1.1 endpoint placeholder for processor-service debit and credit operations.",
+        description: "Internal endpoint for processor-service. Supports atomic debit or credit with SELECT FOR UPDATE to reduce race conditions. Debit checks sufficient funds before updating.",
         requestBody: {
           required: true,
           content: {
@@ -91,17 +176,71 @@ const swaggerDocument = {
                 type: "object",
                 required: ["user_id", "amount", "operation"],
                 properties: {
-                  user_id: { type: "integer", example: 1 },
-                  amount: { type: "number", format: "decimal", example: 25.5 },
-                  operation: { type: "string", enum: ["debit", "credit"], example: "debit" }
+                  user_id: { type: "integer", minimum: 1 },
+                  amount: { type: "number", minimum: 0.01 },
+                  operation: { type: "string", enum: ["debit", "credit"] }
                 }
+              },
+              example: {
+                user_id: 1,
+                amount: 100.0,
+                operation: "debit"
               }
             }
           }
         },
         responses: {
-          "501": {
-            description: "Not implemented in phase 1.1"
+          "200": {
+            description: "Balance updated successfully",
+            content: {
+              "application/json": {
+                example: {
+                  message: "Balance updated successfully",
+                  user_id: 1,
+                  operation: "debit",
+                  previous_balance: "1000.00",
+                  amount: "100.00",
+                  new_balance: "900.00"
+                }
+              }
+            }
+          },
+          "400": {
+            description: "Invalid input, invalid operation, or insufficient funds",
+            content: {
+              "application/json": {
+                schema: errorResponse,
+                examples: {
+                  invalidOperation: {
+                    value: {
+                      error: "invalid_operation",
+                      message: "operation must be debit or credit."
+                    }
+                  },
+                  insufficientFunds: {
+                    value: {
+                      error: "insufficient_funds",
+                      message: "The account does not have enough balance for this debit."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            description: "Account not found",
+            content: {
+              "application/json": {
+                schema: errorResponse,
+                example: {
+                  error: "user_not_found",
+                  message: "Account was not found."
+                }
+              }
+            }
+          },
+          "500": {
+            description: "Internal server error"
           }
         }
       }
