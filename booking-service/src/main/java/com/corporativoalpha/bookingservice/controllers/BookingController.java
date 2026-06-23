@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -20,40 +21,62 @@ public class BookingController {
     private BookingRepository bookingRepository;
 
     @Autowired
-    private RestTemplate restTemplate; // <--- Nuestra herramienta para consumir APIs
+    private RestTemplate restTemplate;
 
     @GetMapping
     public List<Booking> getAllBookings() {
         return bookingRepository.findAll();
     }
 
+    // ==========================================
+    // ENDPOINT: MIS RESERVAS
+    // ==========================================
+    @GetMapping("/user/{userId}")
+    public List<Booking> getUserBookings(@PathVariable Integer userId) {
+        return bookingRepository.findByUserId(userId);
+    }
+
     @PostMapping
     public ResponseEntity<?> createBooking(@RequestBody Booking booking) {
 
         // ==========================================
-        // VALIDACIÓN 1: CAPACIDAD (Llamada al Microservicio A)
+        // VALIDACIÓN NUEVA: FECHAS EN EL PASADO
+        // ==========================================
+        if (booking.getBookingDate().isBefore(LocalDate.now())) {
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body("Error: No puedes crear reservas en fechas pasadas.");
+        }
+
+        // ==========================================
+        // VALIDACIÓN NUEVA: CONSISTENCIA TEMPORAL
+        // ==========================================
+        if (!booking.getEndTime().isAfter(booking.getStartTime())) {
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body("Error: La hora de fin debe ser estrictamente posterior a la hora de inicio.");
+        }
+
+        // ==========================================
+        // VALIDACIÓN: CAPACIDAD (Llamada al Microservicio A)
         // ==========================================
         try {
             String catalogUrl = "http://localhost:8081/api/spaces/" + booking.getSpaceId();
-            // Hacemos la petición GET a la otra API y guardamos la respuesta en SpaceDTO
             ResponseEntity<SpaceDTO> response = restTemplate.getForEntity(catalogUrl, SpaceDTO.class);
-
             SpaceDTO space = response.getBody();
 
-            // Verificamos si los asistentes superan la capacidad
             if (space != null && booking.getAttendees() > space.getCapacity()) {
                 return ResponseEntity
-                        .status(HttpStatus.BAD_REQUEST) // Código 400
+                        .status(HttpStatus.BAD_REQUEST)
                         .body("Error: El número de asistentes (" + booking.getAttendees() +
                                 ") supera la capacidad máxima del espacio (" + space.getCapacity() + ").");
             }
         } catch (HttpClientErrorException.NotFound e) {
-            // Si el catalog-service devuelve un 404, el espacio no existe
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Error: El espacio solicitado no existe.");
         }
 
         // ==========================================
-        // VALIDACIÓN 2: OVERLAPPING (En nuestra propia BD)
+        // VALIDACIÓN: OVERLAPPING (En nuestra BD)
         // ==========================================
         List<Booking> overlapping = bookingRepository.findOverlappingBookings(
                 booking.getSpaceId(),
@@ -68,7 +91,7 @@ public class BookingController {
                     .body("Error: El espacio ya está reservado en ese horario.");
         }
 
-        // Si pasa ambas validaciones, guardamos
+        // Si sobrevive a este "campo minado" de validaciones, guardamos
         Booking savedBooking = bookingRepository.save(booking);
         return ResponseEntity.status(HttpStatus.CREATED).body(savedBooking);
     }

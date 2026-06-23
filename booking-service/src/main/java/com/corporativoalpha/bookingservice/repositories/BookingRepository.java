@@ -24,4 +24,7 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
             @Param("startTime") LocalTime startTime,
             @Param("endTime") LocalTime endTime
     );
+
+    // Nuevo método para "Mis Reservas"
+    List<Booking> findByUserId(Integer userId);
 }
