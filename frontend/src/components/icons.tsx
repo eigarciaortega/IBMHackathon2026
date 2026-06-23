@@ -142,6 +142,17 @@ export const IconCampana = (p: P) => (
     <path d="M13.73 21a2 2 0 0 1-3.46 0" />
   </Base>
 )
+export const IconSol = (p: P) => (
+  <Base {...p}>
+    <circle cx="12" cy="12" r="4" />
+    <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
+  </Base>
+)
+export const IconLuna = (p: P) => (
+  <Base {...p}>
+    <path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z" />
+  </Base>
+)
 
 // Marca: franjas de una jornada reservada (evoca la pista de ocupación). El tono
 // 'marca' (azul) va sobre fondos claros; 'claro' (azulejo blanco) sobre fondos

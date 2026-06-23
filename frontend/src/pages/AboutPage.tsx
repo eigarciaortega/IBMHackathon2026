@@ -15,7 +15,7 @@ export function AboutPage() {
         </Link>
 
         <div className="card overflow-hidden">
-          <div className="relative overflow-hidden bg-gradient-to-br from-azul-strong to-[#0f2657] px-7 py-8 text-white">
+          <div className="relative overflow-hidden bg-gradient-to-br from-[#16357a] to-[#0f2657] px-7 py-8 text-white">
             <div
               aria-hidden="true"
               className="pointer-events-none absolute inset-0 opacity-[0.08]"
@@ -33,7 +33,7 @@ export function AboutPage() {
             <h1 className="relative mt-5 text-2xl font-semibold text-white">
               Gestión híbrida de espacios
             </h1>
-            <p className="relative mt-2 max-w-sm text-pretty text-sm leading-relaxed text-azul-soft/85">
+            <p className="relative mt-2 max-w-sm text-pretty text-sm leading-relaxed text-white/80">
               Búsqueda de disponibilidad, motor de reservas sin solapamiento y panel
               de ocupación, con microservicios en Go y una SPA en React.
             </p>
