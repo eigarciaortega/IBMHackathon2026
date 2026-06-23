@@ -89,8 +89,15 @@ const getSuggestedBookingWindow = () => {
   const start = new Date();
   start.setHours(start.getHours() + 1, 0, 0, 0);
 
-  const end = new Date(start);
+  let end = new Date(start);
   end.setHours(end.getHours() + 1);
+
+  if (localDateIso(end) !== localDateIso(start)) {
+    start.setDate(start.getDate() + 1);
+    start.setHours(0, 0, 0, 0);
+    end = new Date(start);
+    end.setHours(1, 0, 0, 0);
+  }
 
   return {
     date: localDateIso(start),
@@ -770,7 +777,9 @@ const renderChips = (container, rows, labelKey, valueKey, emptyMessage) => {
 };
 
 const buildRecommendations = (today, analytics) => {
-  const recommendations = [];
+  const recommendations = [
+    "Las reservas se validan contra fecha y hora actual para evitar registros invalidos y mejorar la confiabilidad operativa."
+  ];
   const peakHour = analytics.peakHours?.[0];
   const topSpace = analytics.mostBookedSpaces?.[0];
   const deskDemand = analytics.bookingsByType?.find((item) => item.type === "DESK");

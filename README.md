@@ -6,6 +6,10 @@ OfficeSpace es una aplicacion web para gestionar espacios de oficina en entornos
 
 Frase de producto: **Reserva mejor. Ocupa mejor. Decide con datos.**
 
+## Valor de negocio
+
+OfficeSpace utiliza la fecha y hora actual del dispositivo para proponer automaticamente el siguiente horario valido de reserva. Esto reduce errores de captura, evita reservas en horarios invalidos y acelera el proceso para colaboradores en entornos hibridos. Ademas, el backend refuerza esta regla para garantizar consistencia temporal aunque el frontend sea manipulado.
+
 ## Problema de negocio
 
 Las oficinas hibridas suelen tener baja visibilidad sobre ocupacion real, preferencias de uso y demanda por recursos como proyector, pantalla, pizarra o zonas silenciosas. Esto genera reservas manuales, espacios subutilizados y poca informacion para decidir como ajustar la capacidad de la oficina.
