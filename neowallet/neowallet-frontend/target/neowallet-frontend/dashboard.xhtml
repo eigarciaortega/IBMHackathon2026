@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:ui="jakarta.faces.facelets"
+      xmlns:p="http://primefaces.org/ui">
+
+<ui:composition template="/WEB-INF/templates/layout.xhtml">
+    <ui:define name="title">Dashboard</ui:define>
+
+    <ui:define name="content">
+
+        <!-- Page Header -->
+        <div class="nw-page-header">
+            <h2 class="nw-page-title">
+                <i class="pi pi-home"></i> Dashboard
+            </h2>
+            <span class="nw-welcome-text">
+                Bienvenido, <strong>#{userSession.name}</strong>
+            </span>
+        </div>
+
+        <!-- Top Row: Balance + Acciones Rápidas -->
+        <div class="nw-top-row">
+
+            <!-- Balance Card -->
+            <div class="nw-balance-card">
+                <div class="nw-balance-label">
+                    <i class="pi pi-wallet"></i> Saldo Disponible
+                </div>
+                <div class="nw-balance-amount">
+                    $<h:outputText value="#{dashboardBean.balance}">
+                        <f:convertNumber minFractionDigits="2" maxFractionDigits="2" groupingUsed="true" />
+                    </h:outputText>
+                </div>
+                <div class="nw-balance-currency">#{dashboardBean.currency}</div>
+                <div class="nw-balance-email">#{dashboardBean.balanceInfo.email}</div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="nw-quick-actions">
+                <div class="nw-quick-title">Acciones Rápidas</div>
+                <div class="nw-actions-row">
+                    <h:link outcome="/recharge" styleClass="nw-action-tile">
+                        <i class="pi pi-plus-circle"></i>
+                        <span>Recargar</span>
+                    </h:link>
+                    <h:link outcome="/transfer" styleClass="nw-action-tile">
+                        <i class="pi pi-send"></i>
+                        <span>Transferir</span>
+                    </h:link>
+                    <h:link outcome="/history" styleClass="nw-action-tile">
+                        <i class="pi pi-list"></i>
+                        <span>Historial</span>
+                    </h:link>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Transactions -->
+        <div class="nw-section" style="margin-top:1.5rem;">
+            <div class="nw-section-header">
+                <span><i class="pi pi-clock"></i> Transacciones Recientes</span>
+                <h:link outcome="/history" styleClass="nw-link">
+                    Ver todo <i class="pi pi-angle-right"></i>
+                </h:link>
+            </div>
+
+            <p:dataTable value="#{dashboardBean.recentTransactions}"
+                         var="tx"
+                         emptyMessage="Aún no hay transacciones"
+                         styleClass="nw-table"
+                         rowStyleClass="#{tx.type == 'SENT' ? 'nw-row-sent' : 'nw-row-received'}">
+
+                <p:column style="width:44px;text-align:center;">
+                    <i class="#{tx.type == 'SENT' ? 'pi pi-arrow-up-right' : 'pi pi-arrow-down-left'}"
+                       style="#{tx.type == 'SENT' ? 'color:#ef4444' : 'color:#22c55e'};font-size:1.1rem;" />
+                </p:column>
+
+                <p:column headerText="Tipo">
+                    <span style="#{tx.type == 'SENT' ? 'color:#ef4444' : 'color:#22c55e'};font-weight:600;">
+                        #{tx.type == 'SENT' ? 'Enviada' : 'Recibida'}
+                    </span>
+                </p:column>
+
+                <p:column headerText="Contraparte">
+                    <h:outputText value="#{tx.type == 'SENT' ? tx.receiverName : tx.senderName}" />
+                </p:column>
+
+                <p:column headerText="Monto" style="text-align:right;">
+                    <span style="#{tx.type == 'SENT' ? 'color:#ef4444' : 'color:#22c55e'};font-weight:700;">
+                        #{tx.type == 'SENT' ? '-' : '+'}$<h:outputText value="#{tx.amount}">
+                            <f:convertNumber minFractionDigits="2" maxFractionDigits="2" />
+                        </h:outputText>
+                    </span>
+                </p:column>
+
+                <p:column headerText="Estado">
+                    <span style="#{tx.status == 'COMPLETED' ? 'color:#22c55e' :
+                                   tx.status == 'PENDING'   ? 'color:#f59e0b' :
+                                   tx.status == 'FAILED'    ? 'color:#ef4444' : 'color:#94a3b8'};font-weight:600;">
+                        #{tx.status}
+                    </span>
+                </p:column>
+
+                <p:column headerText="Fecha">
+                    <h:outputText value="#{tx.createdAt}">
+                        <f:convertDateTime pattern="dd/MM/yyyy HH:mm" type="localDateTime" />
+                    </h:outputText>
+                </p:column>
+
+            </p:dataTable>
+        </div>
+
+    </ui:define>
+</ui:composition>
+</html>

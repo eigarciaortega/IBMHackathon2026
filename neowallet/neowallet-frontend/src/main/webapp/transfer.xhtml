@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:ui="jakarta.faces.facelets"
+      xmlns:p="http://primefaces.org/ui">
+
+<ui:composition template="/WEB-INF/templates/layout.xhtml">
+    <ui:define name="title">Transferir</ui:define>
+
+    <ui:define name="content">
+
+        <div class="nw-page-header">
+            <h2 class="nw-page-title">
+                <i class="pi pi-send"></i> Enviar Dinero
+            </h2>
+        </div>
+
+        <div class="nw-form-wrapper">
+            <div class="nw-form-card">
+
+                <div class="nw-form-card-header">
+                    <i class="pi pi-arrow-right-arrow-left"></i> Detalles de la transferencia
+                </div>
+
+                <h:form id="transferForm">
+                    <p:messages id="transferMsg" showDetail="true" closable="true"
+                                style="margin-bottom:1rem;" />
+
+                    <!-- ID del destinatario -->
+                    <div class="nw-field">
+                        <p:outputLabel for="receiverId" value="ID del destinatario" />
+                        <p:inputText id="receiverId"
+                                     value="#{transferBean.receiverId}"
+                                     placeholder="Ej: 2"
+                                     styleClass="nw-input"
+                                     required="true"
+                                     requiredMessage="El ID del destinatario es requerido" />
+                        <small class="nw-hint">
+                            Usuario A = ID 1 &nbsp;·&nbsp; Usuario B = ID 2 &nbsp;·&nbsp; Usuario C = ID 3
+                        </small>
+                    </div>
+
+                    <!-- Monto -->
+                    <div class="nw-field">
+                        <p:outputLabel for="transferAmount" value="Monto a enviar (USD)" />
+                        <p:inputNumber id="transferAmount"
+                                       value="#{transferBean.amount}"
+                                       minValue="0.01"
+                                       symbol="$ "
+                                       symbolPosition="p"
+                                       decimalSeparator="."
+                                       thousandSeparator=","
+                                       required="true"
+                                       requiredMessage="El monto es requerido"
+                                       styleClass="nw-input"
+                                       placeholder="0.00" />
+                    </div>
+
+                    <!-- Descripción -->
+                    <div class="nw-field">
+                        <p:outputLabel for="description" value="Descripción (opcional)" />
+                        <p:inputText id="description"
+                                     value="#{transferBean.description}"
+                                     placeholder="Ej: Pago de alquiler"
+                                     maxlength="100"
+                                     styleClass="nw-input" />
+                    </div>
+
+                    <!-- Info Saga -->
+                    <div class="nw-info-box">
+                        <i class="pi pi-shield" style="color:#3b82f6;"></i>
+                        <span>Tu dinero está protegido. Si ocurre un error en el proceso,
+                              el monto es devuelto automáticamente (Patrón Saga).</span>
+                    </div>
+
+                    <!-- Botones -->
+                    <div class="nw-btn-row">
+                        <p:commandButton value="Enviar Dinero"
+                                         icon="pi pi-send"
+                                         action="#{transferBean.transfer()}"
+                                         update="transferMsg transferResult"
+                                         process="@form"
+                                         styleClass="nw-btn-primary"
+                                         onclick="return confirm('¿Confirmas el envío?');" />
+                        <p:commandButton value="Limpiar"
+                                         icon="pi pi-times"
+                                         action="#{transferBean.reset()}"
+                                         update="@form"
+                                         process="@none"
+                                         styleClass="p-button-outlined"
+                                         immediate="true" />
+                    </div>
+
+                    <!-- Resultado -->
+                    <p:outputPanel id="transferResult">
+                        <div class="nw-result-box nw-result-success"
+                             style="display:#{transferBean.transferSuccess ? 'block' : 'none'};">
+                            <h3 class="nw-result-title">
+                                <i class="pi pi-check-circle"></i> Transferencia Completada
+                            </h3>
+                            <div class="nw-result-row">
+                                <span>Destinatario:</span>
+                                <span><strong>#{transferBean.lastTransfer.receiverName}</strong></span>
+                            </div>
+                            <div class="nw-result-row">
+                                <span>Monto enviado:</span>
+                                <span class="nw-negative">
+                                    -$<h:outputText value="#{transferBean.lastTransfer.amount}">
+                                        <f:convertNumber minFractionDigits="2" maxFractionDigits="2" />
+                                    </h:outputText>
+                                </span>
+                            </div>
+                            <div class="nw-result-row">
+                                <span>Estado:</span>
+                                <span style="color:#22c55e;font-weight:700;">
+                                    #{transferBean.lastTransfer.status}
+                                </span>
+                            </div>
+                            <div class="nw-result-row nw-result-total">
+                                <span>Tu nuevo saldo:</span>
+                                <span>$<h:outputText value="#{transferBean.lastTransfer.newSenderBalance}">
+                                    <f:convertNumber minFractionDigits="2" maxFractionDigits="2" />
+                                </h:outputText></span>
+                            </div>
+                            <div class="nw-result-row">
+                                <span>ID de transacción:</span>
+                                <span style="color:#64748b;font-size:0.8rem;">
+                                    ##{transferBean.lastTransfer.transactionId}
+                                </span>
+                            </div>
+                        </div>
+                    </p:outputPanel>
+
+                </h:form>
+            </div>
+        </div>
+
+    </ui:define>
+</ui:composition>
+</html>

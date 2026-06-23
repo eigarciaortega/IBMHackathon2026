@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:ui="jakarta.faces.facelets"
+      xmlns:p="http://primefaces.org/ui">
+
+<ui:composition template="/WEB-INF/templates/layout.xhtml">
+    <ui:define name="title">Historial</ui:define>
+
+    <ui:define name="content">
+
+        <div class="nw-page-header">
+            <h2 class="nw-page-title">
+                <i class="pi pi-list"></i> Historial de Transacciones
+            </h2>
+        </div>
+
+        <!-- Stats Row -->
+        <div class="nw-stats-row">
+            <div class="nw-stat-card">
+                <i class="pi pi-list" style="color:#3b82f6;font-size:1.5rem;"></i>
+                <div class="nw-stat-num">#{historyBean.totalCount}</div>
+                <div class="nw-stat-label">Total</div>
+            </div>
+            <div class="nw-stat-card">
+                <i class="pi pi-arrow-up-right" style="color:#ef4444;font-size:1.5rem;"></i>
+                <div class="nw-stat-num">#{historyBean.sentCount}</div>
+                <div class="nw-stat-label">Enviadas</div>
+            </div>
+            <div class="nw-stat-card">
+                <i class="pi pi-arrow-down-left" style="color:#22c55e;font-size:1.5rem;"></i>
+                <div class="nw-stat-num">#{historyBean.receivedCount}</div>
+                <div class="nw-stat-label">Recibidas</div>
+            </div>
+        </div>
+
+        <!-- Table Card -->
+        <div class="nw-section" style="margin-top:1rem;">
+            <h:form id="historyForm">
+
+                <!-- Filtros -->
+                <div class="nw-filter-row">
+                    <p:commandButton value="Todas"
+                                     icon="pi pi-list"
+                                     update="historyTable filterRow"
+                                     process="@none"
+                                     immediate="true"
+                                     styleClass="#{historyBean.filterType == 'ALL' ? 'nw-btn-primary' : 'p-button-outlined'}">
+                        <f:setPropertyActionListener value="ALL" target="#{historyBean.filterType}" />
+                        <p:ajax listener="#{historyBean.applyFilter()}" update="historyTable filterRow" />
+                    </p:commandButton>
+                    <p:commandButton value="Enviadas"
+                                     icon="pi pi-arrow-up-right"
+                                     update="historyTable filterRow"
+                                     process="@none"
+                                     immediate="true"
+                                     styleClass="#{historyBean.filterType == 'SENT' ? 'nw-btn-primary' : 'p-button-outlined'}">
+                        <f:setPropertyActionListener value="SENT" target="#{historyBean.filterType}" />
+                        <p:ajax listener="#{historyBean.applyFilter()}" update="historyTable filterRow" />
+                    </p:commandButton>
+                    <p:commandButton value="Recibidas"
+                                     icon="pi pi-arrow-down-left"
+                                     update="historyTable filterRow"
+                                     process="@none"
+                                     immediate="true"
+                                     styleClass="#{historyBean.filterType == 'RECEIVED' ? 'nw-btn-primary' : 'p-button-outlined'}">
+                        <f:setPropertyActionListener value="RECEIVED" target="#{historyBean.filterType}" />
+                        <p:ajax listener="#{historyBean.applyFilter()}" update="historyTable filterRow" />
+                    </p:commandButton>
+
+                    <p:commandButton value="Actualizar"
+                                     icon="pi pi-refresh"
+                                     action="#{historyBean.loadHistory()}"
+                                     update="historyTable filterRow"
+                                     process="@none"
+                                     styleClass="p-button-outlined p-button-secondary"
+                                     style="margin-left:auto;" />
+                </div>
+
+                <!-- Tabla -->
+                <p:dataTable id="historyTable"
+                             value="#{historyBean.filteredTransactions}"
+                             var="tx"
+                             emptyMessage="No hay transacciones para mostrar"
+                             paginator="true"
+                             rows="10"
+                             paginatorTemplate="{CurrentPageReport} {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+                             rowsPerPageTemplate="5,10,20,50"
+                             currentPageReportTemplate="Mostrando {startRecord}-{endRecord} de {totalRecords}"
+                             styleClass="nw-table"
+                             rowStyleClass="#{tx.type == 'SENT' ? 'nw-row-sent' : 'nw-row-received'}"
+                             style="margin-top:0.75rem;">
+
+                    <p:column style="width:44px;text-align:center;">
+                        <i class="#{historyBean.getTypeIcon(tx.type)}"
+                           style="#{historyBean.getTypeColor(tx.type)};font-size:1.1rem;" />
+                    </p:column>
+
+                    <p:column headerText="Tipo" style="width:110px;">
+                        <span style="#{historyBean.getTypeColor(tx.type)};font-weight:600;">
+                            #{tx.type == 'SENT' ? 'Enviada' : 'Recibida'}
+                        </span>
+                    </p:column>
+
+                    <p:column headerText="Contraparte">
+                        <h:outputText value="#{tx.type == 'SENT' ? tx.receiverName : tx.senderName}" />
+                    </p:column>
+
+                    <p:column headerText="Descripción">
+                        <h:outputText value="#{tx.description != null and not empty tx.description ? tx.description : '—'}" />
+                    </p:column>
+
+                    <p:column headerText="Monto" style="text-align:right;width:130px;">
+                        <span style="#{historyBean.getTypeColor(tx.type)};font-weight:700;font-size:1rem;">
+                            #{historyBean.getAmountPrefix(tx.type)}$<h:outputText value="#{tx.amount}">
+                                <f:convertNumber minFractionDigits="2" maxFractionDigits="2" />
+                            </h:outputText>
+                        </span>
+                    </p:column>
+
+                    <p:column headerText="Estado" style="width:130px;">
+                        <span style="#{historyBean.getStatusBadgeStyle(tx.status)}">
+                            #{tx.status}
+                        </span>
+                    </p:column>
+
+                    <p:column headerText="Fecha" style="width:160px;">
+                        <h:outputText value="#{tx.createdAt}">
+                            <f:convertDateTime pattern="dd/MM/yyyy HH:mm" type="localDateTime" />
+                        </h:outputText>
+                    </p:column>
+
+                </p:dataTable>
+
+                <p:outputPanel id="filterRow" />
+
+            </h:form>
+        </div>
+
+    </ui:define>
+</ui:composition>
+</html>

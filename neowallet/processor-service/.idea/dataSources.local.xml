@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="dataSourceStorageLocal" created-in="IU-261.25134.95">
+    <data-source name="processor_db@localhost" uuid="4529eb68-06c8-4703-85f4-39dc16dd3ed1">
+      <database-info product="" version="" jdbc-version="" driver-name="" driver-version="" dbms="POSTGRES" />
+      <secret-storage>master_key</secret-storage>
+      <user-name>neowallet</user-name>
+      <schema-mapping />
+    </data-source>
+  </component>
+</project>

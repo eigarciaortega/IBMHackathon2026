@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:ui="jakarta.faces.facelets"
+      xmlns:p="http://primefaces.org/ui">
+
+<h:head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NeoWallet — <ui:insert name="title">Portal</ui:insert></title>
+    <h:outputStylesheet library="css" name="custom.css" />
+    <ui:insert name="head" />
+</h:head>
+
+<h:body styleClass="nw-body">
+
+    <!-- ── Top Bar ─────────────────────────────────────────────────── -->
+    <header class="nw-topbar">
+        <div class="nw-topbar-brand">
+            <i class="pi pi-wallet" style="font-size:1.6rem;color:#3b82f6;"></i>
+            <span class="nw-brand-text">NeoWallet</span>
+            <span class="nw-brand-tag">P2P</span>
+        </div>
+        <div class="nw-topbar-user">
+            <span class="nw-topbar-name">
+                <i class="pi pi-user"></i> #{userSession.name}
+            </span>
+            <h:form>
+                <p:commandButton value="Salir"
+                                 icon="pi pi-sign-out"
+                                 action="#{globalBean.logout()}"
+                                 styleClass="p-button-text p-button-sm nw-btn-logout"
+                                 immediate="true" />
+            </h:form>
+        </div>
+    </header>
+
+    <!-- ── Layout ──────────────────────────────────────────────────── -->
+    <div class="nw-layout">
+
+        <!-- Sidebar -->
+        <nav class="nw-sidebar">
+            <ul class="nw-nav-list">
+                <li>
+                    <h:link outcome="/dashboard" styleClass="nw-nav-link">
+                        <i class="pi pi-home"></i><span>Dashboard</span>
+                    </h:link>
+                </li>
+                <li>
+                    <h:link outcome="/recharge" styleClass="nw-nav-link">
+                        <i class="pi pi-plus-circle"></i><span>Recargar Saldo</span>
+                    </h:link>
+                </li>
+                <li>
+                    <h:link outcome="/transfer" styleClass="nw-nav-link">
+                        <i class="pi pi-send"></i><span>Transferir</span>
+                    </h:link>
+                </li>
+                <li>
+                    <h:link outcome="/history" styleClass="nw-nav-link">
+                        <i class="pi pi-list"></i><span>Historial</span>
+                    </h:link>
+                </li>
+            </ul>
+
+            <div class="nw-sidebar-footer">
+                <small>FastPay © 2026</small>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="nw-main">
+            <p:growl id="growl" showDetail="true" life="5000" sticky="false" />
+            <p:messages id="globalMessages" showDetail="true" closable="true" />
+            <ui:insert name="content" />
+        </main>
+    </div>
+
+</h:body>
+</html>

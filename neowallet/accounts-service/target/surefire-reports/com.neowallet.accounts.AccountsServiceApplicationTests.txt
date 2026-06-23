@@ -1,4 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: com.neowallet.accounts.AccountsServiceApplicationTests
 -------------------------------------------------------------------------------
-Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 6.756 s -- in com.neowallet.accounts.AccountsServiceApplicationTests
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 5.983 s -- in com.neowallet.accounts.AccountsServiceApplicationTests

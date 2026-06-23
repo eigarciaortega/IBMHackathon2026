@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:p="http://primefaces.org/ui">
+
+<h:head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NeoWallet — Iniciar Sesión</title>
+    <h:outputStylesheet library="css" name="custom.css" />
+</h:head>
+
+<h:body styleClass="nw-login-page">
+    <div class="nw-login-wrapper">
+        <div class="nw-login-card">
+
+            <!-- Brand -->
+            <div class="nw-login-header">
+                <i class="pi pi-wallet nw-login-icon"></i>
+                <h1 class="nw-login-title">NeoWallet</h1>
+                <p class="nw-login-subtitle">P2P Payments · FastPay</p>
+            </div>
+
+            <!-- Form -->
+            <h:form id="loginForm">
+                <p:messages id="loginMessages" showDetail="true" closable="true"
+                            style="margin-bottom:1rem;" />
+
+                <div class="nw-field">
+                    <p:outputLabel for="email" value="Correo Electrónico" />
+                    <p:inputText id="email"
+                                 value="#{loginBean.email}"
+                                 placeholder="usuario@neowallet.com"
+                                 styleClass="nw-input"
+                                 required="true"
+                                 requiredMessage="El correo es requerido"
+                                 validatorMessage="Correo inválido" />
+                </div>
+
+                <div class="nw-field">
+                    <p:outputLabel for="password" value="Contraseña" />
+                    <p:password id="password"
+                                value="#{loginBean.password}"
+                                placeholder="••••••••"
+                                styleClass="nw-input"
+                                feedback="false"
+                                toggleMask="true"
+                                required="true"
+                                requiredMessage="La contraseña es requerida" />
+                </div>
+
+                <p:commandButton value="Iniciar Sesión"
+                                 icon="pi pi-sign-in"
+                                 action="#{loginBean.login()}"
+                                 update="loginMessages"
+                                 process="@form"
+                                 styleClass="nw-btn-primary nw-btn-full"
+                                 style="margin-top:1rem;" />
+            </h:form>
+
+            <!-- Test Credentials Hint -->
+            <div class="nw-login-hint">
+                <p style="font-weight:600;margin-bottom:0.5rem;">
+                    <i class="pi pi-info-circle"></i> Usuarios de prueba:
+                </p>
+                <p>👤 usuario.a@neowallet.com — Saldo $1,000</p>
+                <p>👤 usuario.b@neowallet.com — Saldo $50</p>
+                <p>👤 usuario.c@neowallet.com — Saldo $0</p>
+                <p style="margin-top:0.4rem;">🔑 Contraseña: <strong>password123</strong></p>
+            </div>
+
+        </div>
+    </div>
+</h:body>
+</html>
