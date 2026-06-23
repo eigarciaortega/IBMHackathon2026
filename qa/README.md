@@ -11,10 +11,24 @@ borra el espacio).
 
 Requisitos: el stack levantado (`docker compose up`) y Node.js.
 
+Contra el stack local (servicios en `localhost:8081-8083`):
+
 ```bash
 cd qa/postman
 npx newman run OfficeSpace.postman_collection.json -e OfficeSpace.postman_environment.json
 ```
+
+Contra la demo en vivo (a través del túnel, mismo contrato):
+
+```bash
+cd qa/postman
+npx newman run OfficeSpace.postman_collection.json -e OfficeSpace.postman_environment.tunnel.json
+```
+
+La colección es la misma; solo cambia el entorno. El entorno de túnel apunta a
+`https://officespace.spcter.cc/api/{auth,catalog,booking}`, que la puerta de enlace
+nginx reenvía a cada servicio. Para abrirla en la app de Postman, importa la
+colección y el entorno que prefieras.
 
 ## Gherkin
 
