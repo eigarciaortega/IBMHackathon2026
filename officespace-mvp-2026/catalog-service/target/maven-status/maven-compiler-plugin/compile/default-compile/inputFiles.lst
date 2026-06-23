@@ -1,9 +1,0 @@
-C:\Desarrollo\Hackaton\IBMHackathon2026\officespace-mvp-2026\catalog-service\src\main\java\com\corporativoalpha\officespace\catalog\CatalogServiceApplication.java
-C:\Desarrollo\Hackaton\IBMHackathon2026\officespace-mvp-2026\catalog-service\src\main\java\com\corporativoalpha\officespace\catalog\config\OpenApiConfig.java
-C:\Desarrollo\Hackaton\IBMHackathon2026\officespace-mvp-2026\catalog-service\src\main\java\com\corporativoalpha\officespace\catalog\config\SecurityConfig.java
-C:\Desarrollo\Hackaton\IBMHackathon2026\officespace-mvp-2026\catalog-service\src\main\java\com\corporativoalpha\officespace\catalog\controller\SpaceController.java
-C:\Desarrollo\Hackaton\IBMHackathon2026\officespace-mvp-2026\catalog-service\src\main\java\com\corporativoalpha\officespace\catalog\domain\model\Space.java
-C:\Desarrollo\Hackaton\IBMHackathon2026\officespace-mvp-2026\catalog-service\src\main\java\com\corporativoalpha\officespace\catalog\domain\repository\SpaceRepository.java
-C:\Desarrollo\Hackaton\IBMHackathon2026\officespace-mvp-2026\catalog-service\src\main\java\com\corporativoalpha\officespace\catalog\service\SpaceService.java
-C:\Desarrollo\Hackaton\IBMHackathon2026\officespace-mvp-2026\catalog-service\src\main\java\com\corporativoalpha\officespace\shared\security\JwtAuthenticationFilter.java
-C:\Desarrollo\Hackaton\IBMHackathon2026\officespace-mvp-2026\catalog-service\src\main\java\com\corporativoalpha\officespace\shared\util\JwtValidator.java

@@ -1,9 +1,0 @@
-com\corporativoalpha\officespace\catalog\CatalogServiceApplication.class
-com\corporativoalpha\officespace\shared\security\JwtAuthenticationFilter.class
-com\corporativoalpha\officespace\catalog\controller\SpaceController.class
-com\corporativoalpha\officespace\catalog\domain\model\Space.class
-com\corporativoalpha\officespace\catalog\config\SecurityConfig.class
-com\corporativoalpha\officespace\shared\util\JwtValidator.class
-com\corporativoalpha\officespace\catalog\service\SpaceService.class
-com\corporativoalpha\officespace\catalog\config\OpenApiConfig.class
-com\corporativoalpha\officespace\catalog\domain\repository\SpaceRepository.class
