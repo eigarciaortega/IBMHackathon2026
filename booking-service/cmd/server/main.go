@@ -30,6 +30,8 @@ import (
 	"github.com/i0dk1/OfficeSpace/booking-service/internal/config"
 	"github.com/i0dk1/OfficeSpace/booking-service/internal/handlers"
 	appmw "github.com/i0dk1/OfficeSpace/booking-service/internal/middleware"
+	"github.com/i0dk1/OfficeSpace/booking-service/internal/models"
+	"github.com/i0dk1/OfficeSpace/booking-service/internal/notifications"
 	"github.com/i0dk1/OfficeSpace/booking-service/internal/repository"
 	"github.com/i0dk1/OfficeSpace/booking-service/internal/services"
 )
@@ -60,11 +62,18 @@ func main() {
 	defer pool.Close()
 
 	repo := repository.NewReservaRepository(pool)
+	notifRepo := repository.NewNotificacionRepository(pool)
 	catalog := clients.NewCatalogClient(cfg.CatalogBaseURL)
-	svc := services.NewReservaService(repo, catalog, loc)
+	svc := services.NewReservaService(repo, catalog, loc).ConNotificador(notifRepo)
 	handler := handlers.NewReservaHandler(svc)
 
-	router := construirRouter(cfg, handler)
+	// Centro de notificaciones en tiempo real: el hub difunde por SSE lo que el
+	// listener recibe del canal LISTEN/NOTIFY de PostgreSQL.
+	hub := notifications.NewHub()
+	go notifications.Escuchar(ctx, pool, hub)
+	notifHandler := handlers.NewNotificacionHandler(notifRepo, hub, []byte(cfg.JWTSecret))
+
+	router := construirRouter(cfg, handler, notifHandler)
 
 	servidor := &http.Server{
 		Addr:              ":" + cfg.Puerto,
@@ -106,7 +115,7 @@ func conectarBD(ctx context.Context, url string) (*pgxpool.Pool, error) {
 	return pool, nil
 }
 
-func construirRouter(cfg *config.Config, h *handlers.ReservaHandler) http.Handler {
+func construirRouter(cfg *config.Config, h *handlers.ReservaHandler, nh *handlers.NotificacionHandler) http.Handler {
 	r := chi.NewRouter()
 
 	r.Use(chimw.RequestID)
@@ -122,6 +131,10 @@ func construirRouter(cfg *config.Config, h *handlers.ReservaHandler) http.Handle
 		http.Redirect(w, r, "/api-docs/", http.StatusFound)
 	})
 
+	// Flujo SSE de notificaciones: se autentica por query param (EventSource no
+	// envía headers), por eso queda fuera del middleware RequiereJWT.
+	r.Get("/notifications/stream", nh.Stream)
+
 	secret := []byte(cfg.JWTSecret)
 	r.Group(func(r chi.Router) {
 		r.Use(appmw.RequiereJWT(secret))
@@ -131,6 +144,10 @@ func construirRouter(cfg *config.Config, h *handlers.ReservaHandler) http.Handle
 		r.Get("/bookings/availability", h.Disponibilidad)
 		r.Delete("/bookings/{id}", h.Cancelar)
 		r.Get("/occupancy", h.Ocupacion)
+
+		// Centro de notificaciones del administrador (historial + marcar leídas).
+		r.With(appmw.RequiereRol(models.RolAdministrador)).Get("/notifications", nh.Listar)
+		r.With(appmw.RequiereRol(models.RolAdministrador)).Post("/notifications/read", nh.MarcarLeidas)
 	})
 
 	// Swagger UI servido en /api-docs (requisito del brief).

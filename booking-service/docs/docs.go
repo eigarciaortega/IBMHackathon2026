@@ -40,7 +40,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_booking-service_internal_models.CrearReservaRequest"
+                            "$ref": "#/definitions/models.CrearReservaRequest"
                         }
                     }
                 ],
@@ -48,25 +48,25 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_booking-service_internal_models.Reserva"
+                            "$ref": "#/definitions/models.Reserva"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_booking-service_internal_apperror.AppError"
+                            "$ref": "#/definitions/apperror.AppError"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_booking-service_internal_apperror.AppError"
+                            "$ref": "#/definitions/apperror.AppError"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_booking-service_internal_apperror.AppError"
+                            "$ref": "#/definitions/apperror.AppError"
                         }
                     }
                 }
@@ -120,13 +120,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_booking-service_internal_models.DisponibilidadResponse"
+                            "$ref": "#/definitions/models.DisponibilidadResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_booking-service_internal_apperror.AppError"
+                            "$ref": "#/definitions/apperror.AppError"
                         }
                     }
                 }
@@ -152,14 +152,14 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_booking-service_internal_models.Reserva"
+                                "$ref": "#/definitions/models.Reserva"
                             }
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_booking-service_internal_apperror.AppError"
+                            "$ref": "#/definitions/apperror.AppError"
                         }
                     }
                 }
@@ -193,25 +193,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_booking-service_internal_models.Reserva"
+                            "$ref": "#/definitions/models.Reserva"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_booking-service_internal_apperror.AppError"
+                            "$ref": "#/definitions/apperror.AppError"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_booking-service_internal_apperror.AppError"
+                            "$ref": "#/definitions/apperror.AppError"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_booking-service_internal_apperror.AppError"
+                            "$ref": "#/definitions/apperror.AppError"
                         }
                     }
                 }
@@ -231,7 +231,115 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_handlers.SaludResponse"
+                            "$ref": "#/definitions/handlers.SaludResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/notifications": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Historial reciente de notificaciones y conteo de no leídas (solo ADMINISTRADOR).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "notificaciones"
+                ],
+                "summary": "Listar notificaciones",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.ListaNotificaciones"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.AppError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.AppError"
+                        }
+                    }
+                }
+            }
+        },
+        "/notifications/read": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "notificaciones"
+                ],
+                "summary": "Marcar notificaciones como leídas",
+                "responses": {
+                    "204": {
+                        "description": "Sin contenido"
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.AppError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.AppError"
+                        }
+                    }
+                }
+            }
+        },
+        "/notifications/stream": {
+            "get": {
+                "description": "Server-Sent Events. Autenticación por query param ` + "`" + `token` + "`" + ` (un JWT de ADMINISTRADOR), ya que EventSource no envía headers.",
+                "produces": [
+                    "text/event-stream"
+                ],
+                "tags": [
+                    "notificaciones"
+                ],
+                "summary": "Flujo de notificaciones en tiempo real (SSE)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "JWT de un administrador",
+                        "name": "token",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Flujo de eventos"
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.AppError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/apperror.AppError"
                         }
                     }
                 }
@@ -267,14 +375,14 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_booking-service_internal_models.Reserva"
+                                "$ref": "#/definitions/models.Reserva"
                             }
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_booking-service_internal_apperror.AppError"
+                            "$ref": "#/definitions/apperror.AppError"
                         }
                     }
                 }
@@ -282,7 +390,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "github_com_i0dk1_OfficeSpace_booking-service_internal_apperror.AppError": {
+        "apperror.AppError": {
             "type": "object",
             "properties": {
                 "codigo": {
@@ -296,7 +404,20 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_i0dk1_OfficeSpace_booking-service_internal_models.CrearReservaRequest": {
+        "handlers.SaludResponse": {
+            "type": "object",
+            "properties": {
+                "servicio": {
+                    "type": "string",
+                    "example": "booking-service"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "ok"
+                }
+            }
+        },
+        "models.CrearReservaRequest": {
             "type": "object",
             "properties": {
                 "asistentes": {
@@ -321,7 +442,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_i0dk1_OfficeSpace_booking-service_internal_models.DisponibilidadResponse": {
+        "models.DisponibilidadResponse": {
             "type": "object",
             "properties": {
                 "disponible": {
@@ -346,7 +467,54 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_i0dk1_OfficeSpace_booking-service_internal_models.Reserva": {
+        "models.ListaNotificaciones": {
+            "type": "object",
+            "properties": {
+                "no_leidas": {
+                    "type": "integer",
+                    "example": 3
+                },
+                "notificaciones": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Notificacion"
+                    }
+                }
+            }
+        },
+        "models.Notificacion": {
+            "type": "object",
+            "properties": {
+                "actor_email": {
+                    "type": "string",
+                    "example": "carlos.mendez@corporativoalpha.com"
+                },
+                "creado_en": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "leida": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "mensaje": {
+                    "type": "string",
+                    "example": "carlos.mendez@corporativoalpha.com reservó Sala Monterrey de 09:00 a 10:00"
+                },
+                "recurso": {
+                    "type": "string",
+                    "example": "Sala Monterrey"
+                },
+                "tipo": {
+                    "type": "string",
+                    "example": "RESERVA_CREADA"
+                }
+            }
+        },
+        "models.Reserva": {
             "type": "object",
             "properties": {
                 "asistentes": {
@@ -383,19 +551,6 @@ const docTemplate = `{
                 "usuario_email": {
                     "type": "string",
                     "example": "carlos.mendez@corporativoalpha.com"
-                }
-            }
-        },
-        "internal_handlers.SaludResponse": {
-            "type": "object",
-            "properties": {
-                "servicio": {
-                    "type": "string",
-                    "example": "booking-service"
-                },
-                "status": {
-                    "type": "string",
-                    "example": "ok"
                 }
             }
         }

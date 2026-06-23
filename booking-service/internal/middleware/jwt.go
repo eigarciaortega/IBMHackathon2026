@@ -61,6 +61,25 @@ func RequiereJWT(secret []byte) func(http.Handler) http.Handler {
 	}
 }
 
+// RequiereRol verifica que el usuario autenticado tenga el rol indicado. Debe
+// usarse después de RequiereJWT.
+func RequiereRol(rol string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			claims, ok := ClaimsDesdeContexto(r.Context())
+			if !ok {
+				apperror.Escribir(w, apperror.ErrTokenInvalido)
+				return
+			}
+			if claims.Rol != rol {
+				apperror.Escribir(w, apperror.ErrAccesoDenegado)
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
 // ClaimsDesdeContexto recupera los claims inyectados por RequiereJWT.
 func ClaimsDesdeContexto(ctx context.Context) (*Claims, bool) {
 	claims, ok := ctx.Value(claveClaims).(*Claims)
