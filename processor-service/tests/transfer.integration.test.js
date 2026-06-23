@@ -13,7 +13,7 @@ const testPool = new Pool({
 // We also need to reset accounts balances via accounts-service DB directly
 const accountsPool = new Pool({
   host: 'localhost',
-  port: 5434,
+  port: 5435,
   database: 'accounts_db',
   user: 'postgres',
   password: 'postgres',
@@ -31,6 +31,8 @@ beforeEach(async () => {
 afterAll(async () => {
   await testPool.end();
   await accountsPool.end();
+  // Close the pool the app itself opened, otherwise Jest reports a leaked handle
+  await require('../src/db/connection').end();
 });
 
 // --- POST /api/transfer ---
