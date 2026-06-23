@@ -1,0 +1,8 @@
+services:
+  postgres:
+    ports: !override
+      - "55432:5432"
+
+  frontend:
+    ports: !override
+      - "3005:80"

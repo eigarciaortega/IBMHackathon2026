@@ -1,0 +1,135 @@
+# =====================================================================
+# IBM OfficeSpace — Orquestación de Microservicios
+# =====================================================================
+# Arquitectura: Microservicios con Base de Datos Compartida (PostgreSQL).
+# Cada servicio tiene su propio proceso, puerto y Dockerfile, y se
+# comunica vía HTTP/REST. Levantar todo con:  docker compose up --build
+# =====================================================================
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: officespace-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: officespace
+      POSTGRES_PASSWORD: officespace
+      POSTGRES_DB: officespace
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./shared-infra/init-db.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U officespace -d officespace"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  auth-service:
+    build: ./auth-service
+    container_name: officespace-auth
+    restart: unless-stopped
+    environment:
+      PORT: 4001
+      PGHOST: postgres
+      PGPORT: 5432
+      PGUSER: officespace
+      PGPASSWORD: officespace
+      PGDATABASE: officespace
+      PGPOOL_MAX: 20
+      PG_CONNECTION_TIMEOUT_MS: 3000
+      PG_QUERY_TIMEOUT_MS: 10000
+      PG_STATEMENT_TIMEOUT_MS: 10000
+      JSON_BODY_LIMIT: 1mb
+      REQUEST_TIMEOUT_MS: 30000
+      JWT_SECRET: ${JWT_SECRET:-ibm-officespace-shared-secret-change-me}
+      JWT_EXPIRES_IN: 8h
+    ports:
+      - "4001:4001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:4001/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  catalog-service:
+    build: ./catalog-service
+    container_name: officespace-catalog
+    restart: unless-stopped
+    environment:
+      PORT: 4002
+      PGHOST: postgres
+      PGPORT: 5432
+      PGUSER: officespace
+      PGPASSWORD: officespace
+      PGDATABASE: officespace
+      PGPOOL_MAX: 20
+      PG_CONNECTION_TIMEOUT_MS: 3000
+      PG_QUERY_TIMEOUT_MS: 10000
+      PG_STATEMENT_TIMEOUT_MS: 10000
+      JSON_BODY_LIMIT: 1mb
+      REQUEST_TIMEOUT_MS: 30000
+      JWT_SECRET: ${JWT_SECRET:-ibm-officespace-shared-secret-change-me}
+    ports:
+      - "4002:4002"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:4002/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  booking-service:
+    build: ./booking-service
+    container_name: officespace-booking
+    restart: unless-stopped
+    environment:
+      PORT: 4003
+      PGHOST: postgres
+      PGPORT: 5432
+      PGUSER: officespace
+      PGPASSWORD: officespace
+      PGDATABASE: officespace
+      PGPOOL_MAX: 20
+      PG_CONNECTION_TIMEOUT_MS: 3000
+      PG_QUERY_TIMEOUT_MS: 10000
+      PG_STATEMENT_TIMEOUT_MS: 10000
+      JSON_BODY_LIMIT: 1mb
+      REQUEST_TIMEOUT_MS: 30000
+      JWT_SECRET: ${JWT_SECRET:-ibm-officespace-shared-secret-change-me}
+      CATALOG_SERVICE_URL: http://catalog-service:4002
+      CATALOG_TIMEOUT_MS: 1500
+    ports:
+      - "4003:4003"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:4003/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  frontend:
+    build: ./frontend
+    container_name: officespace-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/health >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  pgdata:

@@ -1,0 +1,479 @@
+/* =====================================================================
+   IBM OfficeSpace — Página de inicio pública (estilo IBM Carbon)
+   Paleta: IBM Blue #0f62fe · Gray 100 #161616 · tipografía IBM Plex.
+   Esquinas casi rectas, grilla limpia, motion sobrio (Carbon).
+   ===================================================================== */
+
+.lp {
+  --lp-blue: #0f62fe;
+  --lp-blue-light: #78a9ff;
+  --lp-ink: #161616;
+  --lp-ink-2: #262626;
+  --lp-ink-3: #393939;
+  --lp-line: #393939;
+  --lp-paper: #ffffff;
+  --lp-gray-10: #f4f4f4;
+  --lp-gray-20: #e0e0e0;
+  --lp-gray-60: #6f6f6f;
+  background: var(--lp-paper);
+  color: var(--lp-ink);
+  font-family: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* ---------------------------------------------------------------------
+   Barra superior (UI Shell de Carbon)
+   --------------------------------------------------------------------- */
+.lp-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1rem;
+  background: var(--lp-ink);
+  border-bottom: 1px solid var(--lp-line);
+  color: #fff;
+}
+.lp-nav__right {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  height: 100%;
+}
+.lp-nav__divider {
+  width: 1px;
+  height: 24px;
+  background: var(--lp-line);
+  margin: 0 0.35rem;
+}
+/* Enlace de texto en la barra (p. ej. IBM.com) */
+.lp-nav__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  height: 100%;
+  padding: 0 0.85rem;
+  color: #fff;
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 400;
+  transition: background 0.15s ease;
+}
+.lp-nav__link:hover {
+  background: var(--lp-ink-3);
+  color: #fff;
+}
+/* Botón sólido azul IBM */
+.lp-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2.5rem;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 400;
+  line-height: 1.4;
+  padding: 0.8rem 1rem;
+  background: var(--lp-blue);
+  color: #fff;
+  text-decoration: none;
+  transition: background 0.15s ease;
+}
+.lp-btn:hover {
+  background: #0353e9;
+  color: #fff;
+}
+.lp-btn--sm {
+  padding: 0 1rem;
+  height: 100%;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.875rem;
+}
+.lp-btn--ghost {
+  background: transparent;
+  border: 1px solid currentColor;
+}
+.lp-btn--ghost:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+.lp-btn--lg {
+  font-size: 1.05rem;
+  padding: 1rem 1.25rem;
+  gap: 4rem;
+}
+.lp-btn__icon {
+  flex: 0 0 auto;
+}
+
+/* ---------------------------------------------------------------------
+   Héroe scroll-expand (.sem-*)
+   --------------------------------------------------------------------- */
+.sem-root {
+  overflow-x: hidden;
+  background: var(--lp-ink);
+}
+.sem-section {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 100dvh;
+}
+.sem-stage {
+  position: relative;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100dvh;
+}
+.sem-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  height: 100%;
+}
+.sem-bg-img {
+  width: 100vw;
+  height: 100vh;
+  object-fit: cover;
+  object-position: center;
+}
+.sem-bg-tint {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(22, 22, 22, 0.35), rgba(22, 22, 22, 0.15));
+}
+.sem-content {
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  z-index: 10;
+}
+.sem-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100dvh;
+  position: relative;
+}
+.sem-media {
+  position: absolute;
+  z-index: 0;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  max-width: 95vw;
+  max-height: 85vh;
+  border-radius: 2px; /* Carbon: esquinas casi rectas */
+  overflow: hidden;
+  box-shadow: 0 0 60px rgba(0, 0, 0, 0.45);
+  will-change: width, height;
+}
+.sem-media-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.sem-media-overlay {
+  position: absolute;
+  inset: 0;
+  background: #161616;
+}
+.sem-media-caption {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 0.5rem;
+  z-index: 10;
+  pointer-events: none;
+}
+.sem-date {
+  margin: 0;
+  font-size: clamp(1.1rem, 2.5vw, 1.6rem);
+  font-weight: 500;
+  color: var(--lp-blue-light);
+  letter-spacing: 0.02em;
+}
+.sem-hint {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: #e0e0e0;
+}
+.sem-title {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 0.5rem;
+  width: 100%;
+  position: relative;
+  z-index: 10;
+}
+.sem-title-word {
+  margin: 0;
+  font-size: clamp(2.6rem, 8vw, 5.5rem);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: #ffffff;
+}
+.sem-reveal {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---------------------------------------------------------------------
+   Cuerpo de contenido revelado (secciones de la landing)
+   --------------------------------------------------------------------- */
+.lp-section {
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 5rem 1.5rem;
+}
+.lp-eyebrow {
+  display: inline-block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--lp-blue);
+  border-left: 3px solid var(--lp-blue);
+  padding-left: 0.6rem;
+  margin-bottom: 1rem;
+}
+.lp-h2 {
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  margin: 0 0 1rem;
+  max-width: 18ch;
+}
+.lp-lead {
+  font-size: clamp(1.05rem, 2vw, 1.35rem);
+  font-weight: 300;
+  line-height: 1.5;
+  color: var(--lp-ink-2);
+  max-width: 60ch;
+}
+.lp-section--dark .lp-h2 {
+  color: #f4f4f4;
+}
+.lp-section--dark .lp-lead {
+  color: #c6c6c6;
+}
+.lp-section--dark .lp-eyebrow {
+  color: var(--lp-blue-light);
+}
+
+/* Rejilla de funcionalidades (bento Carbon) */
+.lp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1px;
+  background: var(--lp-gray-20);
+  border: 1px solid var(--lp-gray-20);
+  margin-top: 2.5rem;
+}
+.lp-feature {
+  background: var(--lp-paper);
+  padding: 2rem 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  position: relative;
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
+  border-top: 3px solid transparent;
+}
+.lp-feature:hover {
+  background: var(--lp-gray-10);
+  border-top-color: var(--lp-blue);
+}
+.lp-feature__icon {
+  color: var(--lp-blue);
+}
+.lp-feature__title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin: 0;
+}
+.lp-feature__text {
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--lp-gray-60);
+  margin: 0;
+}
+.lp-feature__tag {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--lp-blue);
+}
+
+/* Pasos "Cómo funciona" */
+.lp-steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 2rem;
+  margin-top: 2.5rem;
+}
+.lp-step {
+  border-top: 1px solid var(--lp-ink);
+  padding-top: 1rem;
+}
+.lp-step__num {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.9rem;
+  color: var(--lp-blue);
+  font-weight: 500;
+}
+.lp-step__title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0.75rem 0 0.5rem;
+}
+.lp-step__text {
+  font-size: 0.95rem;
+  color: var(--lp-gray-60);
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Banda de métricas */
+.lp-stats {
+  background: var(--lp-ink);
+  color: #fff;
+}
+.lp-stats__grid {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 4rem 1.5rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 2.5rem;
+}
+.lp-stat__num {
+  font-size: clamp(2.4rem, 5vw, 3.4rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  color: var(--lp-blue-light);
+}
+.lp-stat__label {
+  margin-top: 0.6rem;
+  font-size: 0.95rem;
+  color: var(--lp-gray-20);
+  line-height: 1.4;
+}
+
+/* Banda CTA final */
+.lp-cta {
+  background: var(--lp-blue);
+  color: #fff;
+}
+.lp-cta__inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 5rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+  align-items: flex-start;
+}
+.lp-cta__title {
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+  margin: 0;
+  max-width: 20ch;
+}
+.lp-cta__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+.lp-cta .lp-btn {
+  background: var(--lp-ink);
+}
+.lp-cta .lp-btn:hover {
+  background: #000;
+}
+.lp-cta .lp-btn--ghost {
+  background: transparent;
+  border: 1px solid #fff;
+}
+.lp-cta .lp-btn--ghost:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* Pie de página */
+.lp-footer {
+  background: var(--lp-ink);
+  color: var(--lp-gray-20);
+  border-top: 1px solid var(--lp-line);
+}
+.lp-footer__inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 3rem 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  align-items: center;
+  justify-content: space-between;
+}
+.lp-footer__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
+.lp-footer__links a {
+  color: var(--lp-gray-20);
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+.lp-footer__links a:hover {
+  color: #fff;
+  text-decoration: underline;
+}
+.lp-footer__copy {
+  font-size: 0.85rem;
+  color: var(--lp-gray-60);
+}
+
+@media (max-width: 600px) {
+  .lp-nav__link--hide-sm {
+    display: none;
+  }
+  .lp-section {
+    padding: 3.5rem 1.25rem;
+  }
+}
