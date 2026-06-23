@@ -1,0 +1,194 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Servicio de autenticación: login con bcrypt y emisión/validación de JWT.",
+        "title": "OfficeSpace — Auth Service",
+        "contact": {},
+        "version": "1.0"
+    },
+    "basePath": "/",
+    "paths": {
+        "/auth/login": {
+            "post": {
+                "description": "Valida email y contraseña contra la base de datos y devuelve un JWT con el rol del usuario.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "autenticación"
+                ],
+                "summary": "Iniciar sesión",
+                "parameters": [
+                    {
+                        "description": "Credenciales de acceso",
+                        "name": "credenciales",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_auth-service_internal_models.LoginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_auth-service_internal_models.LoginResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_auth-service_internal_apperror.AppError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_auth-service_internal_apperror.AppError"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/me": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Devuelve los datos del usuario asociado al token JWT enviado.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "autenticación"
+                ],
+                "summary": "Usuario autenticado",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_auth-service_internal_models.MeResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_auth-service_internal_apperror.AppError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_i0dk1_OfficeSpace_auth-service_internal_apperror.AppError"
+                        }
+                    }
+                }
+            }
+        },
+        "/health": {
+            "get": {
+                "description": "Indica si el servicio está operativo (usado por docker-compose y Dokploy).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "salud"
+                ],
+                "summary": "Sonda de salud",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_handlers.SaludResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "github_com_i0dk1_OfficeSpace_auth-service_internal_apperror.AppError": {
+            "type": "object",
+            "properties": {
+                "codigo": {
+                    "type": "string"
+                },
+                "mensaje": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_i0dk1_OfficeSpace_auth-service_internal_models.LoginRequest": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "admin@corporativoalpha.com"
+                },
+                "password": {
+                    "type": "string",
+                    "example": "Admin123"
+                }
+            }
+        },
+        "github_com_i0dk1_OfficeSpace_auth-service_internal_models.LoginResponse": {
+            "type": "object",
+            "properties": {
+                "rol": {
+                    "type": "string",
+                    "example": "ADMINISTRADOR"
+                },
+                "token": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_i0dk1_OfficeSpace_auth-service_internal_models.MeResponse": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "admin@corporativoalpha.com"
+                },
+                "nombre": {
+                    "type": "string",
+                    "example": "Administrador Alpha"
+                },
+                "rol": {
+                    "type": "string",
+                    "example": "ADMINISTRADOR"
+                }
+            }
+        },
+        "internal_handlers.SaludResponse": {
+            "type": "object",
+            "properties": {
+                "servicio": {
+                    "type": "string",
+                    "example": "auth-service"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "ok"
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "description": "Escribe: Bearer {token}",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
+    }
+}
