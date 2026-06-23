@@ -1,4 +1,5 @@
 const navButtons = document.querySelectorAll(".nav-button");
+const loginNavButton = document.querySelector('.nav-button[data-view="login"]');
 const protectedNavButtons = document.querySelectorAll(".protected-nav");
 const adminNavButtons = document.querySelectorAll(".admin-nav");
 const views = document.querySelectorAll(".view");
@@ -80,19 +81,29 @@ const setMyBookingsMessage = (message, isSuccess = false) => setMessage(myBookin
 
 const pad = (value) => String(value).padStart(2, "0");
 
-const localDateIso = (date = new Date()) =>
+const formatLocalDateInput = (date = new Date()) =>
   `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 
-const timeValue = (date = new Date()) => `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+const getLocalToday = () => formatLocalDateInput();
 
-const getSuggestedBookingWindow = () => {
+const formatTimeInput = (date = new Date()) => `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+
+const normalizeDateForInput = (value) => String(value || "").slice(0, 10);
+const normalizeTimeForInput = (value) => String(value || "").slice(0, 5);
+
+const getNextValidHour = () => {
   const start = new Date();
   start.setHours(start.getHours() + 1, 0, 0, 0);
+  return start;
+};
+
+const getSuggestedBookingWindow = () => {
+  const start = getNextValidHour();
 
   let end = new Date(start);
   end.setHours(end.getHours() + 1);
 
-  if (localDateIso(end) !== localDateIso(start)) {
+  if (formatLocalDateInput(end) !== formatLocalDateInput(start)) {
     start.setDate(start.getDate() + 1);
     start.setHours(0, 0, 0, 0);
     end = new Date(start);
@@ -100,28 +111,39 @@ const getSuggestedBookingWindow = () => {
   }
 
   return {
-    date: localDateIso(start),
-    startTime: timeValue(start),
-    endTime: timeValue(end)
+    date: formatLocalDateInput(start),
+    startTime: formatTimeInput(start),
+    endTime: formatTimeInput(end)
   };
 };
 
 const validateTemporalSelection = ({ date, startTime, endTime }) => {
-  const today = localDateIso();
+  const today = getLocalToday();
 
   if (!date) return "Selecciona una fecha para continuar.";
   if (date < today) return "La fecha no puede estar en el pasado.";
   if (!startTime || !endTime) return "Selecciona hora de inicio y hora de fin.";
   if (endTime <= startTime) return "La hora de fin debe ser mayor que la hora de inicio.";
-  if (date === today && startTime <= timeValue()) {
+  if (date === today && startTime <= formatTimeInput()) {
     return "No puedes reservar en un horario que ya pasó. Selecciona una hora posterior.";
   }
 
   return "";
 };
 
+const isBookingCompleted = (booking) => {
+  if (booking.status !== "ACTIVE") return false;
+
+  const date = normalizeDateForInput(booking.date);
+  const endTime = normalizeTimeForInput(booking.endTime);
+
+  if (!date || !endTime) return false;
+
+  return `${date}T${endTime}` <= `${getLocalToday()}T${formatTimeInput()}`;
+};
+
 const initializeAvailabilityDefaults = (force = false) => {
-  const today = localDateIso();
+  const today = getLocalToday();
   const suggested = getSuggestedBookingWindow();
 
   availabilityDate.min = today;
@@ -185,6 +207,7 @@ const renderSession = () => {
   const loggedIn = isLoggedIn();
 
   sessionCard.hidden = !loggedIn;
+  loginNavButton.hidden = loggedIn;
   logoutButton.hidden = !loggedIn;
   protectedNavButtons.forEach((button) => {
     button.hidden = !loggedIn;
@@ -680,14 +703,19 @@ const renderMyBookings = (bookings) => {
 
   myBookingsList.innerHTML = bookings
     .map((booking) => {
-      const canCancel = booking.status === "ACTIVE";
+      const isCompleted = isBookingCompleted(booking);
+      const displayStatus = isCompleted ? "FINALIZADA" : booking.status;
+      const canCancel = booking.status === "ACTIVE" && !isCompleted;
+      const bookingDate = normalizeDateForInput(booking.date);
+      const bookingStartTime = normalizeTimeForInput(booking.startTime);
+      const bookingEndTime = normalizeTimeForInput(booking.endTime);
       const action = canCancel
         ? `<button type="button" data-action="cancel-booking" data-id="${booking.id}">Cancelar</button>`
         : "<span></span>";
 
-      return `<div class="booking-row">
-        <strong>${escapeHtml(booking.space.name)} (${escapeHtml(booking.status)})</strong>
-        <span>${escapeHtml(booking.date)} - ${escapeHtml(booking.startTime)} a ${escapeHtml(booking.endTime)} - ${escapeHtml(booking.attendees)} asistentes</span>
+      return `<div class="booking-row${isCompleted ? " booking-row-completed" : ""}">
+        <strong>${escapeHtml(booking.space.name)} <em>${escapeHtml(displayStatus)}</em></strong>
+        <span>${escapeHtml(bookingDate)} - ${escapeHtml(bookingStartTime)} a ${escapeHtml(bookingEndTime)} - ${escapeHtml(booking.attendees)} asistentes</span>
         ${action}
       </div>`;
     })
