@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NeoWallet</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      min-height: 100vh;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: #1a1d2e;
+      border-bottom: 1px solid #2d3148;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .logo { font-size: 22px; font-weight: 700; color: #7c6fff; letter-spacing: -0.5px; }
+    .logo span { color: #a78bfa; }
+    .badge {
+      font-size: 10px;
+      background: #2d2250;
+      color: #a78bfa;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    /* ── LAYOUT ── */
+    main {
+      max-width: 480px;
+      margin: 32px auto;
+      padding: 0 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* ── CARDS ── */
+    .card {
+      background: #1a1d2e;
+      border: 1px solid #2d3148;
+      border-radius: 16px;
+      padding: 24px;
+    }
+
+    /* ── USER SELECTOR ── */
+    .user-selector label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      display: block;
+      margin-bottom: 10px;
+    }
+    .user-pills {
+      display: flex;
+      gap: 8px;
+    }
+    .user-pill {
+      flex: 1;
+      padding: 10px;
+      border-radius: 10px;
+      border: 2px solid #2d3148;
+      background: #0f1117;
+      color: #94a3b8;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s;
+    }
+    .user-pill:hover { border-color: #7c6fff; color: #e2e8f0; }
+    .user-pill.active {
+      border-color: #7c6fff;
+      background: #2d2250;
+      color: #c4b5fd;
+    }
+    .user-pill small { display: block; font-weight: 400; color: #64748b; font-size: 10px; margin-top: 2px; }
+    .user-pill.active small { color: #a78bfa; }
+
+    /* ── BALANCE CARD ── */
+    .balance-card {
+      background: linear-gradient(135deg, #2d2250 0%, #1a1d2e 100%);
+      border-color: #4c3a8a;
+      text-align: center;
+    }
+    .balance-label { font-size: 12px; color: #a78bfa; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase; }
+    .balance-amount {
+      font-size: 48px;
+      font-weight: 700;
+      color: #fff;
+      margin: 8px 0 4px;
+      letter-spacing: -1px;
+    }
+    .balance-amount .currency { font-size: 24px; color: #a78bfa; vertical-align: top; margin-top: 10px; margin-right: 4px; }
+    .balance-user { font-size: 14px; color: #64748b; }
+    .balance-user strong { color: #94a3b8; }
+    .balance-skeleton { opacity: 0.4; }
+
+    /* ── ACTION BUTTONS ── */
+    .actions { display: flex; gap: 12px; }
+    .btn {
+      flex: 1;
+      padding: 14px;
+      border-radius: 12px;
+      border: none;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+    .btn-icon { font-size: 20px; }
+    .btn-primary { background: #7c6fff; color: #fff; }
+    .btn-primary:hover { background: #6d5fe0; }
+    .btn-secondary { background: #1e2235; color: #94a3b8; border: 1px solid #2d3148; }
+    .btn-secondary:hover { background: #2d3148; color: #e2e8f0; }
+    .btn-active { background: #1e2235; color: #7c6fff; border: 1px solid #7c6fff; }
+
+    /* ── PANELS ── */
+    .panel { display: none; }
+    .panel.open { display: block; }
+
+    .panel-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 20px;
+      color: #e2e8f0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* ── FORM ── */
+    .form-group { margin-bottom: 16px; }
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: #64748b;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+    .form-group input, .form-group select {
+      width: 100%;
+      background: #0f1117;
+      border: 1px solid #2d3148;
+      border-radius: 10px;
+      padding: 12px 14px;
+      color: #e2e8f0;
+      font-size: 15px;
+      outline: none;
+      transition: border 0.15s;
+    }
+    .form-group input:focus, .form-group select:focus { border-color: #7c6fff; }
+    .form-group input::placeholder { color: #334155; }
+
+    .submit-btn {
+      width: 100%;
+      padding: 14px;
+      border-radius: 12px;
+      border: none;
+      background: #7c6fff;
+      color: #fff;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s;
+      margin-top: 4px;
+    }
+    .submit-btn:hover { background: #6d5fe0; }
+    .submit-btn:disabled { background: #2d3148; color: #475569; cursor: not-allowed; }
+
+    /* ── ALERTS ── */
+    .alert {
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 16px;
+      display: none;
+    }
+    .alert.show { display: block; }
+    .alert-success { background: #052e16; border: 1px solid #166534; color: #4ade80; }
+    .alert-error { background: #2d0a0a; border: 1px solid #7f1d1d; color: #f87171; }
+
+    /* ── HISTORY ── */
+    .history-list { display: flex; flex-direction: column; gap: 10px; }
+    .tx-item {
+      background: #0f1117;
+      border: 1px solid #2d3148;
+      border-radius: 12px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .tx-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+    .tx-icon.sent { background: #2d0a0a; }
+    .tx-icon.received { background: #052e16; }
+    .tx-icon.failed { background: #1c1400; }
+    .tx-info { flex: 1; min-width: 0; }
+    .tx-type { font-size: 13px; font-weight: 600; color: #e2e8f0; }
+    .tx-meta { font-size: 11px; color: #475569; margin-top: 2px; }
+    .tx-amount { text-align: right; }
+    .tx-amount .amount { font-size: 15px; font-weight: 700; }
+    .tx-amount .amount.sent { color: #f87171; }
+    .tx-amount .amount.received { color: #4ade80; }
+    .tx-amount .amount.failed { color: #94a3b8; }
+    .tx-status {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 999px;
+      margin-top: 4px;
+      display: inline-block;
+    }
+    .status-COMPLETED { background: #052e16; color: #4ade80; }
+    .status-FAILED { background: #2d0a0a; color: #f87171; }
+    .status-ROLLED_BACK { background: #1c1400; color: #fbbf24; }
+    .status-PENDING { background: #0d1a2d; color: #60a5fa; }
+    .status-DEBITED { background: #0d1a2d; color: #60a5fa; }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 0;
+      color: #475569;
+      font-size: 14px;
+    }
+    .empty-state .empty-icon { font-size: 36px; margin-bottom: 10px; }
+
+    .loading-dots::after {
+      content: '...';
+      animation: dots 1s steps(3, end) infinite;
+    }
+    @keyframes dots {
+      0%, 100% { content: '.'; }
+      33% { content: '..'; }
+      66% { content: '...'; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Neo<span>Wallet</span></div>
+  <div class="badge">P2P MVP</div>
+</header>
+
+<main>
+
+  <!-- USER SELECTOR -->
+  <div class="card user-selector">
+    <label>Seleccionar usuario</label>
+    <div class="user-pills">
+      <button class="user-pill" data-id="1" onclick="selectUser(1)">
+        👤 Usuario A
+        <small>Rico</small>
+      </button>
+      <button class="user-pill" data-id="2" onclick="selectUser(2)">
+        👤 Usuario B
+        <small>Pobre</small>
+      </button>
+      <button class="user-pill" data-id="3" onclick="selectUser(3)">
+        👤 Usuario C
+        <small>Nuevo</small>
+      </button>
+    </div>
+  </div>
+
+  <!-- BALANCE -->
+  <div class="card balance-card" id="balanceCard">
+    <div class="balance-label">Saldo disponible</div>
+    <div class="balance-amount" id="balanceAmount">
+      <span class="currency">$</span>
+      <span id="balanceValue">—</span>
+    </div>
+    <div class="balance-user" id="balanceUser">Selecciona un usuario para comenzar</div>
+  </div>
+
+  <!-- ACTION BUTTONS -->
+  <div class="actions">
+    <button class="btn btn-secondary" id="btnRecharge" onclick="togglePanel('recharge')">
+      <span class="btn-icon">💳</span>
+      Recargar
+    </button>
+    <button class="btn btn-primary" id="btnTransfer" onclick="togglePanel('transfer')">
+      <span class="btn-icon">↗</span>
+      Transferir
+    </button>
+    <button class="btn btn-secondary" id="btnHistory" onclick="togglePanel('history')">
+      <span class="btn-icon">📋</span>
+      Historial
+    </button>
+  </div>
+
+  <!-- PANEL: RECARGAR -->
+  <div class="card panel" id="panel-recharge">
+    <div class="panel-title">💳 Recargar Saldo</div>
+    <div class="alert alert-success" id="recharge-success"></div>
+    <div class="alert alert-error" id="recharge-error"></div>
+    <div class="form-group">
+      <label>Monto a recargar</label>
+      <input type="number" id="rechargeAmount" placeholder="0.00" min="1" step="0.01" />
+    </div>
+    <div class="form-group">
+      <label>Método de pago</label>
+      <select id="rechargeMethod">
+        <option value="credit_card">Tarjeta de crédito</option>
+        <option value="debit_card">Tarjeta de débito</option>
+        <option value="bank_transfer">Transferencia bancaria</option>
+      </select>
+    </div>
+    <button class="submit-btn" id="rechargeBtn" onclick="doRecharge()">Recargar</button>
+  </div>
+
+  <!-- PANEL: TRANSFERIR -->
+  <div class="card panel" id="panel-transfer">
+    <div class="panel-title">↗ Transferir Dinero</div>
+    <div class="alert alert-success" id="transfer-success"></div>
+    <div class="alert alert-error" id="transfer-error"></div>
+    <div class="form-group">
+      <label>Destinatario (ID de usuario)</label>
+      <select id="receiverId">
+        <option value="">Seleccionar destinatario...</option>
+        <option value="1">Usuario 1 — Usuario A (Rico)</option>
+        <option value="2">Usuario 2 — Usuario B (Pobre)</option>
+        <option value="3">Usuario 3 — Usuario C (Nuevo)</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Monto</label>
+      <input type="number" id="transferAmount" placeholder="0.00" min="0.01" step="0.01" />
+    </div>
+    <button class="submit-btn" id="transferBtn" onclick="doTransfer()">Transferir</button>
+  </div>
+
+  <!-- PANEL: HISTORIAL -->
+  <div class="card panel" id="panel-history">
+    <div class="panel-title">📋 Historial de Transacciones</div>
+    <div id="historyContent">
+      <div class="empty-state">
+        <div class="empty-icon">📂</div>
+        Cargando historial<span class="loading-dots"></span>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+  const ACCOUNTS = 'http://localhost:3000';
+  const PROCESSOR = 'http://localhost:3001';
+
+  let currentUserId = null;
+  let activePanel = null;
+
+  async function selectUser(id) {
+    currentUserId = id;
+
+    // UI: pills
+    document.querySelectorAll('.user-pill').forEach(p => p.classList.remove('active'));
+    document.querySelector(`.user-pill[data-id="${id}"]`).classList.add('active');
+
+    // UI: balance placeholder
+    document.getElementById('balanceValue').textContent = '—';
+    document.getElementById('balanceUser').textContent = 'Cargando...';
+
+    // Update receiver options (exclude self)
+    const sel = document.getElementById('receiverId');
+    [...sel.options].forEach(o => {
+      o.disabled = o.value == id;
+      if (o.value == id) o.textContent = o.textContent.replace(' (tú)', '') + ' (tú)';
+      else o.textContent = o.textContent.replace(' (tú)', '');
+    });
+
+    // Fetch balance
+    try {
+      const res = await fetch(`${ACCOUNTS}/accounts/${id}`);
+      if (!res.ok) throw new Error('No encontrado');
+      const data = await res.json();
+      document.getElementById('balanceValue').textContent = Number(data.balance).toFixed(2);
+      document.getElementById('balanceUser').innerHTML = `<strong>${data.name}</strong> · ${data.email}`;
+    } catch (e) {
+      document.getElementById('balanceValue').textContent = 'Error';
+      document.getElementById('balanceUser').textContent = 'No se pudo cargar el saldo';
+    }
+
+    // If history is open, reload it
+    if (activePanel === 'history') loadHistory();
+  }
+
+  function togglePanel(name) {
+    const btns = { recharge: 'btnRecharge', transfer: 'btnTransfer', history: 'btnHistory' };
+
+    if (activePanel === name) {
+      // Close
+      document.getElementById(`panel-${name}`).classList.remove('open');
+      document.getElementById(btns[name]).className = 'btn btn-secondary';
+      if (name === 'transfer') document.getElementById(btns[name]).className = 'btn btn-primary';
+      activePanel = null;
+      return;
+    }
+
+    // Close previous
+    if (activePanel) {
+      document.getElementById(`panel-${activePanel}`).classList.remove('open');
+      const prevBtn = document.getElementById(btns[activePanel]);
+      prevBtn.className = activePanel === 'transfer' ? 'btn btn-primary' : 'btn btn-secondary';
+    }
+
+    activePanel = name;
+    document.getElementById(`panel-${name}`).classList.add('open');
+    document.getElementById(btns[name]).className = 'btn btn-active';
+
+    if (name === 'history') loadHistory();
+  }
+
+  function showAlert(prefix, type, msg) {
+    const el = document.getElementById(`${prefix}-${type}`);
+    el.textContent = msg;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 5000);
+  }
+
+  async function doRecharge() {
+    if (!currentUserId) return alert('Selecciona un usuario primero');
+    const amount = parseFloat(document.getElementById('rechargeAmount').value);
+    const method = document.getElementById('rechargeMethod').value;
+    if (!amount || amount <= 0) return showAlert('recharge', 'error', 'Ingresa un monto válido mayor a 0');
+
+    const btn = document.getElementById('rechargeBtn');
+    btn.disabled = true;
+    btn.textContent = 'Procesando...';
+
+    try {
+      const res = await fetch(`${ACCOUNTS}/api/recharge`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: currentUserId, amount, payment_method: method })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error desconocido');
+      showAlert('recharge', 'success', `✅ Recarga exitosa. Nuevo saldo: $${Number(data.user.balance).toFixed(2)}`);
+      document.getElementById('rechargeAmount').value = '';
+      document.getElementById('balanceValue').textContent = Number(data.user.balance).toFixed(2);
+    } catch (e) {
+      showAlert('recharge', 'error', `❌ ${e.message}`);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Recargar';
+    }
+  }
+
+  async function doTransfer() {
+    if (!currentUserId) return alert('Selecciona un usuario primero');
+    const receiver_id = parseInt(document.getElementById('receiverId').value);
+    const amount = parseFloat(document.getElementById('transferAmount').value);
+
+    if (!receiver_id) return showAlert('transfer', 'error', 'Selecciona un destinatario');
+    if (!amount || amount <= 0) return showAlert('transfer', 'error', 'Ingresa un monto válido mayor a 0');
+    if (receiver_id === currentUserId) return showAlert('transfer', 'error', 'No puedes transferirte a ti mismo');
+
+    const btn = document.getElementById('transferBtn');
+    btn.disabled = true;
+    btn.textContent = 'Procesando...';
+
+    try {
+      const res = await fetch(`${PROCESSOR}/api/transfer`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sender_id: currentUserId, receiver_id, amount })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || data.error || 'Error desconocido');
+      showAlert('transfer', 'success', `✅ Transferencia exitosa (ID #${data.transaction_id})`);
+      document.getElementById('transferAmount').value = '';
+      document.getElementById('receiverId').value = '';
+      // Refresh balance
+      await selectUser(currentUserId);
+    } catch (e) {
+      showAlert('transfer', 'error', `❌ ${e.message}`);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Transferir';
+    }
+  }
+
+  async function loadHistory() {
+    if (!currentUserId) {
+      document.getElementById('historyContent').innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">👤</div>
+          Selecciona un usuario para ver su historial
+        </div>`;
+      return;
+    }
+
+    document.getElementById('historyContent').innerHTML = `
+      <div class="empty-state">Cargando<span class="loading-dots"></span></div>`;
+
+    try {
+      const res = await fetch(`${PROCESSOR}/api/transactions/${currentUserId}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+
+      if (data.history.length === 0) {
+        document.getElementById('historyContent').innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">📭</div>
+            Sin transacciones aún
+          </div>`;
+        return;
+      }
+
+      const items = data.history.map(tx => {
+        const isSent = tx.type === 'sent';
+        const isFailed = tx.status !== 'COMPLETED';
+        const typeClass = isFailed ? 'failed' : (isSent ? 'sent' : 'received');
+        const icon = isFailed ? '⚠️' : (isSent ? '↗' : '↙');
+        const label = isSent ? `Enviado → Usuario ${tx.counterparty_id}` : `Recibido ← Usuario ${tx.counterparty_id}`;
+        const sign = isFailed ? '' : (isSent ? '-' : '+');
+        const date = new Date(tx.date).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
+
+        return `
+          <div class="tx-item">
+            <div class="tx-icon ${typeClass}">${icon}</div>
+            <div class="tx-info">
+              <div class="tx-type">${label}</div>
+              <div class="tx-meta">#${tx.transaction_id} · ${date}</div>
+            </div>
+            <div class="tx-amount">
+              <div class="amount ${typeClass}">${sign}$${Number(tx.amount).toFixed(2)}</div>
+              <span class="tx-status status-${tx.status}">${tx.status}</span>
+            </div>
+          </div>`;
+      }).join('');
+
+      document.getElementById('historyContent').innerHTML = `
+        <div class="history-list">${items}</div>`;
+
+    } catch (e) {
+      document.getElementById('historyContent').innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">⚠️</div>
+          Error al cargar historial: ${e.message}
+        </div>`;
+    }
+  }
+</script>
+
+</body>
+</html>

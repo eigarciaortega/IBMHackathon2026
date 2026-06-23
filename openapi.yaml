@@ -1,0 +1,197 @@
+openapi: 3.0.3
+
+info:
+  title: NeoWallet P2P API
+  description: |
+    API REST para el MVP de la billetera digital **NeoWallet**.
+    Desarrollado con una arquitectura de microservicios y Patrón Saga para resiliencia financiera.
+
+    ## Microservicios
+    * **Accounts Service (Puerto 3000):** Gestiona saldos y usuarios.
+    * **Processor Service (Puerto 3001):** Motor transaccional P2P.
+  version: 1.0.0
+  contact:
+    name: Equipo NeoWallet
+
+tags:
+  - name: Accounts
+    description: Microservicio de Cuentas (Puerto 3000)
+  - name: Processor
+    description: Microservicio de Procesamiento P2P (Puerto 3001)
+
+paths:
+
+  # ─── ACCOUNTS SERVICE (Port 3000) ───────────────────────────────────────────
+
+  /accounts/{id}:
+    servers:
+      - url: http://localhost:3000
+        description: Accounts Service
+    get:
+      tags: [Accounts]
+      summary: Consultar Saldo de Usuario
+      description: Retorna los datos y el saldo actual de un usuario específico.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+      responses:
+        '200':
+          description: Datos del usuario encontrados
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '404':
+          description: Usuario no encontrado
+
+  /api/recharge:
+    servers:
+      - url: http://localhost:3000
+        description: Accounts Service
+    post:
+      tags: [Accounts]
+      summary: Recargar Saldo
+      description: Agrega fondos a la billetera de un usuario. Simula el ingreso de dinero desde una fuente externa (tarjeta, banco).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RechargeRequest'
+      responses:
+        '200':
+          description: Recarga exitosa
+        '400':
+          description: Datos inválidos (monto negativo o cero)
+
+  /accounts/update-balance:
+    servers:
+      - url: http://localhost:3000
+        description: Accounts Service (Internal)
+    post:
+      tags: [Accounts]
+      summary: Actualizar Balance (Uso Interno)
+      description: Endpoint privado utilizado por el Processor Service para debitar o acreditar dinero de forma segura.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateBalanceRequest'
+      responses:
+        '200':
+          description: Balance actualizado correctamente
+        '400':
+          description: Fondos insuficientes u operación inválida
+
+  # ─── PROCESSOR SERVICE (Port 3001) ──────────────────────────────────────────
+
+  /api/transfer:
+    servers:
+      - url: http://localhost:3001
+        description: Processor Service
+    post:
+      tags: [Processor]
+      summary: Transferir Dinero (P2P)
+      description: |
+        Motor core del sistema. Transfiere fondos entre dos usuarios utilizando el **Patrón Saga**.
+        Si el débito es exitoso pero el crédito falla, el sistema aplica una compensación automática para evitar pérdida de dinero.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransferRequest'
+      responses:
+        '200':
+          description: Transferencia procesada con éxito
+        '400':
+          description: Error de negocio (fondos insuficientes, auto-transferencia)
+        '500':
+          description: Error interno del sistema
+
+  /api/transactions/{user_id}:
+    servers:
+      - url: http://localhost:3001
+        description: Processor Service
+    get:
+      tags: [Processor]
+      summary: Historial de Transacciones
+      description: Devuelve la lista completa de transacciones enviadas o recibidas por un usuario.
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+      responses:
+        '200':
+          description: Historial recuperado exitosamente
+
+# ─── COMPONENTS ──────────────────────────────────────────────────────────────
+
+components:
+  schemas:
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Usuario A (Rico)
+        email:
+          type: string
+          example: usuario.a@neowallet.com
+        balance:
+          type: string
+          example: "1400.00"
+
+    RechargeRequest:
+      type: object
+      required: [user_id, amount, payment_method]
+      properties:
+        user_id:
+          type: integer
+          example: 1
+        amount:
+          type: number
+          example: 500.00
+        payment_method:
+          type: string
+          example: credit_card
+
+    UpdateBalanceRequest:
+      type: object
+      required: [user_id, amount, operation]
+      properties:
+        user_id:
+          type: integer
+          example: 1
+        amount:
+          type: number
+          example: 100.00
+        operation:
+          type: string
+          enum: [debit, credit]
+          example: debit
+
+    TransferRequest:
+      type: object
+      required: [sender_id, receiver_id, amount]
+      properties:
+        sender_id:
+          type: integer
+          example: 1
+        receiver_id:
+          type: integer
+          example: 2
+        amount:
+          type: number
+          example: 100.00

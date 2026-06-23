@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  # Base de Datos para el Servicio de Cuentas
+  accounts-db:
+    image: postgres:15-alpine
+    container_name: neowallet_accounts_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: wallet_user
+      POSTGRES_PASSWORD: WalletSecretPass123!
+      POSTGRES_DB: accounts_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./db-infra/init-accounts.sql:/docker-entrypoint-initdb.d/init-accounts.sql
+      - accounts_db_data:/var/lib/postgresql/data
+
+  # Base de Datos para el Servicio de Procesamiento
+  processor-db:
+    image: postgres:15-alpine
+    container_name: neowallet_processor_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: wallet_user
+      POSTGRES_PASSWORD: WalletSecretPass123!
+      POSTGRES_DB: processor_db
+    ports:
+      - "5433:5432" # Expuesto al exterior en el 5433 para evitar colisiones
+    volumes:
+      - ./db-infra/init-processor.sql:/docker-entrypoint-initdb.d/init-processor.sql
+      - processor_db_data:/var/lib/postgresql/data
+
+  # Microservicio de Cuentas
+  accounts-service:
+    image: node:20-alpine
+    container_name: neowallet_accounts_service
+    restart: unless-stopped
+    working_dir: /app
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - DB_HOST=accounts-db
+      - DB_PORT=5432
+      - DB_USER=wallet_user
+      - DB_PASS=WalletSecretPass123!
+      - DB_NAME=accounts_db
+    volumes:
+      - ./accounts-service:/app
+    command: sh -c "npm install && npm run dev"
+    depends_on:
+      - accounts-db
+
+  # Microservicio de Procesamiento P2P
+  processor-service:
+    image: node:20-alpine
+    container_name: neowallet_processor_service
+    restart: unless-stopped
+    working_dir: /app
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - DB_HOST=processor-db
+      - DB_PORT=5432
+      - DB_USER=wallet_user
+      - DB_PASS=WalletSecretPass123!
+      - DB_NAME=processor_db
+      - ACCOUNTS_SERVICE_URL=http://accounts-service:3000
+    volumes:
+      - ./processor-service:/app
+    command: sh -c "npm install && npm run dev"
+    depends_on:
+      - processor-db
+
+volumes:
+  accounts_db_data:
+  processor_db_data:
