@@ -6,7 +6,6 @@ import { useAuth } from '../hooks/useAuth'
 import { ApiError } from '../lib/api'
 import { IconCheck, Logo } from '../components/icons'
 import { Spinner } from '../components/ui'
-import { OccupancyTrack } from '../components/OccupancyTrack'
 
 const VENTAJAS = [
   'Disponibilidad en tiempo real',
@@ -41,20 +40,31 @@ export function LoginPage() {
   }
 
   return (
-    <div className="grid min-h-dvh lg:grid-cols-[1.05fr_1fr]">
+    <div className="grid min-h-dvh lg:grid-cols-2">
       {/* Panel de marca (oculto en móvil) */}
-      <aside className="relative hidden flex-col overflow-hidden px-10 py-10 text-white lg:flex xl:px-16 bg-gradient-to-br from-azul-strong via-azul-strong to-[#0f2657]">
-        {/* Motivo de cuadrícula tenue que evoca el logo (franjas de reserva). */}
+      <aside className="relative hidden flex-col overflow-hidden px-12 py-12 text-white lg:flex xl:px-20 bg-gradient-to-br from-azul-strong via-azul-strong to-[#0d2150]">
+        {/* Motivo de cuadrícula tenue. */}
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 opacity-[0.07]"
           style={{
             backgroundImage:
               'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)',
-            backgroundSize: '36px 36px',
-            maskImage: 'radial-gradient(130% 90% at 25% 10%, #000 35%, transparent 100%)',
+            backgroundSize: '40px 40px',
+            maskImage: 'radial-gradient(140% 100% at 20% 0%, #000 35%, transparent 100%)',
           }}
         />
+        {/* Glifo grande y tenue (franjas de reserva) como firma de marca. */}
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 100 64"
+          className="pointer-events-none absolute -right-16 bottom-4 w-[34rem] text-white opacity-[0.05]"
+          fill="currentColor"
+        >
+          <rect x="2" y="6" width="64" height="12" rx="6" />
+          <rect x="22" y="26" width="64" height="12" rx="6" />
+          <rect x="2" y="46" width="44" height="12" rx="6" />
+        </svg>
 
         <div className="relative flex items-center gap-2.5">
           <Logo tono="claro" />
@@ -62,44 +72,25 @@ export function LoginPage() {
         </div>
 
         {/* Bloque central */}
-        <div className="relative my-auto max-w-md py-10">
-          <h1 className="text-balance text-[2.6rem] font-semibold leading-[1.08] tracking-tight text-white">
+        <div className="relative my-auto max-w-lg">
+          <h1 className="text-balance text-[2.9rem] font-semibold leading-[1.05] tracking-tight text-white">
             Reserva salas y escritorios sin choques de horario.
           </h1>
-          <p className="mt-5 max-w-sm text-pretty leading-relaxed text-azul-soft/85">
-            La gestión híbrida de espacios de Corporativo Alpha, sin el Excel
-            compartido que duplicaba reservas.
-          </p>
 
-          <ul className="mt-7 space-y-2.5">
+          <ul className="mt-10 space-y-4">
             {VENTAJAS.map((v) => (
-              <li key={v} className="flex items-center gap-3 text-sm text-white/90">
-                <span className="grid size-5 shrink-0 place-items-center rounded-full bg-white/15 text-white">
+              <li key={v} className="flex items-center gap-3.5 text-[0.95rem] text-white/90">
+                <span className="grid size-6 shrink-0 place-items-center rounded-full bg-white/10 text-ambar ring-1 ring-white/15">
                   <IconCheck className="size-3.5" />
                 </span>
                 {v}
               </li>
             ))}
           </ul>
-
-          <div className="mt-8 max-w-sm rounded-[var(--radius-lg)] bg-white/[0.07] p-4 ring-1 ring-white/15">
-            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-azul-soft/80">
-              Sala Monterrey · hoy
-            </p>
-            <OccupancyTrack
-              franjas={[
-                { inicio: '09:00', fin: '10:30' },
-                { inicio: '13:00', fin: '14:00' },
-                { inicio: '16:00', fin: '18:00' },
-              ]}
-              mostrarHoras
-              variante="oscuro"
-            />
-          </div>
         </div>
 
         <div className="relative flex items-center justify-between text-sm text-azul-soft/70">
-          <span>Corporativo Alpha</span>
+          <span>Corporativo Alpha · Gestión de espacios</span>
           <Link to="/about" className="rounded text-azul-soft/80 underline-offset-4 hover:text-white hover:underline">
             Acerca de
           </Link>
@@ -108,7 +99,7 @@ export function LoginPage() {
 
       {/* Formulario */}
       <main className="flex items-center justify-center px-6 py-12">
-        <div className="w-full max-w-[23rem]">
+        <div className="w-full max-w-[24rem]">
           <div className="mb-10 lg:hidden">
             <div className="inline-flex items-center gap-2.5">
               <Logo />
@@ -159,7 +150,7 @@ export function LoginPage() {
               />
             </div>
 
-            <button type="submit" className="btn-primary w-full" disabled={enviando}>
+            <button type="submit" className="btn-primary mt-2 w-full" disabled={enviando}>
               {enviando ? <Spinner className="size-4" /> : null}
               {enviando ? 'Entrando…' : 'Iniciar sesión'}
             </button>
