@@ -1,0 +1,81 @@
+services:
+  accounts_db:
+    image: postgres:15-alpine
+    container_name: neowallet_accounts_db
+    environment:
+      POSTGRES_DB: accounts_db
+      POSTGRES_USER: ${ACCOUNTS_DB_USER:-neowallet}
+      POSTGRES_PASSWORD: ${ACCOUNTS_DB_PASSWORD:-neowallet_secret}
+    ports:
+      - "5446:5432"
+    volumes:
+      - accounts_db_data:/var/lib/postgresql/data
+      - ./accounts-service/src/db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${ACCOUNTS_DB_USER:-neowallet} -d accounts_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  processor_db:
+    image: postgres:15-alpine
+    container_name: neowallet_processor_db
+    environment:
+      POSTGRES_DB: processor_db
+      POSTGRES_USER: ${PROCESSOR_DB_USER:-neowallet}
+      POSTGRES_PASSWORD: ${PROCESSOR_DB_PASSWORD:-neowallet_secret}
+    ports:
+      - "5445:5432"
+    volumes:
+      - processor_db_data:/var/lib/postgresql/data
+      - ./processor-service/src/db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PROCESSOR_DB_USER:-neowallet} -d processor_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  accounts-service:
+    build:
+      context: ./accounts-service
+      dockerfile: Dockerfile
+    container_name: neowallet_accounts_service
+    ports:
+      - "4000:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DB_HOST: accounts_db
+      DB_PORT: 5432
+      DB_NAME: accounts_db
+      DB_USER: ${ACCOUNTS_DB_USER:-neowallet}
+      DB_PASSWORD: ${ACCOUNTS_DB_PASSWORD:-neowallet_secret}
+    depends_on:
+      accounts_db:
+        condition: service_healthy
+
+  processor-service:
+    build:
+      context: ./processor-service
+      dockerfile: Dockerfile
+    container_name: neowallet_processor_service
+    ports:
+      - "4001:3001"
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      DB_HOST: processor_db
+      DB_PORT: 5432
+      DB_NAME: processor_db
+      DB_USER: ${PROCESSOR_DB_USER:-neowallet}
+      DB_PASSWORD: ${PROCESSOR_DB_PASSWORD:-neowallet_secret}
+      ACCOUNTS_SERVICE_URL: http://accounts-service:3000
+    depends_on:
+      processor_db:
+        condition: service_healthy
+      accounts-service:
+        condition: service_started
+
+volumes:
+  accounts_db_data:
+  processor_db_data:
