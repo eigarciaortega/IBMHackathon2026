@@ -191,7 +191,7 @@ const searchAssistantSpaces = async (req, res) => {
 
       return res.status(400).json({
         intent: "BUSCAR_ESPACIO",
-        message: availability.error,
+        message: availability.errors?.[0] || availability.error,
         interpretedFilters,
         missingFields: [],
         suggestedSpaces: []

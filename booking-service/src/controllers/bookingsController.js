@@ -30,7 +30,7 @@ const getAvailability = async (req, res) => {
 
   if (intervalErrors.length) {
     return res.status(400).json({
-      message: "Datos invalidos para consultar disponibilidad.",
+      message: intervalErrors[0],
       errors: intervalErrors
     });
   }
@@ -66,7 +66,7 @@ const createBooking = async (req, res) => {
 
   if (errors.length) {
     return res.status(400).json({
-      message: "Datos invalidos para crear reserva.",
+      message: errors[0],
       errors
     });
   }

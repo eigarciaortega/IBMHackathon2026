@@ -27,9 +27,22 @@ const createSwaggerSpec = (port) => ({
         required: ["spaceId", "date", "startTime", "endTime", "attendees"],
         properties: {
           spaceId: { type: "string", format: "uuid" },
-          date: { type: "string", format: "date", example: "2026-06-23" },
-          startTime: { type: "string", example: "09:00" },
-          endTime: { type: "string", example: "10:00" },
+          date: {
+            type: "string",
+            format: "date",
+            example: "2026-06-23",
+            description: "No puede estar en el pasado."
+          },
+          startTime: {
+            type: "string",
+            example: "09:00",
+            description: "Debe ser posterior a la hora actual cuando date sea hoy."
+          },
+          endTime: {
+            type: "string",
+            example: "10:00",
+            description: "Debe ser mayor que startTime."
+          },
           attendees: { type: "integer", example: 5 }
         }
       },
@@ -136,9 +149,27 @@ const createSwaggerSpec = (port) => ({
         summary: "Consulta espacios disponibles para un intervalo",
         security: [{ bearerAuth: [] }],
         parameters: [
-          { name: "date", in: "query", required: true, schema: { type: "string", format: "date" } },
-          { name: "startTime", in: "query", required: true, schema: { type: "string", example: "09:00" } },
-          { name: "endTime", in: "query", required: true, schema: { type: "string", example: "10:00" } },
+          {
+            name: "date",
+            in: "query",
+            required: true,
+            schema: { type: "string", format: "date" },
+            description: "No puede estar en el pasado."
+          },
+          {
+            name: "startTime",
+            in: "query",
+            required: true,
+            schema: { type: "string", example: "09:00" },
+            description: "Debe ser posterior a la hora actual cuando date sea hoy."
+          },
+          {
+            name: "endTime",
+            in: "query",
+            required: true,
+            schema: { type: "string", example: "10:00" },
+            description: "Debe ser mayor que startTime."
+          },
           { name: "type", in: "query", schema: { type: "string", enum: ["SALA", "DESK"] } },
           { name: "minCapacity", in: "query", schema: { type: "integer", minimum: 1 } },
           { name: "attendees", in: "query", schema: { type: "integer", minimum: 1 } },
@@ -150,7 +181,7 @@ const createSwaggerSpec = (port) => ({
         ],
         responses: {
           200: { description: "Espacios disponibles" },
-          400: { description: "Datos invalidos" },
+          400: { description: "Datos invalidos: fecha pasada, horario pasado para hoy o endTime menor/igual que startTime" },
           401: { description: "Token faltante o invalido" },
           500: { description: "Error interno" }
         }
@@ -168,7 +199,7 @@ const createSwaggerSpec = (port) => ({
         },
         responses: {
           201: { description: "Reserva creada" },
-          400: { description: "Datos invalidos o capacidad excedida" },
+          400: { description: "Datos invalidos, fecha/hora no permitida o capacidad excedida" },
           401: { description: "Token faltante o invalido" },
           404: { description: "Espacio no encontrado" },
           409: { description: "Reserva solapada" },
@@ -322,7 +353,7 @@ const createSwaggerSpec = (port) => ({
               }
             }
           },
-          400: { description: "Mensaje faltante o datos invalidos" },
+          400: { description: "Mensaje faltante, fecha/hora no permitida o datos invalidos" },
           401: { description: "Token faltante o invalido" },
           500: { description: "Error interno" }
         }

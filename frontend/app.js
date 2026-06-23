@@ -21,6 +21,9 @@ const saveSpaceButton = document.getElementById("saveSpaceButton");
 const clearSpaceFormButton = document.getElementById("clearSpaceFormButton");
 const adminOnlyHeaders = document.querySelectorAll(".admin-only");
 const availabilityForm = document.getElementById("availabilityForm");
+const availabilityDate = document.getElementById("availabilityDate");
+const availabilityStartTime = document.getElementById("availabilityStartTime");
+const availabilityEndTime = document.getElementById("availabilityEndTime");
 const availabilityResults = document.getElementById("availabilityResults");
 const availabilityMessage = document.getElementById("availabilityMessage");
 const bookingSummary = document.getElementById("bookingSummary");
@@ -74,6 +77,60 @@ const setSpaceMessage = (message, isSuccess = false) => setMessage(spaceMessage,
 const setAvailabilityMessage = (message, isSuccess = false) => setMessage(availabilityMessage, message, isSuccess);
 const setBookingMessage = (message, isSuccess = false) => setMessage(bookingMessage, message, isSuccess);
 const setMyBookingsMessage = (message, isSuccess = false) => setMessage(myBookingsMessage, message, isSuccess);
+
+const pad = (value) => String(value).padStart(2, "0");
+
+const localDateIso = (date = new Date()) =>
+  `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+
+const timeValue = (date = new Date()) => `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+
+const getSuggestedBookingWindow = () => {
+  const start = new Date();
+  start.setHours(start.getHours() + 1, 0, 0, 0);
+
+  const end = new Date(start);
+  end.setHours(end.getHours() + 1);
+
+  return {
+    date: localDateIso(start),
+    startTime: timeValue(start),
+    endTime: timeValue(end)
+  };
+};
+
+const validateTemporalSelection = ({ date, startTime, endTime }) => {
+  const today = localDateIso();
+
+  if (!date) return "Selecciona una fecha para continuar.";
+  if (date < today) return "La fecha no puede estar en el pasado.";
+  if (!startTime || !endTime) return "Selecciona hora de inicio y hora de fin.";
+  if (endTime <= startTime) return "La hora de fin debe ser mayor que la hora de inicio.";
+  if (date === today && startTime <= timeValue()) {
+    return "No puedes reservar en un horario que ya pasó. Selecciona una hora posterior.";
+  }
+
+  return "";
+};
+
+const initializeAvailabilityDefaults = (force = false) => {
+  const today = localDateIso();
+  const suggested = getSuggestedBookingWindow();
+
+  availabilityDate.min = today;
+
+  const currentValues = {
+    date: availabilityDate.value,
+    startTime: availabilityStartTime.value,
+    endTime: availabilityEndTime.value
+  };
+
+  if (force || !currentValues.date || validateTemporalSelection(currentValues)) {
+    availabilityDate.value = suggested.date;
+    availabilityStartTime.value = suggested.startTime;
+    availabilityEndTime.value = suggested.endTime;
+  }
+};
 
 const escapeHtml = (value) =>
   String(value ?? "")
@@ -453,6 +510,12 @@ const buildAvailabilityQuery = () => {
   return params;
 };
 
+const getAvailabilityTemporalValues = () => ({
+  date: availabilityDate.value,
+  startTime: availabilityStartTime.value,
+  endTime: availabilityEndTime.value
+});
+
 const renderAvailability = (spaces, request) => {
   const normalizedSpaces = spaces.map(normalizeSpace);
 
@@ -507,6 +570,14 @@ availabilityForm.addEventListener("submit", async (event) => {
     return;
   }
 
+  const temporalError = validateTemporalSelection(getAvailabilityTemporalValues());
+
+  if (temporalError) {
+    setAvailabilityMessage(temporalError);
+    availabilityResults.innerHTML = "";
+    return;
+  }
+
   const params = buildAvailabilityQuery();
   setAvailabilityMessage("");
   availabilityResults.innerHTML = "";
@@ -553,6 +624,17 @@ confirmBookingForm.addEventListener("submit", async (event) => {
 
   if (!selectedBooking) {
     setBookingMessage("Selecciona un espacio disponible antes de confirmar.");
+    return;
+  }
+
+  const temporalError = validateTemporalSelection({
+    date: selectedBooking.date,
+    startTime: selectedBooking.startTime,
+    endTime: selectedBooking.endTime
+  });
+
+  if (temporalError) {
+    setBookingMessage(temporalError);
     return;
   }
 
@@ -878,6 +960,17 @@ assistantSuggestions.addEventListener("click", async (event) => {
     return;
   }
 
+  const temporalError = validateTemporalSelection({
+    date: filters.date,
+    startTime: filters.startTime,
+    endTime: filters.endTime
+  });
+
+  if (temporalError) {
+    assistantOutput.textContent = `${latestAssistantResponse.message}\n\n${temporalError}`;
+    return;
+  }
+
   button.disabled = true;
   button.textContent = "Reservando...";
 
@@ -914,6 +1007,10 @@ assistantOpenButton.addEventListener("click", () => {
 });
 
 document.addEventListener("view:activated", (event) => {
+  if (event.detail.viewId === "search") {
+    initializeAvailabilityDefaults();
+  }
+
   if (event.detail.viewId === "dashboard") {
     loadSpaces();
     loadDashboardMetrics();
@@ -924,6 +1021,7 @@ document.addEventListener("view:activated", (event) => {
   }
 });
 
+initializeAvailabilityDefaults();
 renderSession();
 
 if (isLoggedIn()) {

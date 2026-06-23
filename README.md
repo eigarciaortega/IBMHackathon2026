@@ -108,3 +108,114 @@ Nota de desarrollo local: si cambias el esquema de base de datos y necesitas rei
 ## Enfoque de innovacion
 
 Alpha Assistant convierte consultas como "Necesito una sala para 5 personas manana en la manana con proyector" en filtros estructurados. El dashboard de negocio usara esas senales para detectar demanda, recursos mas solicitados y patrones de ocupacion.
+
+## QA Strategy
+
+La estrategia de QA esta documentada en [`docs/QA_STRATEGY.md`](docs/QA_STRATEGY.md). Cubre riesgos criticos del negocio, reglas de disponibilidad, autenticacion, permisos, dashboard, Alpha Assistant y el uso del "Buggy Controller" del reto como referencia de defectos prevenidos.
+
+El punto mas critico es el motor de reservas, especialmente la regla de no solapamiento:
+
+```text
+new_start < existing_end AND new_end > existing_start
+```
+
+Esta regla permite reservas consecutivas y bloquea reservas que se cruzan en el mismo espacio.
+
+## Casos de prueba
+
+Los casos manuales estan en [`docs/TEST_CASES.md`](docs/TEST_CASES.md). Incluyen login, permisos, catalogo, reservas, capacidad, cancelaciones, dashboard y Alpha Assistant.
+
+Casos clave:
+
+- Login admin y colaborador.
+- GET /spaces sin token debe devolver 401.
+- POST /spaces como colaborador debe devolver 403.
+- Reserva exitosa.
+- Reserva solapada debe devolver 409.
+- Reserva consecutiva debe permitirse.
+- Alpha Assistant debe sugerir espacios disponibles y no recomendar espacios ocupados.
+- Dashboard no debe estar disponible para colaboradores.
+
+## Gherkin / BDD
+
+Los escenarios BDD estan en [`docs/GHERKIN.md`](docs/GHERKIN.md). Estan escritos en espanol con formato Gherkin para expresar reglas de negocio de forma entendible por QA, desarrollo y stakeholders.
+
+Incluyen escenarios para:
+
+- rechazar reserva solapada;
+- permitir reserva consecutiva;
+- rechazar capacidad excedida;
+- bloquear acciones admin a colaborador;
+- reservar desde Alpha Assistant;
+- ocultar Dashboard a usuarios no autenticados o colaboradores.
+
+## Postman Collection
+
+La coleccion basica de Postman esta en [`postman/OfficeSpace.postman_collection.json`](postman/OfficeSpace.postman_collection.json).
+
+Variables incluidas:
+
+- `baseAuthUrl = http://localhost:3000`
+- `baseCatalogUrl = http://localhost:3001`
+- `baseBookingUrl = http://localhost:3002`
+- `token`
+- `collaboratorToken`
+- `spaceId`
+- `bookingId`
+
+La coleccion incluye requests para login, catalogo, disponibilidad, reservas, Alpha Assistant y dashboard analytics.
+
+## Innovacion QA: CI/CD con GitHub Actions
+
+El pipeline esta en [`.github/workflows/ci.yml`](.github/workflows/ci.yml). Se ejecuta en `push` y `pull_request`.
+
+Validaciones incluidas:
+
+- usar Node.js LTS;
+- ejecutar `npm install` en `auth-service`, `catalog-service` y `booking-service`;
+- ejecutar `node --check` sobre los archivos JS de cada servicio;
+- ejecutar `docker compose config`.
+
+Es un pipeline ligero y defendible para hackathon: previene errores de sintaxis, dependencias rotas y configuracion invalida de Compose sin levantar toda la aplicacion.
+
+## Bugs prevenidos basados en Buggy Controller
+
+El reporte de defectos prevenidos esta en [`docs/BUG_REPORT.md`](docs/BUG_REPORT.md). Documenta regresiones esperadas como:
+
+- filtro de capacidad ignorado;
+- solapamiento mal detectado;
+- status code incorrecto ante conflicto;
+- hora final menor que hora inicial;
+- capacidad excedida;
+- falta de autenticacion;
+- cancelacion o eliminacion sin permisos.
+
+Los estados usados son `Prevenido`, `Cubierto por prueba` y `No reproducido en version actual`.
+
+## Validaciones basicas
+
+Desde la carpeta `officespace-advisor`:
+
+```bash
+docker compose config
+```
+
+Validar sintaxis JS manualmente:
+
+```bash
+node --check auth-service/src/index.js
+node --check catalog-service/src/index.js
+node --check booking-service/src/index.js
+```
+
+Validar todos los JS de servicios en Linux/macOS o GitHub Actions:
+
+```bash
+find auth-service/src catalog-service/src booking-service/src -name "*.js" -print0 | xargs -0 -n1 node --check
+```
+
+Levantar la app para pruebas manuales:
+
+```bash
+docker compose up --build
+```

@@ -1,0 +1,406 @@
+{
+  "info": {
+    "name": "OfficeSpace",
+    "description": "Coleccion basica de QA para auth, catalog, booking, dashboard y Alpha Assistant.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseAuthUrl",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "baseCatalogUrl",
+      "value": "http://localhost:3001"
+    },
+    {
+      "key": "baseBookingUrl",
+      "value": "http://localhost:3002"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "collaboratorToken",
+      "value": ""
+    },
+    {
+      "key": "spaceId",
+      "value": ""
+    },
+    {
+      "key": "bookingId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth - Login admin",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"admin@corporativoalpha.com\",\n  \"password\": \"Admin123\"\n}"
+        },
+        "url": {
+          "raw": "{{baseAuthUrl}}/login",
+          "host": ["{{baseAuthUrl}}"],
+          "path": ["login"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Login admin responde 200', function () { pm.response.to.have.status(200); });",
+              "const json = pm.response.json();",
+              "if (json.token) pm.collectionVariables.set('token', json.token);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth - Login colaborador",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"carlos.mendez@corporativoalpha.com\",\n  \"password\": \"User123\"\n}"
+        },
+        "url": {
+          "raw": "{{baseAuthUrl}}/login",
+          "host": ["{{baseAuthUrl}}"],
+          "path": ["login"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Login colaborador responde 200', function () { pm.response.to.have.status(200); });",
+              "const json = pm.response.json();",
+              "if (json.token) pm.collectionVariables.set('collaboratorToken', json.token);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Catalog - GET spaces",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseCatalogUrl}}/spaces",
+          "host": ["{{baseCatalogUrl}}"],
+          "path": ["spaces"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('GET spaces responde 200', function () { pm.response.to.have.status(200); });",
+              "const spaces = pm.response.json();",
+              "if (Array.isArray(spaces) && spaces.length) pm.collectionVariables.set('spaceId', spaces[0].id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Catalog - POST space como admin",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Sala QA Postman\",\n  \"type\": \"SALA\",\n  \"capacity\": 4,\n  \"floor\": \"Piso QA\",\n  \"hasProjector\": true,\n  \"hasAc\": true,\n  \"hasScreen\": true,\n  \"hasWhiteboard\": false,\n  \"isQuietZone\": false,\n  \"description\": \"Sala creada desde coleccion Postman.\"\n}"
+        },
+        "url": {
+          "raw": "{{baseCatalogUrl}}/spaces",
+          "host": ["{{baseCatalogUrl}}"],
+          "path": ["spaces"]
+        }
+      }
+    },
+    {
+      "name": "Booking - GET availability",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseBookingUrl}}/availability?date=2026-06-23&startTime=09:00&endTime=10:00&type=SALA&attendees=4&projector=true",
+          "host": ["{{baseBookingUrl}}"],
+          "path": ["availability"],
+          "query": [
+            {
+              "key": "date",
+              "value": "2026-06-23"
+            },
+            {
+              "key": "startTime",
+              "value": "09:00"
+            },
+            {
+              "key": "endTime",
+              "value": "10:00"
+            },
+            {
+              "key": "type",
+              "value": "SALA"
+            },
+            {
+              "key": "attendees",
+              "value": "4"
+            },
+            {
+              "key": "projector",
+              "value": "true"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Availability responde 200', function () { pm.response.to.have.status(200); });",
+              "const json = pm.response.json();",
+              "if (json.spaces && json.spaces.length) pm.collectionVariables.set('spaceId', json.spaces[0].id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Booking - POST booking exitoso",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"spaceId\": \"{{spaceId}}\",\n  \"date\": \"2026-06-23\",\n  \"startTime\": \"09:00\",\n  \"endTime\": \"10:00\",\n  \"attendees\": 4\n}"
+        },
+        "url": {
+          "raw": "{{baseBookingUrl}}/bookings",
+          "host": ["{{baseBookingUrl}}"],
+          "path": ["bookings"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Booking exitoso responde 201', function () { pm.response.to.have.status(201); });",
+              "const json = pm.response.json();",
+              "if (json.id) pm.collectionVariables.set('bookingId', json.id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Booking - POST booking solapado",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"spaceId\": \"{{spaceId}}\",\n  \"date\": \"2026-06-23\",\n  \"startTime\": \"09:30\",\n  \"endTime\": \"10:30\",\n  \"attendees\": 4\n}"
+        },
+        "url": {
+          "raw": "{{baseBookingUrl}}/bookings",
+          "host": ["{{baseBookingUrl}}"],
+          "path": ["bookings"]
+        }
+      }
+    },
+    {
+      "name": "Booking - GET my bookings",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseBookingUrl}}/bookings/my",
+          "host": ["{{baseBookingUrl}}"],
+          "path": ["bookings", "my"]
+        }
+      }
+    },
+    {
+      "name": "Booking - DELETE booking by id",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseBookingUrl}}/bookings/{{bookingId}}",
+          "host": ["{{baseBookingUrl}}"],
+          "path": ["bookings", "{{bookingId}}"]
+        }
+      }
+    },
+    {
+      "name": "Assistant - POST search",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"message\": \"Necesito una sala para 5 personas manana en la manana con proyector\"\n}"
+        },
+        "url": {
+          "raw": "{{baseBookingUrl}}/assistant/search",
+          "host": ["{{baseBookingUrl}}"],
+          "path": ["assistant", "search"]
+        }
+      }
+    },
+    {
+      "name": "Dashboard - GET analytics",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseBookingUrl}}/dashboard/analytics",
+          "host": ["{{baseBookingUrl}}"],
+          "path": ["dashboard", "analytics"]
+        }
+      }
+    }
+  ]
+}
