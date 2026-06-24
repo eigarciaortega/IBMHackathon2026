@@ -157,6 +157,7 @@ export default function AdminPage() {
               name="name"
               value={spaceForm.name}
               onChange={handleChange}
+              placeholder="Ej. Sala Dirección"
               required
             />
           </label>
@@ -200,6 +201,7 @@ export default function AdminPage() {
               name="location"
               value={spaceForm.location}
               onChange={handleChange}
+              placeholder="Ej. Edificio A - Piso 5"
               required
             />
           </label>
@@ -210,6 +212,7 @@ export default function AdminPage() {
               name="otherResources"
               value={spaceForm.otherResources}
               onChange={handleChange}
+              placeholder="Ej. Cámara de videoconferencia"
             />
           </label>
 
@@ -280,9 +283,17 @@ export default function AdminPage() {
                 <tr key={space.id}>
                   <td>{space.id}</td>
                   <td>{space.name}</td>
-                  <td>{space.type}</td>
+                  <td>
+                    {space.type === "SALA_JUNTAS"
+                      ? "Sala de juntas"
+                      : "Escritorio individual"}
+                  </td>
                   <td>{space.capacity}</td>
-                  <td>{space.status}</td>
+                  <td>
+                    <span className={`status-pill ${space.status}`}>
+                      {space.status}
+                    </span>
+                  </td>
                   <td>
                     {space.status === "ACTIVO" ? (
                       <button onClick={() => handleDeactivate(space.id)}>
@@ -329,7 +340,11 @@ export default function AdminPage() {
                   <td>
                     {booking.startTime} - {booking.endTime}
                   </td>
-                  <td>{booking.status}</td>
+                  <td>
+                    <span className={`status-pill ${booking.status}`}>
+                      {booking.status}
+                    </span>
+                  </td>
                 </tr>
               ))
             )}

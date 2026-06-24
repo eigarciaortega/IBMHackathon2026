@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { clearSession, getUser } from "../utils/authStorage";
 
 export default function Navbar() {
@@ -12,18 +12,37 @@ export default function Navbar() {
 
   return (
     <nav className="navbar">
-      <strong>OfficeSpace</strong>
+      <div className="navbar-brand">OfficeSpace</div>
 
       <div className="nav-links">
-        <Link to="/spaces">Buscar espacios</Link>
-        <Link to="/bookings/my">Mis reservas</Link>
+        <NavLink
+          to="/spaces"
+          className={({ isActive }) => (isActive ? "active-link" : "")}
+        >
+          Buscar espacios
+        </NavLink>
+
+        <NavLink
+          to="/bookings/my"
+          className={({ isActive }) => (isActive ? "active-link" : "")}
+        >
+          {user?.role === "ADMINISTRADOR" ? "Todas las reservas" : "Mis reservas"}
+        </NavLink>
 
         {user?.role === "ADMINISTRADOR" && (
-          <Link to="/admin">Administración</Link>
+          <NavLink
+            to="/admin"
+            className={({ isActive }) => (isActive ? "active-link" : "")}
+          >
+            Administración
+          </NavLink>
         )}
 
-        <span>{user?.email}</span>
-        <button onClick={handleLogout}>Cerrar sesión</button>
+        <span className="nav-user">{user?.email}</span>
+
+        <button className="logout-button" onClick={handleLogout}>
+          Cerrar sesión
+        </button>
       </div>
     </nav>
   );

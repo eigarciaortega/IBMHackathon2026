@@ -121,7 +121,11 @@ export default function MyBookingsPage() {
                     {booking.startTime} - {booking.endTime}
                   </td>
                   <td>{booking.attendees}</td>
-                  <td>{booking.status}</td>
+                  <td>
+                    <span className={`status-pill ${booking.status}`}>
+                      {booking.status}
+                    </span>
+                  </td>
                   <td>
                     {booking.status === "ACTIVA" ? (
                       <button onClick={() => handleCancel(booking.id)}>
