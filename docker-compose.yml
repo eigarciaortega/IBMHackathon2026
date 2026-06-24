@@ -1,0 +1,40 @@
+services:
+  accounts-db:
+    image: postgres:15
+    container_name: neowallet-accounts-db
+    restart: always
+    environment:
+      POSTGRES_DB: ${ACCOUNTS_DB_NAME}
+      POSTGRES_USER: ${ACCOUNTS_DB_USER}
+      POSTGRES_PASSWORD: ${ACCOUNTS_DB_PASSWORD}
+    ports:
+      - "${ACCOUNTS_DB_PORT}:5432"
+    volumes:
+      - neowallet_accounts_data:/var/lib/postgresql/data
+      - ./shared-infra/accounts-init.sql:/docker-entrypoint-initdb.d/accounts-init.sql
+    networks:
+      - neowallet-network
+
+  processor-db:
+    image: postgres:15
+    container_name: neowallet-processor-db
+    restart: always
+    environment:
+      POSTGRES_DB: ${PROCESSOR_DB_NAME}
+      POSTGRES_USER: ${PROCESSOR_DB_USER}
+      POSTGRES_PASSWORD: ${PROCESSOR_DB_PASSWORD}
+    ports:
+      - "${PROCESSOR_DB_PORT}:5432"
+    volumes:
+      - neowallet_processor_data:/var/lib/postgresql/data
+      - ./shared-infra/processor-init.sql:/docker-entrypoint-initdb.d/processor-init.sql
+    networks:
+      - neowallet-network
+
+volumes:
+  neowallet_accounts_data:
+  neowallet_processor_data:
+
+networks:
+  neowallet-network:
+    driver: bridge
