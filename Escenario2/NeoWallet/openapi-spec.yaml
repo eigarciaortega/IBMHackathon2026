@@ -1,0 +1,415 @@
+openapi: 3.0.3
+info:
+  title: NeoWallet API
+  description: |
+    Sistema de pagos P2P con arquitectura de microservicios.
+    
+    ## Arquitectura
+    - **Accounts Service** (Puerto 3000): Gestión de cuentas y saldos
+    - **Processor Service** (Puerto 3001): Lógica de transferencias con Patrón Saga
+    
+    ## Autenticación
+    El Accounts Service requiere API Key en el header `X-API-KEY: IBM-HACKATHON-2026`
+  version: 1.0.0
+  contact:
+    name: NeoWallet Team
+    email: support@neowallet.com
+
+servers:
+  - url: http://localhost:3000
+    description: Accounts Service
+  - url: http://localhost:3001
+    description: Processor Service
+
+tags:
+  - name: Accounts
+    description: Gestión de cuentas y saldos
+  - name: Transfers
+    description: Transferencias P2P
+  - name: Health
+    description: Health checks
+
+paths:
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Health Check
+      description: Verifica el estado del servicio
+      responses:
+        '200':
+          description: Servicio operativo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: UP
+                  service:
+                    type: string
+                    example: accounts-service
+                  timestamp:
+                    type: integer
+                    format: int64
+                    example: 1719198000000
+
+  /accounts/{id}:
+    get:
+      tags:
+        - Accounts
+      summary: Consultar saldo de usuario
+      description: Obtiene la información completa de un usuario incluyendo su saldo actual
+      operationId: getAccount
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID del usuario
+          schema:
+            type: integer
+            example: 1
+        - name: X-API-KEY
+          in: header
+          required: true
+          description: API Key de autenticación
+          schema:
+            type: string
+            example: IBM-HACKATHON-2026
+      responses:
+        '200':
+          description: Usuario encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: ID inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: No autorizado - API Key inválida o faltante
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Usuario no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/recharge:
+    post:
+      tags:
+        - Accounts
+      summary: Recargar saldo
+      description: Agrega fondos a la cuenta de un usuario (simulado)
+      operationId: rechargeBalance
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RechargeRequest'
+      responses:
+        '200':
+          description: Recarga exitosa
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Monto inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Usuario no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /accounts/update-balance:
+    post:
+      tags:
+        - Accounts
+      summary: Actualizar balance (Interno)
+      description: Endpoint interno usado por el Processor Service para débitos y créditos
+      operationId: updateBalance
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateBalanceRequest'
+      responses:
+        '200':
+          description: Balance actualizado exitosamente
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/User'
+                  - type: object
+                    properties:
+                      status:
+                        type: string
+                        example: success
+        '400':
+          description: Fondos insuficientes o datos inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Usuario no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/transfer:
+    post:
+      tags:
+        - Transfers
+      summary: Transferir dinero entre usuarios
+      description: |
+        Ejecuta una transferencia P2P utilizando el Patrón Saga para garantizar consistencia.
+        
+        **Flujo:**
+        1. Validaciones iniciales
+        2. Crear transacción PENDING
+        3. Debitar del sender
+        4. Acreditar al receiver
+        5. Marcar como COMPLETED
+        
+        **En caso de fallo:**
+        - Si falla el débito: Marcar como FAILED
+        - Si falla el crédito: Ejecutar compensación (devolver dinero al sender) y marcar como ROLLED_BACK
+      operationId: transfer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransferRequest'
+      responses:
+        '200':
+          description: Transferencia exitosa
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransferResponse'
+        '400':
+          description: Validación fallida (auto-transferencia, monto inválido, fondos insuficientes)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Usuario no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error del sistema (con compensación ejecutada)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/transactions/{userId}:
+    get:
+      tags:
+        - Transfers
+      summary: Consultar historial de transacciones (BONUS)
+      description: Obtiene el historial completo de transacciones de un usuario
+      operationId: getTransactions
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: ID del usuario
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: Historial obtenido exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionHistory'
+        '400':
+          description: ID de usuario inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Usuario A (Rico)
+        email:
+          type: string
+          format: email
+          example: usuario.a@neowallet.com
+        balance:
+          type: number
+          format: decimal
+          example: 1000.00
+          description: Saldo actual (siempre >= 0)
+
+    RechargeRequest:
+      type: object
+      required:
+        - userId
+        - amount
+        - paymentMethod
+      properties:
+        userId:
+          type: integer
+          example: 1
+        amount:
+          type: number
+          format: decimal
+          example: 500.00
+          minimum: 0.01
+        paymentMethod:
+          type: string
+          example: credit_card
+          description: Método de pago simulado
+
+    UpdateBalanceRequest:
+      type: object
+      required:
+        - userId
+        - amount
+        - operation
+      properties:
+        userId:
+          type: integer
+          example: 1
+        amount:
+          type: number
+          format: decimal
+          example: 100.00
+        operation:
+          type: string
+          enum: [DEBIT, CREDIT]
+          example: DEBIT
+
+    TransferRequest:
+      type: object
+      required:
+        - senderId
+        - receiverId
+        - amount
+      properties:
+        senderId:
+          type: integer
+          example: 1
+          description: ID del usuario que envía
+        receiverId:
+          type: integer
+          example: 2
+          description: ID del usuario que recibe
+        amount:
+          type: number
+          format: decimal
+          example: 100.00
+          minimum: 0.01
+          description: Monto a transferir
+
+    TransferResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Transferencia exitosa
+        transactionId:
+          type: integer
+          example: 1
+          description: ID único de la transacción para rastreo
+
+    TransactionHistory:
+      type: object
+      properties:
+        userId:
+          type: integer
+          example: 1
+        transactions:
+          type: array
+          items:
+            $ref: '#/components/schemas/TransactionDetail'
+        total:
+          type: integer
+          example: 5
+          description: Total de transacciones
+
+    TransactionDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        type:
+          type: string
+          enum: [sent, received, self]
+          example: sent
+          description: Tipo de transacción desde la perspectiva del usuario
+        amount:
+          type: number
+          format: decimal
+          example: 100.00
+        counterparty:
+          type: integer
+          example: 2
+          description: ID del otro usuario involucrado
+        status:
+          type: string
+          enum: [PENDING, DEBITED, COMPLETED, FAILED, ROLLED_BACK]
+          example: COMPLETED
+        errorMessage:
+          type: string
+          nullable: true
+          example: null
+        createdAt:
+          type: string
+          format: date-time
+          example: "2026-06-24T03:00:00Z"
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          example: Usuario no encontrado
+
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-KEY
+      description: API Key requerida para Accounts Service
+
+security:
+  - ApiKeyAuth: []
+
+# Made with Bob

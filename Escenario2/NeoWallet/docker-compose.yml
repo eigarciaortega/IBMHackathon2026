@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  accounts_db:
+    image: postgres:15-alpine
+    container_name: neowallet_accounts_db
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: secretpassword
+      POSTGRES_DB: accounts_db
+    ports:
+      - "5432:5432"
+    volumes:
+      # Esto ejecuta el script SQL automáticamente al crear la BD
+      - ./db-init/accounts.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: always
+
+  processor_db:
+    image: postgres:15-alpine
+    container_name: neowallet_processor_db
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: secretpassword
+      POSTGRES_DB: processor_db
+    ports:
+      - "5433:5432"
+    volumes:
+      # Esto ejecuta el script SQL automáticamente al crear la BD
+      - ./db-init/processor.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: always

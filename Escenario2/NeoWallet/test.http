@@ -1,0 +1,76 @@
+### CP-001 — Consulta de saldo exitosa
+GET http://localhost:3000/accounts/1
+X-API-KEY: IBM-HACKATHON-2026
+
+### CP-004 — Acceso denegado (Sin API Key)
+GET http://localhost:3000/accounts/1
+
+### CP-009 — Transferencia exitosa (Happy Path)
+POST http://localhost:3001/api/transfer
+Content-Type: application/json
+
+{
+  "senderId": 1,
+  "receiverId": 2,
+  "amount": 100
+}
+
+### CP-013 — Transferencia rechazada (Fondos insuficientes)
+POST http://localhost:3001/api/transfer
+Content-Type: application/json
+
+{
+  "senderId": 1,
+  "receiverId": 2,
+  "amount": 5000
+
+### BONUS: Health Check - Accounts Service
+GET http://localhost:3000/health
+
+### BONUS: Health Check - Processor Service
+GET http://localhost:3001/health
+
+### BONUS: Recarga de saldo
+POST http://localhost:3000/api/recharge
+Content-Type: application/json
+
+{
+  "userId": 3,
+  "amount": 500,
+  "paymentMethod": "credit_card"
+}
+
+### BONUS: Historial de transacciones - Usuario 1
+GET http://localhost:3001/api/transactions/1
+
+### BONUS: Historial de transacciones - Usuario 2
+GET http://localhost:3001/api/transactions/2
+
+### CP-010 — Transferencia a sí mismo (debe fallar)
+POST http://localhost:3001/api/transfer
+Content-Type: application/json
+
+{
+  "senderId": 1,
+  "receiverId": 1,
+  "amount": 100
+}
+
+### CP-011 — Transferencia con monto cero (debe fallar)
+POST http://localhost:3001/api/transfer
+Content-Type: application/json
+
+{
+  "senderId": 1,
+  "receiverId": 2,
+  "amount": 0
+}
+
+### CP-005 — Usuario inexistente
+GET http://localhost:3000/accounts/999
+X-API-KEY: IBM-HACKATHON-2026
+
+### CP-007 — ID inválido (no numérico)
+GET http://localhost:3000/accounts/abc
+X-API-KEY: IBM-HACKATHON-2026
+}
