@@ -1,0 +1,122 @@
+version: '3.8'
+
+services:
+  # Base de datos para Accounts Service
+  accounts-db:
+    image: postgres:15-alpine
+    container_name: neowallet-accounts-db
+    environment:
+      POSTGRES_DB: accounts_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+    ports:
+      - "5432:5432"
+    volumes:
+      - accounts-data:/var/lib/postgresql/data
+      - ./accounts-service/init-scripts:/docker-entrypoint-initdb.d
+    networks:
+      - neowallet-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Base de datos para Processor Service
+  processor-db:
+    image: postgres:15-alpine
+    container_name: neowallet-processor-db
+    environment:
+      POSTGRES_DB: processor_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+    ports:
+      - "5433:5432"
+    volumes:
+      - processor-data:/var/lib/postgresql/data
+      - ./processor-service/init-scripts:/docker-entrypoint-initdb.d
+    networks:
+      - neowallet-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Accounts Service (Puerto 3000)
+  accounts-service:
+    build:
+      context: ./accounts-service
+      dockerfile: Dockerfile
+    container_name: neowallet-accounts-service
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      DB_HOST: accounts-db
+      DB_PORT: 5432
+      DB_NAME: accounts_db
+      DB_USER: postgres
+      DB_PASSWORD: postgres123
+    ports:
+      - "5000:3000"
+    depends_on:
+      accounts-db:
+        condition: service_healthy
+    networks:
+      - neowallet-network
+    volumes:
+      - ./accounts-service/src:/app/src
+    restart: unless-stopped
+
+  # Processor Service (Puerto 3001)
+  processor-service:
+    build:
+      context: ./processor-service
+      dockerfile: Dockerfile
+    container_name: neowallet-processor-service
+    environment:
+      NODE_ENV: development
+      PORT: 3001
+      DB_HOST: processor-db
+      DB_PORT: 5432
+      DB_NAME: processor_db
+      DB_USER: postgres
+      DB_PASSWORD: postgres123
+      ACCOUNTS_SERVICE_URL: http://accounts-service:3000
+    ports:
+      - "5001:3001"
+    depends_on:
+      processor-db:
+        condition: service_healthy
+      accounts-service:
+        condition: service_started
+    networks:
+      - neowallet-network
+    volumes:
+      - ./processor-service/src:/app/src
+    restart: unless-stopped
+
+  # Frontend Service (Puerto 8080)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: neowallet-frontend
+    ports:
+      - "8080:8080"
+    depends_on:
+      - accounts-service
+      - processor-service
+    networks:
+      - neowallet-network
+    volumes:
+      - ./frontend:/app
+    restart: unless-stopped
+
+networks:
+  neowallet-network:
+    driver: bridge
+
+volumes:
+  accounts-data:
+  processor-data:

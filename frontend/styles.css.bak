@@ -1,0 +1,343 @@
+// NeoWallet Frontend - JavaScript Application
+const API_BASE_ACCOUNTS = 'http://localhost:5000';
+const API_BASE_PROCESSOR = 'http://localhost:5001';
+
+// Estado de la aplicación
+let accounts = [];
+let selectedUserId = null;
+let transactions = [];
+
+// Inicializar la aplicación
+document.addEventListener('DOMContentLoaded', () => {
+    initializeApp();
+    setupEventListeners();
+});
+
+async function initializeApp() {
+    await checkServicesHealth();
+    await loadAccounts();
+    setInterval(checkServicesHealth, 30000); // Check every 30 seconds
+}
+
+function setupEventListeners() {
+    document.getElementById('transfer-form').addEventListener('submit', handleTransfer);
+    document.getElementById('recharge-form').addEventListener('submit', handleRecharge);
+    document.getElementById('refresh-accounts').addEventListener('click', loadAccounts);
+    document.getElementById('refresh-transactions').addEventListener('click', () => {
+        if (selectedUserId) loadTransactions(selectedUserId);
+    });
+}
+
+// Verificar salud de los servicios
+async function checkServicesHealth() {
+    try {
+        const accountsHealth = await fetch(`${API_BASE_ACCOUNTS}/health`);
+        const accountsData = await accountsHealth.json();
+        updateServiceStatus('accounts', accountsData.status === 'healthy');
+    } catch (error) {
+        updateServiceStatus('accounts', false);
+    }
+
+    try {
+        const processorHealth = await fetch(`${API_BASE_PROCESSOR}/health`);
+        const processorData = await processorHealth.json();
+        updateServiceStatus('processor', processorData.status === 'healthy');
+    } catch (error) {
+        updateServiceStatus('processor', false);
+    }
+}
+
+function updateServiceStatus(service, isHealthy) {
+    const indicator = document.getElementById(`${service}-status`);
+    const text = document.getElementById(`${service}-status-text`);
+
+    if (isHealthy) {
+        indicator.className = 'status-indicator online';
+        text.textContent = 'Online';
+    } else {
+        indicator.className = 'status-indicator offline';
+        text.textContent = 'Offline';
+    }
+}
+
+// Cargar cuentas
+async function loadAccounts() {
+    try {
+        showLoading('accounts-container');
+        const response = await fetch(`${API_BASE_ACCOUNTS}/accounts`);
+        const data = await response.json();
+
+        if (data.success) {
+            accounts = data.data;
+            renderAccounts();
+            document.getElementById('total-users').textContent = accounts.length;
+            populateUserSelects();
+        } else {
+            showError('accounts-container', 'Error al cargar cuentas');
+        }
+    } catch (error) {
+        showError('accounts-container', 'No se pudo conectar con el servidor');
+        console.error('Error loading accounts:', error);
+    }
+}
+
+function renderAccounts() {
+    const container = document.getElementById('accounts-container');
+
+    if (accounts.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <p>No hay cuentas disponibles</p>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = `
+        <div class="accounts-list">
+            ${accounts.map(account => `
+                <div class="account-item" onclick="selectAccount(${account.id})">
+                    <div class="account-info">
+                        <div class="account-name">${account.name}</div>
+                        <div class="account-email">${account.email}</div>
+                    </div>
+                    <div class="account-balance">$${parseFloat(account.balance).toFixed(2)}</div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+}
+
+function populateUserSelects() {
+    const senderSelect = document.getElementById('sender-id');
+    const receiverSelect = document.getElementById('receiver-id');
+    const rechargeSelect = document.getElementById('recharge-user-id');
+
+    const options = accounts.map(account =>
+        `<option value="${account.id}">${account.name} - $${parseFloat(account.balance).toFixed(2)}</option>`
+    ).join('');
+
+    senderSelect.innerHTML = '<option value="">Seleccionar remitente</option>' + options;
+    receiverSelect.innerHTML = '<option value="">Seleccionar destinatario</option>' + options;
+    rechargeSelect.innerHTML = '<option value="">Seleccionar usuario</option>' + options;
+}
+
+function selectAccount(userId) {
+    selectedUserId = userId;
+    loadTransactions(userId);
+
+    // Highlight selected account
+    document.querySelectorAll('.account-item').forEach(item => {
+        item.style.borderLeftWidth = '4px';
+    });
+    event.currentTarget.style.borderLeftWidth = '6px';
+}
+
+// Cargar transacciones
+async function loadTransactions(userId) {
+    try {
+        showLoading('transactions-container');
+        const response = await fetch(`${API_BASE_PROCESSOR}/api/transactions/${userId}`);
+        const data = await response.json();
+
+        if (data.success) {
+            transactions = data.data;
+            renderTransactions(userId);
+        } else {
+            showError('transactions-container', 'Error al cargar transacciones');
+        }
+    } catch (error) {
+        showError('transactions-container', 'No se pudo conectar con el servidor');
+        console.error('Error loading transactions:', error);
+    }
+}
+
+function renderTransactions(userId) {
+    const container = document.getElementById('transactions-container');
+
+    if (transactions.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <p>No hay transacciones para este usuario</p>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = `
+        <div class="transactions-list">
+            ${transactions.map(tx => {
+        const isSent = tx.sender_id === userId;
+        const typeClass = isSent ? 'sent' : 'received';
+        const typeText = isSent ? 'Enviado' : 'Recibido';
+        const amountPrefix = isSent ? '-' : '+';
+
+        return `
+                    <div class="transaction-item ${typeClass}">
+                        <div class="transaction-header">
+                            <span class="transaction-type">${typeText}</span>
+                            <span class="transaction-amount ${typeClass}">
+                                ${amountPrefix}$${parseFloat(tx.amount).toFixed(2)}
+                            </span>
+                        </div>
+                        <div class="transaction-details">
+                            ${isSent ? 'Para' : 'De'}: Usuario #${isSent ? tx.receiver_id : tx.sender_id}
+                        </div>
+                        <div class="transaction-details">
+                            ${new Date(tx.created_at).toLocaleString('es-MX')}
+                        </div>
+                        <span class="transaction-status ${tx.status.toLowerCase()}">
+                            ${tx.status}
+                        </span>
+                    </div>
+                `;
+    }).join('')}
+        </div>
+    `;
+}
+
+// Manejar transferencia
+async function handleTransfer(e) {
+    e.preventDefault();
+
+    const senderId = parseInt(document.getElementById('sender-id').value);
+    const receiverId = parseInt(document.getElementById('receiver-id').value);
+    const amount = parseFloat(document.getElementById('transfer-amount').value);
+
+    if (!senderId || !receiverId) {
+        showAlert('error', 'Por favor selecciona remitente y destinatario');
+        return;
+    }
+
+    if (senderId === receiverId) {
+        showAlert('error', 'No puedes transferir a la misma cuenta');
+        return;
+    }
+
+    if (amount <= 0) {
+        showAlert('error', 'El monto debe ser mayor a 0');
+        return;
+    }
+
+    const button = e.target.querySelector('button');
+    button.disabled = true;
+    button.textContent = 'Procesando...';
+
+    try {
+        const response = await fetch(`${API_BASE_PROCESSOR}/api/transfer`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                sender_id: senderId,
+                receiver_id: receiverId,
+                amount: amount
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            showAlert('success', `Transferencia exitosa! ID: ${data.data.transaction_id}`);
+            document.getElementById('transfer-form').reset();
+            await loadAccounts();
+            if (selectedUserId) await loadTransactions(selectedUserId);
+        } else {
+            showAlert('error', data.error || 'Error en la transferencia');
+        }
+    } catch (error) {
+        showAlert('error', 'No se pudo procesar la transferencia');
+        console.error('Transfer error:', error);
+    } finally {
+        button.disabled = false;
+        button.textContent = 'Transferir';
+    }
+}
+
+// Manejar recarga
+async function handleRecharge(e) {
+    e.preventDefault();
+
+    const userId = parseInt(document.getElementById('recharge-user-id').value);
+    const amount = parseFloat(document.getElementById('recharge-amount').value);
+
+    if (!userId) {
+        showAlert('error', 'Por favor selecciona un usuario');
+        return;
+    }
+
+    if (amount <= 0) {
+        showAlert('error', 'El monto debe ser mayor a 0');
+        return;
+    }
+
+    const button = e.target.querySelector('button');
+    button.disabled = true;
+    button.textContent = 'Procesando...';
+
+    try {
+        const response = await fetch(`${API_BASE_PROCESSOR}/api/recharge`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                user_id: userId,
+                amount: amount
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            showAlert('success', `Recarga exitosa! Nuevo saldo: $${data.data.new_balance}`);
+            document.getElementById('recharge-form').reset();
+            await loadAccounts();
+            if (selectedUserId === userId) await loadTransactions(userId);
+        } else {
+            showAlert('error', data.error || 'Error en la recarga');
+        }
+    } catch (error) {
+        showAlert('error', 'No se pudo procesar la recarga');
+        console.error('Recharge error:', error);
+    } finally {
+        button.disabled = false;
+        button.textContent = 'Recargar';
+    }
+}
+
+// Utilidades
+function showLoading(containerId) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = `
+        <div class="loading">
+            <div class="spinner"></div>
+            <p>Cargando...</p>
+        </div>
+    `;
+}
+
+function showError(containerId, message) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = `
+        <div class="alert error">
+            ${message}
+        </div>
+    `;
+}
+
+function showAlert(type, message) {
+    const alertsContainer = document.getElementById('alerts-container');
+    const alert = document.createElement('div');
+    alert.className = `alert ${type}`;
+    alert.textContent = message;
+
+    alertsContainer.appendChild(alert);
+
+    setTimeout(() => {
+        alert.remove();
+    }, 5000);
+}
+
+// Made with Bob
