@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import LoginPage from './pages/LoginPage';
 import SearchPage from './pages/SearchPage';
@@ -8,6 +8,23 @@ import MyBookingsPage from './pages/MyBookingsPage';
 const AppContent = () => {
   const { user, logout } = useAuth();
   const [currentPage, setCurrentPage] = useState('search');
+
+  // BUG FIX 2: Redirección por rol después del login
+  useEffect(() => {
+    if (user) {
+      if (user.perfil === 'ADMINISTRADOR') {
+        setCurrentPage('admin');
+      } else {
+        setCurrentPage('search');
+      }
+    }
+  }, [user]);
+
+  // BUG FIX 1: Limpiar página al hacer logout
+  const handleLogout = () => {
+    logout();
+    setCurrentPage('search');
+  };
 
   if (!user) return <LoginPage />;
 
@@ -25,7 +42,6 @@ const AppContent = () => {
         top: 0,
         zIndex: 100,
       }}>
-        {/* Logo */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
           <div style={{
             background: 'rgba(255,255,255,0.15)',
@@ -44,7 +60,6 @@ const AppContent = () => {
           </div>
         </div>
 
-        {/* Nav links */}
         <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
           {[
             { key: 'search', label: '🔍 Buscar', show: true },
@@ -65,7 +80,6 @@ const AppContent = () => {
           ))}
         </div>
 
-        {/* User info + logout */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <div style={{
             background: 'rgba(255,255,255,0.1)',
@@ -86,7 +100,7 @@ const AppContent = () => {
               <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.6)' }}>{user.perfil}</div>
             </div>
           </div>
-          <button onClick={logout} style={{
+          <button onClick={handleLogout} style={{
             background: 'rgba(236,72,153,0.2)',
             color: '#F9A8D4',
             border: '1px solid rgba(236,72,153,0.4)',
@@ -116,3 +130,5 @@ const App = () => (
 );
 
 export default App;
+
+// Made with Bob

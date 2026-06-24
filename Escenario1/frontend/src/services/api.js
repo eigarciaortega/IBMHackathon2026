@@ -3,11 +3,20 @@ import axios from 'axios';
 const CATALOG_URL = 'http://localhost:3001';
 const BOOKING_URL = 'http://localhost:3002';
 
-const getToken = () => localStorage.getItem('token');
+const getToken = () => {
+  const token = localStorage.getItem('token');
+  console.log('🔑 getToken() llamado, token:', token ? `${token.substring(0, 20)}...` : 'NULL');
+  return token;
+};
 
-const authHeader = () => ({
-  headers: { Authorization: `Bearer ${getToken()}` }
-});
+const authHeader = () => {
+  const token = getToken();
+  const header = {
+    headers: { Authorization: `Bearer ${token}` }
+  };
+  console.log('📤 authHeader() generado:', header);
+  return header;
+};
 
 // AUTH
 export const login = (email, contrasena) =>
@@ -47,3 +56,5 @@ export const cancelBooking = (id) =>
 
 export const getAvailableSpaces = (params) =>
   axios.get(`${BOOKING_URL}/bookings/available`, { ...authHeader(), params });
+
+// Made with Bob

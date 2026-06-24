@@ -1,0 +1,320 @@
+### ============================================
+### OFFICESPACE - CASOS DE PRUEBA COMPLETOS
+### ============================================
+### Instrucciones:
+### 1. Ejecuta el LOGIN primero
+### 2. Copia el token de la respuesta
+### 3. Reemplaza {{token}} con tu token en las siguientes peticiones
+### ============================================
+
+@baseUrl = http://localhost:3001
+@bookingUrl = http://localhost:3002
+@token = REEMPLAZAR_CON_TOKEN_DEL_LOGIN
+
+### ============================================
+### PASO 1: AUTENTICACIÓN
+### ============================================
+
+### 1.1 Login como Admin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@corporativoalpha.com",
+  "contrasena": "Admin123"
+}
+
+### 1.2 Login como Colaborador (Carlos)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "carlos.mendez@corporativoalpha.com",
+  "contrasena": "User123"
+}
+
+### 1.3 Login como Colaborador (Ana)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "ana.torres@corporativoalpha.com",
+  "contrasena": "User123"
+}
+
+### ============================================
+### PASO 2: GESTIÓN DE ESPACIOS (ADMIN)
+### ============================================
+
+### 2.1 Health Check - Catalog Service
+GET {{baseUrl}}/health
+
+### 2.2 Obtener todos los espacios
+GET {{baseUrl}}/spaces
+Authorization: Bearer {{token}}
+
+### 2.3 Filtrar espacios por tipo SALA
+GET {{baseUrl}}/spaces?tipo=SALA
+Authorization: Bearer {{token}}
+
+### 2.4 Filtrar espacios por capacidad mínima (6 personas)
+GET {{baseUrl}}/spaces?capacidad=6
+Authorization: Bearer {{token}}
+
+### 2.5 Obtener espacio específico por ID
+GET {{baseUrl}}/spaces/1
+Authorization: Bearer {{token}}
+
+### 2.6 Crear nuevo espacio (Solo Admin) ✅
+POST {{baseUrl}}/spaces
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nombre": "Sala de Innovación",
+  "tipo": "SALA",
+  "capacidad": 10,
+  "piso": "Piso 4",
+  "con_proyector": true,
+  "con_aire": true,
+  "con_pizarron": true,
+  "con_tv": false,
+  "con_refrigerador": false
+}
+
+### 2.7 Actualizar espacio existente (Solo Admin) ✅
+PUT {{baseUrl}}/spaces/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nombre": "Sala Creativa Renovada",
+  "capacidad": 12,
+  "con_tv": true
+}
+
+### 2.8 Eliminar espacio (Soft Delete - Solo Admin) ✅
+DELETE {{baseUrl}}/spaces/9
+Authorization: Bearer {{token}}
+
+### 2.9 Intentar crear espacio como Colaborador (Debe fallar con 403) ❌
+POST {{baseUrl}}/spaces
+Authorization: Bearer TOKEN_DE_COLABORADOR
+Content-Type: application/json
+
+{
+  "nombre": "Sala No Permitida",
+  "tipo": "SALA",
+  "capacidad": 4
+}
+
+### ============================================
+### PASO 3: SISTEMA DE RESERVACIONES
+### ============================================
+
+### 3.1 Health Check - Booking Service
+GET {{bookingUrl}}/health
+
+### 3.2 Buscar espacios disponibles en un horario
+GET {{bookingUrl}}/bookings/available?hora_entrada=2026-06-25T09:00:00&hora_salida=2026-06-25T11:00:00
+Authorization: Bearer {{token}}
+
+### 3.3 Buscar espacios disponibles con filtros
+GET {{bookingUrl}}/bookings/available?hora_entrada=2026-06-25T14:00:00&hora_salida=2026-06-25T16:00:00&tipo=SALA&capacidad=8
+Authorization: Bearer {{token}}
+
+### 3.4 Crear reserva exitosa ✅
+POST {{bookingUrl}}/bookings
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "espacio_id": 1,
+  "hora_entrada": "2026-06-26T09:00:00",
+  "hora_salida": "2026-06-26T11:00:00",
+  "asistentes": 6
+}
+
+### 3.5 Ver mis reservas
+GET {{bookingUrl}}/bookings/mine
+Authorization: Bearer {{token}}
+
+### 3.6 Cancelar una reserva
+DELETE {{bookingUrl}}/bookings/1
+Authorization: Bearer {{token}}
+
+### ============================================
+### PASO 4: CASOS DE PRUEBA ESPECÍFICOS
+### ============================================
+
+### CASO 4.1: Traslape de Horarios (Debe fallar con 409) ❌
+# Primero crear una reserva base
+POST {{bookingUrl}}/bookings
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "espacio_id": 2,
+  "hora_entrada": "2026-06-27T14:00:00",
+  "hora_salida": "2026-06-27T16:00:00",
+  "asistentes": 8
+}
+
+# Luego intentar reservar con traslape (debe fallar)
+POST {{bookingUrl}}/bookings
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "espacio_id": 2,
+  "hora_entrada": "2026-06-27T15:00:00",
+  "hora_salida": "2026-06-27T17:00:00",
+  "asistentes": 4
+}
+
+### CASO 4.2: Liberación de Espacio tras Cancelación ✅
+# Paso 1: Crear reserva
+POST {{bookingUrl}}/bookings
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "espacio_id": 3,
+  "hora_entrada": "2026-06-28T10:00:00",
+  "hora_salida": "2026-06-28T11:00:00",
+  "asistentes": 4
+}
+
+# Paso 2: Cancelar la reserva (reemplazar ID)
+DELETE {{bookingUrl}}/bookings/2
+Authorization: Bearer {{token}}
+
+# Paso 3: Ahora SÍ debe permitir reservar el mismo horario
+POST {{bookingUrl}}/bookings
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "espacio_id": 3,
+  "hora_entrada": "2026-06-28T10:00:00",
+  "hora_salida": "2026-06-28T11:00:00",
+  "asistentes": 3
+}
+
+### CASO 4.3: Refrigerador solo en Sala de Lactancia
+# Intentar en sala común (debe fallar con 403) ❌
+POST {{bookingUrl}}/bookings
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "espacio_id": 1,
+  "hora_entrada": "2026-06-29T09:00:00",
+  "hora_salida": "2026-06-29T10:00:00",
+  "asistentes": 4,
+  "requiere_refrigerador": true
+}
+
+# Reservar en Sala de Lactancia (debe funcionar) ✅
+POST {{bookingUrl}}/bookings
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "espacio_id": 8,
+  "hora_entrada": "2026-06-29T13:00:00",
+  "hora_salida": "2026-06-29T14:00:00",
+  "asistentes": 1,
+  "requiere_refrigerador": true
+}
+
+### CASO 4.4: Exceder capacidad del espacio (debe fallar con 400) ❌
+POST {{bookingUrl}}/bookings
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "espacio_id": 3,
+  "hora_entrada": "2026-06-30T09:00:00",
+  "hora_salida": "2026-06-30T10:00:00",
+  "asistentes": 10
+}
+
+### CASO 4.5: Reservas consecutivas (debe permitirse) ✅
+# Primera reserva
+POST {{bookingUrl}}/bookings
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "espacio_id": 4,
+  "hora_entrada": "2026-07-01T10:00:00",
+  "hora_salida": "2026-07-01T11:00:00",
+  "asistentes": 1
+}
+
+# Segunda reserva consecutiva
+POST {{bookingUrl}}/bookings
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "espacio_id": 4,
+  "hora_entrada": "2026-07-01T11:00:00",
+  "hora_salida": "2026-07-01T12:00:00",
+  "asistentes": 1
+}
+
+### ============================================
+### PASO 5: PANEL DE ADMINISTRADOR
+### ============================================
+
+### 5.1 Ver reservas de hoy (Solo Admin)
+GET {{bookingUrl}}/bookings/today
+Authorization: Bearer {{token}}
+
+### 5.2 Ver reservas por fecha específica (Solo Admin)
+GET {{bookingUrl}}/bookings/by-date?fecha=2026-06-26
+Authorization: Bearer {{token}}
+
+### 5.3 Ver reservas de otra fecha
+GET {{bookingUrl}}/bookings/by-date?fecha=2026-06-27
+Authorization: Bearer {{token}}
+
+### 5.4 Intentar ver reservas por fecha como Colaborador (debe fallar con 403) ❌
+GET {{bookingUrl}}/bookings/by-date?fecha=2026-06-26
+Authorization: Bearer TOKEN_DE_COLABORADOR
+
+### ============================================
+### RESUMEN DE VALIDACIONES
+### ============================================
+###
+### ✅ FUNCIONALIDADES QUE DEBEN FUNCIONAR:
+### - Login de usuarios (Admin y Colaboradores)
+### - CRUD completo de espacios (Solo Admin)
+### - Crear reservaciones
+### - Ver mis reservaciones
+### - Cancelar reservaciones
+### - Buscar espacios disponibles
+### - Reservas consecutivas
+### - Refrigerador en Sala de Lactancia
+### - Panel Admin: ver todas las reservas por fecha
+###
+### ❌ VALIDACIONES QUE DEBEN FALLAR:
+### - Crear/Editar/Eliminar espacios como Colaborador (403)
+### - Traslape de horarios (409)
+### - Refrigerador en salas comunes (403)
+### - Exceder capacidad del espacio (400)
+### - Ver panel Admin como Colaborador (403)
+###
+### CÓDIGOS HTTP ESPERADOS:
+### - 200: Operación exitosa (GET, PUT, DELETE)
+### - 201: Recurso creado (POST)
+### - 400: Validación fallida
+### - 401: No autenticado
+### - 403: No autorizado (rol insuficiente)
+### - 404: Recurso no encontrado
+### - 409: Conflicto (traslape de horarios)
+### - 500: Error del servidor
+###
+### ============================================

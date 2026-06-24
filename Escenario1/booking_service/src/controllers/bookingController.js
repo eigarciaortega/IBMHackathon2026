@@ -18,11 +18,6 @@ const getToday = async (req, res) => {
   }
 };
 
-/**
- * NUEVO: Obtener reservas por fecha específica
- * Query param: fecha (formato YYYY-MM-DD)
- * Solo para administradores
- */
 const getByDate = async (req, res) => {
   try {
     const { fecha } = req.query;
@@ -31,7 +26,6 @@ const getByDate = async (req, res) => {
       return res.status(400).json({ error: 'El parámetro fecha es obligatorio (formato: YYYY-MM-DD)' });
     }
 
-    // Validar formato de fecha
     const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
     if (!dateRegex.test(fecha)) {
       return res.status(400).json({ error: 'Formato de fecha inválido. Use YYYY-MM-DD' });
@@ -46,7 +40,7 @@ const getByDate = async (req, res) => {
 
 const create = async (req, res) => {
   try {
-    const { espacio_id, hora_entrada, hora_salida, asistentes } = req.body;
+    const { espacio_id, hora_entrada, hora_salida, asistentes, requiere_refrigerador } = req.body;
 
     if (!espacio_id || !hora_entrada || !hora_salida || !asistentes) {
       return res.status(400).json({ 
@@ -59,7 +53,8 @@ const create = async (req, res) => {
       usuario_id: req.user.id,
       hora_entrada,
       hora_salida,
-      asistentes
+      asistentes,
+      requiere_refrigerador: requiere_refrigerador || false
     });
 
     res.status(201).json({ message: 'Reserva creada exitosamente', booking });

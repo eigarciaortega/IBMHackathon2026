@@ -21,13 +21,12 @@ const getToday = async () => {
      JOIN espacios e ON r.espacio_id = e.id
      JOIN usuarios u ON r.usuario_id = u.id
      WHERE DATE(r.hora_entrada) = CURRENT_DATE
-       AND r.status = 'CONFIRMED'
+       AND r.status IN ('CONFIRMED', 'PENDING')
      ORDER BY r.hora_entrada ASC`
   );
   return result.rows;
 };
 
-// NUEVO: Obtener reservas por fecha específica
 const getByDate = async (fecha) => {
   const result = await pool.query(
     `SELECT r.*, e.nombre as espacio_nombre, e.piso, e.tipo,
@@ -43,18 +42,15 @@ const getByDate = async (fecha) => {
   return result.rows;
 };
 
-const create = async ({ espacio_id, usuario_id, hora_entrada, hora_salida, asistentes }) => {
-  // Validar que no sea en el pasado
+const create = async ({ espacio_id, usuario_id, hora_entrada, hora_salida, asistentes, requiere_refrigerador = false }) => {
   if (new Date(hora_entrada) < new Date()) {
     throw { status: 400, message: 'No se pueden crear reservas en el pasado' };
   }
 
-  // Validar que hora_salida > hora_entrada
   if (new Date(hora_salida) <= new Date(hora_entrada)) {
     throw { status: 400, message: 'La hora de salida debe ser mayor a la hora de entrada' };
   }
 
-  // Validar que el espacio existe y está disponible
   const espacioResult = await pool.query(
     `SELECT * FROM espacios WHERE id = $1 AND disponible = true`,
     [espacio_id]
@@ -65,7 +61,22 @@ const create = async ({ espacio_id, usuario_id, hora_entrada, hora_salida, asist
     throw { status: 404, message: 'Espacio no encontrado o no disponible' };
   }
 
-  // Validar capacidad
+  // VALIDACIÓN: Refrigerador solo en Sala de Lactancia
+  if (requiere_refrigerador) {
+    if (espacio.nombre !== 'Sala de Lactancia') {
+      throw { 
+        status: 403, 
+        message: 'El refrigerador solo puede ser reservado en la Sala de Lactancia' 
+      };
+    }
+    if (!espacio.con_refrigerador) {
+      throw { 
+        status: 400, 
+        message: 'Este espacio no cuenta con refrigerador' 
+      };
+    }
+  }
+
   if (asistentes > espacio.capacidad) {
     throw { 
       status: 400, 
@@ -73,7 +84,7 @@ const create = async ({ espacio_id, usuario_id, hora_entrada, hora_salida, asist
     };
   }
 
-  // MEJORADO: Validar overlap (ahora ignora CANCELLED y PENDING)
+  // VALIDACIÓN: Traslapes (ignora CANCELLED, libera espacio inmediatamente)
   const overlap = await hasOverlap(espacio_id, hora_entrada, hora_salida);
   if (overlap) {
     throw { 
@@ -82,17 +93,15 @@ const create = async ({ espacio_id, usuario_id, hora_entrada, hora_salida, asist
     };
   }
 
-  // Crear reserva
   const result = await pool.query(
-    `INSERT INTO reservaciones (espacio_id, usuario_id, hora_entrada, hora_salida, asistentes)
-     VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-    [espacio_id, usuario_id, hora_entrada, hora_salida, asistentes]
+    `INSERT INTO reservaciones (espacio_id, usuario_id, hora_entrada, hora_salida, asistentes, requiere_refrigerador)
+     VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+    [espacio_id, usuario_id, hora_entrada, hora_salida, asistentes, requiere_refrigerador]
   );
   return result.rows[0];
 };
 
 const cancel = async (id, usuario_id) => {
-  // Verificar que la reserva existe y pertenece al usuario
   const result = await pool.query(
     `SELECT * FROM reservaciones WHERE id = $1`,
     [id]
@@ -111,6 +120,7 @@ const cancel = async (id, usuario_id) => {
     throw { status: 400, message: 'No puedes cancelar una reserva que ya pasó' };
   }
 
+  // Al cancelar, el espacio se libera inmediatamente (status = 'CANCELLED')
   const updated = await pool.query(
     `UPDATE reservaciones SET status = 'CANCELLED' 
      WHERE id = $1 RETURNING *`,

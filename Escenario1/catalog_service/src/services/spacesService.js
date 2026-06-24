@@ -27,10 +27,10 @@ const getById = async (id) => {
   return result.rows[0];
 };
 
-const create = async ({ nombre, tipo, capacidad, piso, con_proyector, con_aire, con_pizarron, con_tv }) => {
+const create = async ({ nombre, tipo, capacidad, piso, con_proyector, con_aire, con_pizarron, con_tv, con_refrigerador }) => {
   const result = await pool.query(
-    `INSERT INTO espacios (nombre, tipo, capacidad, piso, con_proyector, con_aire, con_pizarron, con_tv)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+    `INSERT INTO espacios (nombre, tipo, capacidad, piso, con_proyector, con_aire, con_pizarron, con_tv, con_refrigerador)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
     [
       nombre,
       tipo.toUpperCase(),
@@ -39,13 +39,14 @@ const create = async ({ nombre, tipo, capacidad, piso, con_proyector, con_aire, 
       con_proyector ?? false,
       con_aire      ?? false,
       con_pizarron  ?? false,
-      con_tv        ?? false
+      con_tv        ?? false,
+      con_refrigerador ?? false
     ]
   );
   return result.rows[0];
 };
 
-const update = async (id, { nombre, tipo, capacidad, piso, con_proyector, con_aire, con_pizarron, con_tv }) => {
+const update = async (id, { nombre, tipo, capacidad, piso, con_proyector, con_aire, con_pizarron, con_tv, con_refrigerador }) => {
   const result = await pool.query(
     `UPDATE espacios SET
       nombre       = COALESCE($1, nombre),
@@ -55,8 +56,9 @@ const update = async (id, { nombre, tipo, capacidad, piso, con_proyector, con_ai
       con_proyector = COALESCE($5, con_proyector),
       con_aire     = COALESCE($6, con_aire),
       con_pizarron = COALESCE($7, con_pizarron),
-      con_tv       = COALESCE($8, con_tv)
-     WHERE id = $9 AND disponible = true RETURNING *`,
+      con_tv       = COALESCE($8, con_tv),
+      con_refrigerador = COALESCE($9, con_refrigerador)
+     WHERE id = $10 AND disponible = true RETURNING *`,
     [
       nombre,
       tipo ? tipo.toUpperCase() : null,
@@ -66,6 +68,7 @@ const update = async (id, { nombre, tipo, capacidad, piso, con_proyector, con_ai
       con_aire,
       con_pizarron,
       con_tv,
+      con_refrigerador,
       id
     ]
   );
@@ -81,3 +84,5 @@ const remove = async (id) => {
 };
 
 module.exports = { getAll, getById, create, update, remove };
+
+// Made with Bob

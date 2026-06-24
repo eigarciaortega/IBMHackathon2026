@@ -1,17 +1,19 @@
 import { useState, useEffect } from 'react';
-import { getSpaces, createSpace, updateSpace, deleteSpace, getTodayBookings, getBookingsByDate } from '../services/api';
+import { getSpaces, createSpace, updateSpace, deleteSpace, getBookingsByDate } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 const AdminPage = () => {
+  const { user } = useAuth();
   const [spaces, setSpaces] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [tab, setTab] = useState('spaces');
   const [showForm, setShowForm] = useState(false);
   const [editingSpace, setEditingSpace] = useState(null);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]); // Fecha actual en formato YYYY-MM-DD
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [form, setForm] = useState({
     nombre: '', tipo: 'SALA', capacidad: '',
     piso: '', con_proyector: false, con_aire: false,
-    con_pizarron: false, con_tv: false
+    con_pizarron: false, con_tv: false, con_refrigerador: false
   });
 
   const fetchSpaces = async () => {
@@ -22,7 +24,17 @@ const AdminPage = () => {
   const fetchBookings = async (fecha) => {
     try {
       const res = await getBookingsByDate(fecha);
-      setBookings(res.data);
+      let filteredBookings = res.data;
+      
+      // SEGURIDAD: Usuarios normales solo ven sus propias reservas
+      if (user.perfil !== 'ADMINISTRADOR') {
+        filteredBookings = filteredBookings.filter(b => b.usuario_id === user.id);
+      }
+      
+      // VISIBILIDAD: No mostrar reservas CANCELLED
+      filteredBookings = filteredBookings.filter(b => b.status !== 'CANCELLED');
+      
+      setBookings(filteredBookings);
     } catch (err) {
       console.error('Error al cargar reservas:', err);
       setBookings([]);
@@ -33,7 +45,6 @@ const AdminPage = () => {
     fetchSpaces();
   }, []);
 
-  // Actualizar reservas cuando cambia la fecha seleccionada
   useEffect(() => {
     if (tab === 'bookings') {
       fetchBookings(selectedDate);
@@ -43,23 +54,56 @@ const AdminPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      // Preparar datos limpios (solo campos permitidos)
+      const cleanData = {
+        nombre: form.nombre,
+        tipo: form.tipo,
+        capacidad: parseInt(form.capacidad),
+        piso: form.piso || '',
+        con_proyector: form.con_proyector || false,
+        con_aire: form.con_aire || false,
+        con_pizarron: form.con_pizarron || false,
+        con_tv: form.con_tv || false,
+        con_refrigerador: form.con_refrigerador || false
+      };
+
+      console.log('📤 Enviando datos:', cleanData);
+
       if (editingSpace) {
-        await updateSpace(editingSpace.id, form);
+        console.log('✏️ Editando espacio ID:', editingSpace.id);
+        await updateSpace(editingSpace.id, cleanData);
       } else {
-        await createSpace(form);
+        console.log('➕ Creando nuevo espacio');
+        await createSpace(cleanData);
       }
       setShowForm(false);
       setEditingSpace(null);
-      setForm({ nombre: '', tipo: 'SALA', capacidad: '', piso: '', con_proyector: false, con_aire: false, con_pizarron: false, con_tv: false });
+      setForm({ nombre: '', tipo: 'SALA', capacidad: '', piso: '', con_proyector: false, con_aire: false, con_pizarron: false, con_tv: false, con_refrigerador: false });
       fetchSpaces();
     } catch (err) {
-      alert(err.response?.data?.error || 'Error al guardar');
+      console.error('❌ Error completo:', err);
+      console.error('❌ Response data:', err.response?.data);
+      console.error('❌ Response status:', err.response?.status);
+      
+      const errorMsg = err.response?.data?.detail || err.response?.data?.error || err.message || 'Error al guardar';
+      alert(`Error al guardar: ${errorMsg}\n\nRevisa la consola del navegador y la terminal del backend para más detalles.`);
     }
   };
 
   const handleEdit = (space) => {
     setEditingSpace(space);
-    setForm(space);
+    // Solo copiar los campos del formulario, no todos los campos del espacio
+    setForm({
+      nombre: space.nombre,
+      tipo: space.tipo,
+      capacidad: space.capacidad,
+      piso: space.piso || '',
+      con_proyector: space.con_proyector || false,
+      con_aire: space.con_aire || false,
+      con_pizarron: space.con_pizarron || false,
+      con_tv: space.con_tv || false,
+      con_refrigerador: space.con_refrigerador || false
+    });
     setShowForm(true);
   };
 
@@ -73,7 +117,6 @@ const AdminPage = () => {
     setSelectedDate(e.target.value);
   };
 
-  // Función para obtener el nombre del día de la semana
   const getDayName = (dateString) => {
     const date = new Date(dateString + 'T00:00:00');
     const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
@@ -84,7 +127,6 @@ const AdminPage = () => {
     <div style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
       <h2 style={{ marginBottom: '1.5rem', color: '#1a1a2e' }}>Panel Administrador</h2>
 
-      {/* Tabs */}
       <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
         {['spaces', 'bookings'].map(t => (
           <button key={t} onClick={() => setTab(t)} style={{
@@ -97,7 +139,6 @@ const AdminPage = () => {
         ))}
       </div>
 
-      {/* Espacios */}
       {tab === 'spaces' && (
         <div>
           <button
@@ -147,11 +188,11 @@ const AdminPage = () => {
                 </div>
 
                 <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
-                  {['con_proyector', 'con_aire', 'con_pizarron', 'con_tv'].map(key => (
+                  {['con_proyector', 'con_aire', 'con_pizarron', 'con_tv', 'con_refrigerador'].map(key => (
                     <label key={key} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
                       <input type="checkbox" checked={form[key]}
                         onChange={e => setForm({ ...form, [key]: e.target.checked })} />
-                      {key === 'con_proyector' ? 'Proyector' : key === 'con_aire' ? 'Aire' : key === 'con_pizarron' ? 'Pizarrón' : 'TV'}
+                      {key === 'con_proyector' ? 'Proyector' : key === 'con_aire' ? 'Aire' : key === 'con_pizarron' ? 'Pizarrón' : key === 'con_tv' ? 'TV' : 'Refrigerador'}
                     </label>
                   ))}
                 </div>
@@ -198,10 +239,8 @@ const AdminPage = () => {
         </div>
       )}
 
-      {/* Reservas con selector de fecha */}
       {tab === 'bookings' && (
         <div>
-          {/* Selector de fecha */}
           <div style={{
             background: 'white', padding: '1.5rem', borderRadius: '10px',
             marginBottom: '1.5rem', boxShadow: '0 2px 10px rgba(0,0,0,0.08)',
@@ -240,7 +279,6 @@ const AdminPage = () => {
             </div>
           </div>
 
-          {/* Tabla de reservas */}
           <div style={{ background: 'white', borderRadius: '10px', overflow: 'hidden', boxShadow: '0 2px 10px rgba(0,0,0,0.08)' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
@@ -256,7 +294,7 @@ const AdminPage = () => {
               <tbody>
                 {bookings.length === 0 ? (
                   <tr><td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: '#666' }}>
-                    No hay reservas para esta fecha
+                    No hay reservas activas para esta fecha
                   </td></tr>
                 ) : bookings.map(b => (
                   <tr key={b.id} style={{ borderBottom: '1px solid #f0f0f0' }}>
@@ -267,8 +305,8 @@ const AdminPage = () => {
                     <td style={td}>{b.asistentes}</td>
                     <td style={td}>
                       <span style={{
-                        background: b.status === 'CONFIRMED' ? '#e8f5e9' : b.status === 'PENDING' ? '#fff3e0' : '#ffebee',
-                        color: b.status === 'CONFIRMED' ? '#2e7d32' : b.status === 'PENDING' ? '#f57c00' : '#c62828',
+                        background: b.status === 'CONFIRMED' ? '#e8f5e9' : '#fff3e0',
+                        color: b.status === 'CONFIRMED' ? '#2e7d32' : '#f57c00',
                         padding: '0.2rem 0.6rem', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 600
                       }}>
                         {b.status}
