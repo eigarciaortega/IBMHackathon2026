@@ -12,6 +12,11 @@ services:
     volumes:
       - neowallet_accounts_data:/var/lib/postgresql/data
       - ./shared-infra/accounts-init.sql:/docker-entrypoint-initdb.d/accounts-init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${ACCOUNTS_DB_USER} -d ${ACCOUNTS_DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
     networks:
       - neowallet-network
 
@@ -28,6 +33,54 @@ services:
     volumes:
       - neowallet_processor_data:/var/lib/postgresql/data
       - ./shared-infra/processor-init.sql:/docker-entrypoint-initdb.d/processor-init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PROCESSOR_DB_USER} -d ${PROCESSOR_DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - neowallet-network
+
+  accounts-service:
+    build:
+      context: ./accounts-service
+    container_name: neowallet-accounts-service
+    restart: always
+    depends_on:
+      accounts-db:
+        condition: service_healthy
+    environment:
+      SERVER_PORT: 3000
+      DB_HOST: accounts-db
+      DB_PORT: 5432
+      DB_NAME: ${ACCOUNTS_DB_NAME}
+      DB_USER: ${ACCOUNTS_DB_USER}
+      DB_PASSWORD: ${ACCOUNTS_DB_PASSWORD}
+    ports:
+      - "${ACCOUNTS_SERVICE_PORT}:3000"
+    networks:
+      - neowallet-network
+
+  processor-service:
+    build:
+      context: ./processor-service
+    container_name: neowallet-processor-service
+    restart: always
+    depends_on:
+      processor-db:
+        condition: service_healthy
+      accounts-service:
+        condition: service_started
+    environment:
+      SERVER_PORT: 3001
+      DB_HOST: processor-db
+      DB_PORT: 5432
+      DB_NAME: ${PROCESSOR_DB_NAME}
+      DB_USER: ${PROCESSOR_DB_USER}
+      DB_PASSWORD: ${PROCESSOR_DB_PASSWORD}
+      ACCOUNTS_SERVICE_URL: http://accounts-service:3000
+    ports:
+      - "${PROCESSOR_SERVICE_PORT}:3001"
     networks:
       - neowallet-network
 
