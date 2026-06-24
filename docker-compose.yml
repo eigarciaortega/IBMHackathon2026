@@ -12,6 +12,92 @@ services:
     volumes:
       - officespace_postgres_data:/var/lib/postgresql/data
       - ./shared-infra/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    networks:
+      - officespace-network
+
+  auth-service:
+    build:
+      context: ./auth-service
+    container_name: officespace-auth-service
+    restart: always
+    depends_on:
+      - postgres
+    environment:
+      SERVER_PORT: 8081
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${OFFICESPACE_DB_NAME}
+      DB_USER: ${OFFICESPACE_DB_USER}
+      DB_PASSWORD: ${OFFICESPACE_DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_ISSUER: ${JWT_ISSUER}
+    ports:
+      - "8081:8081"
+    networks:
+      - officespace-network
+
+  catalog-service:
+    build:
+      context: ./catalog-service
+    container_name: officespace-catalog-service
+    restart: always
+    depends_on:
+      - postgres
+      - auth-service
+    environment:
+      SERVER_PORT: 8082
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${OFFICESPACE_DB_NAME}
+      DB_USER: ${OFFICESPACE_DB_USER}
+      DB_PASSWORD: ${OFFICESPACE_DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_ISSUER: ${JWT_ISSUER}
+    ports:
+      - "8082:8082"
+    networks:
+      - officespace-network
+
+  booking-service:
+    build:
+      context: ./booking-service
+    container_name: officespace-booking-service
+    restart: always
+    depends_on:
+      - postgres
+      - auth-service
+      - catalog-service
+    environment:
+      SERVER_PORT: 8083
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${OFFICESPACE_DB_NAME}
+      DB_USER: ${OFFICESPACE_DB_USER}
+      DB_PASSWORD: ${OFFICESPACE_DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_ISSUER: ${JWT_ISSUER}
+    ports:
+      - "8083:8083"
+    networks:
+      - officespace-network
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: officespace-frontend
+    restart: always
+    depends_on:
+      - auth-service
+      - catalog-service
+      - booking-service
+    ports:
+      - "5173:5173"
+    networks:
+      - officespace-network
 
 volumes:
   officespace_postgres_data:
+
+networks:
+  officespace-network:
+    driver: bridge
