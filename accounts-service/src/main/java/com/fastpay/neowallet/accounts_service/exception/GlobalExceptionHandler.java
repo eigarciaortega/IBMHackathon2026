@@ -3,6 +3,7 @@ package com.fastpay.neowallet.accounts_service.exception;
 import com.fastpay.neowallet.accounts_service.dto.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -15,16 +16,20 @@ import java.util.stream.Collectors;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(UserNotFoundException.class)
-    public ErrorResponse handleUserNotFound(
+    public ResponseEntity<ErrorResponse> handleUserNotFound(
             UserNotFoundException exception,
             HttpServletRequest request
     ) {
-        return new ErrorResponse(
-                LocalDateTime.now(),
-                HttpStatus.NOT_FOUND.value(),
-                HttpStatus.NOT_FOUND.getReasonPhrase(),
-                exception.getMessage(),
-                request.getRequestURI()
+        HttpStatus status = HttpStatus.NOT_FOUND;
+
+        return ResponseEntity.status(status).body(
+                new ErrorResponse(
+                        LocalDateTime.now(),
+                        status.value(),
+                        status.getReasonPhrase(),
+                        exception.getMessage(),
+                        request.getRequestURI()
+                )
         );
     }
 
@@ -33,64 +38,80 @@ public class GlobalExceptionHandler {
             InsufficientFundsException.class,
             IllegalArgumentException.class
     })
-    public ErrorResponse handleBadRequest(
+    public ResponseEntity<ErrorResponse> handleBadRequest(
             RuntimeException exception,
             HttpServletRequest request
     ) {
-        return new ErrorResponse(
-                LocalDateTime.now(),
-                HttpStatus.BAD_REQUEST.value(),
-                HttpStatus.BAD_REQUEST.getReasonPhrase(),
-                exception.getMessage(),
-                request.getRequestURI()
+        HttpStatus status = HttpStatus.BAD_REQUEST;
+
+        return ResponseEntity.status(status).body(
+                new ErrorResponse(
+                        LocalDateTime.now(),
+                        status.value(),
+                        status.getReasonPhrase(),
+                        exception.getMessage(),
+                        request.getRequestURI()
+                )
         );
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ErrorResponse handleValidation(
+    public ResponseEntity<ErrorResponse> handleValidation(
             MethodArgumentNotValidException exception,
             HttpServletRequest request
     ) {
+        HttpStatus status = HttpStatus.BAD_REQUEST;
+
         String message = exception.getBindingResult()
                 .getFieldErrors()
                 .stream()
                 .map(error -> error.getField() + ": " + error.getDefaultMessage())
                 .collect(Collectors.joining("; "));
 
-        return new ErrorResponse(
-                LocalDateTime.now(),
-                HttpStatus.BAD_REQUEST.value(),
-                HttpStatus.BAD_REQUEST.getReasonPhrase(),
-                message,
-                request.getRequestURI()
+        return ResponseEntity.status(status).body(
+                new ErrorResponse(
+                        LocalDateTime.now(),
+                        status.value(),
+                        status.getReasonPhrase(),
+                        message,
+                        request.getRequestURI()
+                )
         );
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ErrorResponse handleInvalidJson(
+    public ResponseEntity<ErrorResponse> handleInvalidJson(
             HttpMessageNotReadableException exception,
             HttpServletRequest request
     ) {
-        return new ErrorResponse(
-                LocalDateTime.now(),
-                HttpStatus.BAD_REQUEST.value(),
-                HttpStatus.BAD_REQUEST.getReasonPhrase(),
-                "El cuerpo de la petición no tiene un formato JSON válido",
-                request.getRequestURI()
+        HttpStatus status = HttpStatus.BAD_REQUEST;
+
+        return ResponseEntity.status(status).body(
+                new ErrorResponse(
+                        LocalDateTime.now(),
+                        status.value(),
+                        status.getReasonPhrase(),
+                        "El cuerpo de la petición no tiene un formato JSON válido",
+                        request.getRequestURI()
+                )
         );
     }
 
     @ExceptionHandler(Exception.class)
-    public ErrorResponse handleGenericException(
+    public ResponseEntity<ErrorResponse> handleGenericException(
             Exception exception,
             HttpServletRequest request
     ) {
-        return new ErrorResponse(
-                LocalDateTime.now(),
-                HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(),
-                "Ocurrió un error inesperado",
-                request.getRequestURI()
+        HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
+
+        return ResponseEntity.status(status).body(
+                new ErrorResponse(
+                        LocalDateTime.now(),
+                        status.value(),
+                        status.getReasonPhrase(),
+                        "Ocurrió un error inesperado",
+                        request.getRequestURI()
+                )
         );
     }
 }
